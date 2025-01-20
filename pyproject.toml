@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools", "wheel"]  # Tools needed to build the package
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "greater_tables"
+version = "1.0.0"
+description = "Perfect tables from pandas"
+authors = [{name = "Stephen J Mildehall", email = "mynl@me.com" }]
+readme = "README.md"
+license = { text = "BSD 3-Clause" }
+requires-python = ">=3.10"
+dependencies = ["pandas"]
