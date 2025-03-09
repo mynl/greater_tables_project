@@ -7,10 +7,12 @@ import pandas as pd
 from pandas.api.types import is_datetime64_any_dtype, is_integer_dtype,\
     is_float_dtype   # , is_numeric_dtype
 import sys
+import warnings
 
 
 # turn this fuck-test off
 pd.set_option('future.no_silent_downcasting', True)
+
 
 # GPT recommended approach
 logger = logging.getLogger(__name__)
@@ -38,9 +40,10 @@ class GT(object):
                  float_default_str='{x:,.3f}',
                  date_default_str='{x:%Y-%m-%d}',
                  ratio_cols=None, ratio_default_str='{x:.1%}',
-                 cast_to_floats=True, hrule_widths=None,
-                 index_names=False,
-                 pef_precision=3, pef_lower=-3, pef_upper=6, font_size=0.9):
+                 cast_to_floats=True, hrule_widths=None, vrule_widths=None,
+                 column_names=False ,
+                 pef_precision=3, pef_lower=-3, pef_upper=6,
+                 font_size=0.9, debug=False):
         """
         Create a greater_tables formatting object, setting defaults.
 
@@ -55,15 +58,11 @@ class GT(object):
         :param aligners: None or dict (type or colname) -> left | center | right
         :param formatters: None or dict type -> format function to override defaults.
         """
-        self.caption = caption
         self.df = df.copy(deep=True)   # the object being formatted
-        self.df_id = f'T{id(df):x}'[::2].upper()
-
-        # set defaults
-        if aligners is None:
-            aligners = {}
-        base_aligners = {'number': 'right', 'date': 'center', 'object': 'left'}
-        self.aligners = base_aligners.update(aligners)
+        if not column_names:
+            self.df.columns.names = [None] * self.df.columns.nlevels
+        self.df_id = f'T{id(df):x}'.upper()
+        self.caption = caption +  (' (id: ' + self.df_id + ')' if debug else '')
 
         # determine ratio columns
         if ratio_cols is not None and np.any(self.df.columns.duplicated()):
@@ -112,6 +111,45 @@ class GT(object):
                 logger.debug(f'col {i} = {self.df.columns[i]} is OBJECT')
                 self.object_col_indices.append(i)
 
+        # figure out column and index alignment
+        if aligners is not None and np.any(self.df.columns.duplicated()):
+            logger.warning('aligners specified with non-unique column names: ignoring request.')
+            aligners = None
+        if aligners is None:
+            # not using
+            aligners = []
+        self.df_aligners = []
+
+        lrc = {'l': 'gt_left', 'r': 'gt_right', 'c': 'gt_center'}
+        for i, c in enumerate(df.columns):
+            if c in aligners:
+                self.df_aligners.append(lrc.get(aligners[c], 'gt_center'))
+            elif c in self.ratio_cols or i in self.float_col_indices or i in self.integer_col_indices:
+                # number -> right
+                self.df_aligners.append('gt_right')
+            elif i in self.date_col_indices:
+                # center dates, why not!
+                self.df_aligners.append('gt_center')
+            else:
+                # all else, left
+                self.df_aligners.append('gt_left')
+
+        # do same for index - but klunky...
+        # not actually sure you ever want right or centered?
+        self.df_idx_aligners = []
+        for ser in [self.df.index] if self.df.index.nlevels == 1 else (
+                self.df.index.get_level_values(i) for i in
+                range(self.df.index.nlevels)):
+            if is_datetime64_any_dtype(ser):
+                self.df_idx_aligners.append('gt_left')
+            elif is_integer_dtype(ser):
+                self.df_idx_aligners.append('gt_left')
+            elif is_float_dtype(ser):
+                self.df_idx_aligners.append('gt_left')
+            else:
+                self.df_idx_aligners.append('gt_left')
+
+        # store defaults
         self.integer_default_str = integer_default_str
         self.float_default_str = float_default_str    # VERY rarely used; for floats in cols that are not floats
         self.date_default_str = date_default_str
@@ -122,20 +160,15 @@ class GT(object):
         self._pef = None
         self.font_size = font_size
         self.hrule_widths = hrule_widths
-        self.index_names = index_names
+        self.vrule_widths = vrule_widths
         # because of the problem of non-unique indexes use a list and
         # not a dict to pass the formatters to to_html
         self._df_formatters = None
 
         self.df_style = None
         self.df_html = None
-        self._df_formatters = None
-        self.df_aligners = None
 
-    def add_caption(self, cap):
-        self.caption = cap
-
-    # define the default and easy formatters
+    # define the default and easy formatters ===================================================
     def ratio(self, x):
         """Ratio formatter."""
         try:
@@ -190,13 +223,14 @@ class GT(object):
         """
         amean = ser.abs().mean()
         # mean = ser.mean()
-        # mn = ser.min()
-        # mx = ser.max()
+        amn = ser.abs().min()
+        amx = ser.abs().max()
         # smallest = ser.abs().min()
         # sd = ser.sd()
         # p10, p50, p90 = np.quantile(ser, [0.1, .5, 0.9], method='inverted_cdf')
         # pl = 10. ** self.pef_lower
         # pu = 10. ** self.pef_upper
+        pl, pu = 10. ** self.pef_lower, 10. ** self.pef_upper
         if amean < 1:
             precision = 5
         elif amean < 10:
@@ -207,21 +241,28 @@ class GT(object):
             precision = 0
         fmt = f'{{x:,.{precision}f}}'
         logger.debug(f'{ser.name=}, {amean=}, {fmt=}')
-
-        def ff(x):
-            try:
-                if x == int(x):
-                    return f'{x:,.0f}.'
-                else:
-                    return fmt.format(x=x)
-            except (ValueError, TypeError):
-                return str(x)
+        if amean < pl or amean > pu or amx / max(1, amn) > pu:
+            # go with eng
+            def ff(x):
+                try:
+                    return self.pef(x)
+                except (ValueError, TypeError):
+                    return str(x)
+        else:
+            def ff(x):
+                try:
+                    if x == int(x) and np.abs(x) < pu:
+                        return f'{x:,.0f}.'
+                    else:
+                        return fmt.format(x=x)
+                except (ValueError, TypeError):
+                    return str(x)
         return ff
 
     @ property
     def df_formatters(self):
         """
-        Make the list of formatters.
+        Make and return the list of formatters.
 
         Created one per column. Int, date, objects use defaults, but
         for float cols the formatter is created custom to the details of
@@ -262,29 +303,29 @@ class GT(object):
 
         ratio cols like in constructor
         """
-
         nindex = self.df.index.nlevels
         ncolumns = self.df.columns.nlevels
         ncols = self.df.shape[1]
         dt = self.df.dtypes
 
         # call pandas built-in html converter
-        html = self.df.to_html(table_id=self.df_id, formatters=self.df_formatters, index_names=self.index_names)
-
-        # TODO USE SELF.ALIGNERS
-        # for now...
-        # guess: index l, numeric r rest l
-        idx = 'l' * self.df.index.nlevels
-        numeric_cols = self.df.select_dtypes('number').columns
-        rc = ''.join('r' if c in numeric_cols else 'l' for c in self.df.columns)
-        col_align = idx + rc
+        # no escape so tex works
+        html = self.df.to_html(table_id=self.df_id, formatters=self.df_formatters,
+                               index_names=True, escape=False)
 
         hrule_widths = self.hrule_widths
         if hrule_widths is None:
             if nindex > 1:
-                hrule_widths = (1.5, 1.0, 0.5)
+                hrule_widths = (1.5, 1.0, 0)
             else:
                 hrule_widths = (0, 0, 0)
+        vrule_widths = self.vrule_widths
+        if vrule_widths is None:
+            if nindex > 1:
+                vrule_widths = (1.5, 1.0, 0)
+            else:
+                vrule_widths = (0, 0, 0)
+
         # start to build style
         style = []
         style.append('<style>')
@@ -294,51 +335,42 @@ class GT(object):
     font-family: "Roboto", "Open Sans Condensed", "Arial", 'Segoe UI', sans-serif;
     font-size: {self.font_size}em;
     width: auto;
+    border: none;
     overflow: auto;    }}
     #{self.df_id} thead {{
+        /* top and bottom of header */
         border-top: 2px solid #000;
         border-bottom: 2px solid #000;
         }}
     #{self.df_id} tbody {{
+        /* bottom of body */ 
         border-bottom: 2px solid #000;
         }}
     #{self.df_id} thead tr:nth-of-type({ncolumns+1}) th:nth-of-type(-n + {nindex - 1}) {{
-        border-right: 0.5px solid #000;
+        /* separate index column names in bottom row of header, ncolumns = number of levels in columns */
+        /* border-right: 0.5px solid #000; */
         }}
     #{self.df_id} thead th:nth-of-type({nindex+1}) {{
-        border-left: 1.5px solid #000;
-        border-bottom: 0.5px solid #000;
+        /* separate column headers from index on left first */
+        border-left: {vrule_widths[0]}px solid #000;
         }}
-    #{self.df_id} thead th:nth-of-type(n+{nindex+2}) {{
-        border-left: 0.5px solid #000;
-        border-bottom: 0.5px solid #000;
+    #{self.df_id} thead tr th:nth-of-type(n+{nindex+2}) {{
+        /* grid around column elements, may overwrite left vertical of columns */
+        /* nindex + 2 because left and want to exclude the first column */
+        border-left: {vrule_widths[1]}px solid #000;
         }}
-    #{self.df_id} thead th:nth-of-type({nindex}) {{
-        border-bottom: 0.5px solid #000;
+    #{self.df_id} thead tr th:nth-of-type(n+{nindex+1}) {{
+        /* grid below column elements */
+        border-bottom: {hrule_widths[1]}px solid #000;
         }}
-    #{self.df_id} tbody tr th:nth-of-type(-n + {nindex - 1}) {{
-        border-right: 0.5px solid #000;
+    #{self.df_id} tbody tr th:nth-of-type(-n + {nindex -1}) {{
+        /* verticals in index columns; excluding the right most ?? if nindex=1?? */ 
+        /* problem for sparse index entries */
+        /* border-right: 0.5px solid #000; */
         }}
-    /*
-    #{self.df_id} tbody tr th {{
-        border-bottom: 0.5px solid #00f;
-        }}
-    #{self.df_id} tbody tr td {{
-        border-bottom: 0.5px solid #f00;
-        }}
-    #{self.df_id} tbody td {{
-        padding-left: 10px;
-        padding-right: 10px;
-        }}
-    #{self.df_id} tbody tr td:nth-of-type(1)  {{
-        border-left: 1.5px solid #000;
-    }}
-    */
-    #{self.df_id} tbody td:nth-of-type({nindex + 1})  {{
-        border-left: 1.5px solid #000;
-    }}
     #{self.df_id} tbody tr td:nth-of-type(n + 2)  {{
-        border-left: 0.5px solid #000;
+        /* verticals in the body; index cols are th not td so fixed from second */
+        border-left: {vrule_widths[2]}px solid #000;
     }}
     #{self.df_id} tbody th  {{
         vertical-align: top;
@@ -352,40 +384,42 @@ class GT(object):
         caption-side: top;
     }}
     #{self.df_id} .gt_body_column {{
-        border-left: 1px solid #000;
+        /* separate index from body (version 2!)  */
+        border-left: {vrule_widths[0]}px solid #000;
     }}
     #{self.df_id} .gt_ruled_row_0 {{
+        /* bold h lines to separate level 1 mindex groups */
         border-top: {hrule_widths[0]}px solid #000;
     }}
     #{self.df_id} .gt_ruled_row_1 {{
-        border-top: {hrule_widths[0]}px solid #444;
+        /* bold h lines to separate level 2 mindex groups */
+        border-top: {hrule_widths[1]}px solid #000;
     }}
     #{self.df_id} .gt_ruled_row_2 {{
-        border-top: {hrule_widths[0]}px solid #888;
+        /* bold h lines to separate level 3 mindex groups */
+        border-top: {hrule_widths[2]}px solid #000;
     }}
     #{self.df_id} .gt_left {{
         text-align: left;
-        }}
+    }}
     #{self.df_id} .gt_center {{
         text-align: center;
-        }}
+    }}
     #{self.df_id} .gt_right {{
         text-align: right;
         font-variant-numeric: tabular-nums;
-        }}
+    }}
     #{self.df_id} .gt_head {{
         /* font-family: "Times New Roman", 'Courier New'; */
         font-size: {self.font_size}em;
-        }}
+    }}
     #{self.df_id} td, th {{
-      /* top, right, bottom left */
-      padding: 2px 10px 2px 10px;
+        /* top, right, bottom left cell padding */
+        padding: 2px 10px 2px 10px;
     }}
 ''')
         # ================================================
         style.append('</style>\n')
-
-        # OK
 
         if len(style) > 2:
             style = '\n'.join(style)
@@ -401,36 +435,6 @@ class GT(object):
         for r in soup.select('thead tr'):
             for td in r.find_all('th'):
                 td['class'] = 'gt_center gt_head'
-                # td['style'] = 'text-align: left;'
-
-        # in each body row: headings left
-        alignment = []
-        for y in dt.values:
-            # if index is not unique this can return > 1 element
-            # know in same order as self.df.columns, so can use
-            # this approach
-            if y in (int, float):
-                a = 'gt_right'
-            elif y == object:
-                # print(c, 'object')
-                a = 'gt_left'
-            else:
-                # print(c, type(c), 'else')
-                a = 'gt_center'
-            alignment.append(a)
-
-        idx_alignment = []
-        if nindex == 1:
-            idx_alignment.append(self.df.index.dtype)
-        else:
-            for c, t in self.df.index.dtypes.items():
-                if t in (int, float):
-                    a = 'gt_right'
-                elif t == object:
-                    a = 'gt_left'
-                else:
-                    a = 'gt_center'
-                idx_alignment.append(a)
 
         # figure which index level changes for h rules
         chg_level = self.changed_level()
@@ -440,10 +444,10 @@ class GT(object):
                 lv = chg_level.loc[i]
                 r['class'] = f'gt_ruled_row_{lv}'
             # to handle sparse index you have to work from the right!
-            for a, td in zip(idx_alignment[::-1], r.find_all('th')[::-1]):
+            for a, td in zip(self.df_idx_aligners[::-1], r.find_all('th')[::-1]):
                 td['class'] = f'{a} gt_head'
                 # td['style'] = 'text-align: left;'
-            for a, td in zip(alignment, r.find_all('td')):
+            for a, td in zip(self.df_aligners, r.find_all('td')):
                 td['class'] = a
             # find the body column
             td = r.find_all('td')[-ncols]
@@ -451,10 +455,9 @@ class GT(object):
                 # print(f'Adding body col to {td.text}')
                 existing_classes = td.get('class', '')  # Get existing classes as a list, or an empty list if none
                 td['class'] = existing_classes + ' gt_body_column'  # Append new classes
+
         if self.caption != "":
             table = soup.find('table')
-
-            # Add a caption
             if table:
                 c = soup.new_tag('caption')
                 c.string = self.caption
@@ -465,17 +468,16 @@ class GT(object):
         table = soup.find("table", {"class": "dataframe"})
         if table:
             del table["class"]
-
         html = soup.prettify()
         self.df_html = html  # after alteration
         # return
         logger.info('CREATED HTML STYLE')
-
         return style + html
 
     @property
     def html(self):
-        return self.df_style + self.df_html
+        return ('' if self.df_style  is None else self.df_style) + (
+            '' if self.df_html is None else self.df_html)
 
     def _repr_latex_(self):
         """Generate a LaTeX tabular representation."""
@@ -573,7 +575,7 @@ class GT(object):
         :return:
         """
         # local variable
-        df = self.df
+        df = self.df.copy()
 
 # \\begin{{{figure}}}{latex}
         header = """
@@ -627,7 +629,10 @@ class GT(object):
                 # df = df.copy().reset_index(drop=False, col_level=df.columns.nlevels - 1)
             else:
                 nc_index = 1
-            df = df.copy().reset_index(drop=False, col_level=df.columns.nlevels - 1)
+            # col_level puts the label at the bottom of the column m index.
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=pd.errors.PerformanceWarning)
+                df = df.reset_index(drop=False, col_level=df.columns.nlevels - 1)
             if sparsify:
                 if hrule is None:
                     hrule = set()
@@ -1020,15 +1025,15 @@ class GT(object):
         except:
             return n
 
-    @staticmethod
-    def clean_underscores(s):
-        """
-        check s for unescaped _s
-        returns true if all _ escaped else false
-        :param s:
-        :return:
-        """
-        return np.all([s[x.start() - 1] == '\\' for x in re.finditer('_', s)])
+    # @staticmethod
+    # def clean_underscores(s):
+    #     """
+    #     check s for unescaped _s
+    #     returns true if all _ escaped else false
+    #     :param s:
+    #     :return:
+    #     """
+    #     return np.all([s[x.start() - 1] == '\\' for x in re.finditer('_', s)])
 
     @staticmethod
     def clean_index(df):

@@ -55,6 +55,7 @@ def test_df(date=False, mi_columns=True):
     w1 = ['Abel', 'Cain', 'Issac', 'Fred', 'George']
     w2 = ['South', 'East', 'West', 'North']
     w4 = ['A', 'B', 'C', 'D']
+    rints = [0, -10, 10, 100, -100, 1000, -1000, 10000, -10000, 100000, -100000, 1000000, -1000000]
     df = pd.DataFrame({'idx1': np.random.choice(w1, nr),
                        'idx2': np.random.choice(w2, nr),
                        'idx3': np.random.poisson(2, nr),
@@ -87,8 +88,8 @@ def test_df(date=False, mi_columns=True):
 def make_test_dfs():
     """Make a dict of test dataframes with different characteristics."""
     ans = {}
-    df = pd.DataFrame({'x': range(10), 'y': np.arange(10, dtype=float)})
-    df.x = df.x ** 2
+    df = pd.DataFrame({'x': [int(i) for i in 3. ** np.arange(10)], 'y': np.arange(10, dtype=float)})
+    df['w'] = df.x ** 0.35
     df['z'] = df.y ** .25
 
     ans['basic'] = df.copy()
