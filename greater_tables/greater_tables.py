@@ -20,11 +20,11 @@ if logger.hasHandlers():
     # Clear existing handlers
     logger.handlers.clear()
 # SET DEGBUUGER LEVEL
-LEVEL = logging.DEBUG    # DEBUG or INFO, WARNING, ERROR, CRITICAL
+LEVEL = logging.ERROR    # DEBUG or INFO, WARNING, ERROR, CRITICAL
 logger.setLevel(LEVEL)
 handler = logging.StreamHandler(sys.stderr)
 handler.setLevel(LEVEL)
-formatter = logging.Formatter('%(asctime)s | %(levelname)s |  %(funcName)-15s | %(message)s', datefmt='%H:%M:%S.%f')
+formatter = logging.Formatter('%(asctime)s | %(levelname)s |  %(funcName)-15s | %(message)s')
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 logger.info('Logger Setup; module recompiled.')
@@ -39,7 +39,7 @@ class GT(object):
                  date_default_str='{x:%Y-%m-%d}',
                  ratio_cols=None, ratio_default_str='{x:.1%}',
                  cast_to_floats=True, hrule_widths=None,
-                 index_names=True,
+                 index_names=False,
                  pef_precision=3, pef_lower=-3, pef_upper=6, font_size=0.9):
         """
         Create a greater_tables formatting object, setting defaults.
@@ -56,7 +56,7 @@ class GT(object):
         :param formatters: None or dict type -> format function to override defaults.
         """
         self.caption = caption
-        self.df = df.copy()   # the object being formatted
+        self.df = df.copy(deep=True)   # the object being formatted
         self.df_id = f'T{id(df):x}'[::2].upper()
 
         # set defaults
@@ -80,12 +80,12 @@ class GT(object):
                 self.ratio_cols = [ratio_cols]
 
         if cast_to_floats:
-            for i, c in enumerate(df.columns):
-                old_type = df.dtypes[c]
-                if not np.any((is_integer_dtype(df.iloc[:, i]),
-                               is_datetime64_any_dtype(df.iloc[:, i]))):
+            for i, c in enumerate(self.df.columns):
+                old_type = self.df.dtypes[c]
+                if not np.any((is_integer_dtype(self.df.iloc[:, i]),
+                               is_datetime64_any_dtype(self.df.iloc[:, i]))):
                     try:
-                        df.iloc[:, i] = df.iloc[:, i].astype(float)
+                        self.df.iloc[:, i] = self.df.iloc[:, i].astype(float)
                         logger.debug(f'coerce {i}={c} from {old_type} to float')
                     except ValueError:
                         logger.debug(f'coercing {i}={c} from {old_type} to float FAILED')
@@ -96,20 +96,20 @@ class GT(object):
         self.date_col_indices = []
         self.object_col_indices = []
         # manage non-unique col names here
-        logger.info('FIGURING TYPES')
+        logger.debug('FIGURING TYPES')
         for i in range(self.df.shape[1]):
-            ser = df.iloc[:, i]
+            ser = self.df.iloc[:, i]
             if is_datetime64_any_dtype(ser):
-                logger.info(f'col {i} = {self.df.columns[i]} is DATE')
+                logger.debug(f'col {i} = {self.df.columns[i]} is DATE')
                 self.date_col_indices.append(i)
             elif is_integer_dtype(ser):
-                logger.info(f'col {i} = {self.df.columns[i]} is INTEGER')
+                logger.debug(f'col {i} = {self.df.columns[i]} is INTEGER')
                 self.integer_col_indices.append(i)
             elif is_float_dtype(ser):
-                logger.info(f'col {i} = {self.df.columns[i]} is FLOAT')
+                logger.debug(f'col {i} = {self.df.columns[i]} is FLOAT')
                 self.float_col_indices.append(i)
             else:
-                logger.info(f'col {i} = {self.df.columns[i]} is OBJECT')
+                logger.debug(f'col {i} = {self.df.columns[i]} is OBJECT')
                 self.object_col_indices.append(i)
 
         self.integer_default_str = integer_default_str
@@ -168,7 +168,7 @@ class GT(object):
             else:
                 # TODo BEEF UP?
                 return self.float_default_str.format(x=f)
-        except ValueError:
+        except (TypeError, ValueError):
             return str(x)
 
     def pef(self, x):
@@ -214,7 +214,7 @@ class GT(object):
                     return f'{x:,.0f}.'
                 else:
                     return fmt.format(x=x)
-            except ValueError:
+            except (ValueError, TypeError):
                 return str(x)
         return ff
 
@@ -246,13 +246,14 @@ class GT(object):
                     self._df_formatters.append(self.make_float_formatter(self.df.iloc[:, i]))
                 else:
                     # print(f'{i} default')
-                    self._df_formatters.append(self.default)
+                    self._df_formatters.append(self.default_formatter)
             # self._df_formatters is now a list of length equal to cols in df
             if len(self._df_formatters) != self.df.shape[1]:
                 raise ValueError(f'Something wrong: {len(self._df_formatters)=} != {self.df.shape=}')
         return self._df_formatters
 
     def __repr__(self):
+        """Basic representation."""
         return f"GreaterTable wrapping df {len(self.df)} rows, id {self.df_id}"
 
     def _repr_html_(self):
@@ -267,6 +268,7 @@ class GT(object):
         ncols = self.df.shape[1]
         dt = self.df.dtypes
 
+        # call pandas built-in html converter
         html = self.df.to_html(table_id=self.df_id, formatters=self.df_formatters, index_names=self.index_names)
 
         # TODO USE SELF.ALIGNERS
@@ -284,105 +286,106 @@ class GT(object):
             else:
                 hrule_widths = (0, 0, 0)
         # start to build style
-        df_id = self.df_id   # shorter
         style = []
         style.append('<style>')
         style.append(f'''
-    # {df_id}  {{
+    #{self.df_id}  {{
     border-collapse: collapse;
     font-family: "Roboto", "Open Sans Condensed", "Arial", 'Segoe UI', sans-serif;
     font-size: {self.font_size}em;
     width: auto;
     overflow: auto;    }}
-    # {df_id} thead {{
+    #{self.df_id} thead {{
         border-top: 2px solid #000;
         border-bottom: 2px solid #000;
         }}
-    # {df_id} tbody {{
+    #{self.df_id} tbody {{
         border-bottom: 2px solid #000;
         }}
-    # {df_id} thead tr:nth-of-type({ncolumns+1}) th:nth-of-type(-n + {nindex - 1}) {{
+    #{self.df_id} thead tr:nth-of-type({ncolumns+1}) th:nth-of-type(-n + {nindex - 1}) {{
         border-right: 0.5px solid #000;
         }}
-    # {df_id} thead th:nth-of-type({nindex+1}) {{
+    #{self.df_id} thead th:nth-of-type({nindex+1}) {{
         border-left: 1.5px solid #000;
         border-bottom: 0.5px solid #000;
         }}
-    # {df_id} thead th:nth-of-type(n+{nindex+2}) {{
+    #{self.df_id} thead th:nth-of-type(n+{nindex+2}) {{
         border-left: 0.5px solid #000;
         border-bottom: 0.5px solid #000;
         }}
-    # {df_id} thead th:nth-of-type({nindex}) {{
+    #{self.df_id} thead th:nth-of-type({nindex}) {{
         border-bottom: 0.5px solid #000;
         }}
-    # {df_id} tbody tr th:nth-of-type(-n + {nindex - 1}) {{
+    #{self.df_id} tbody tr th:nth-of-type(-n + {nindex - 1}) {{
         border-right: 0.5px solid #000;
         }}
     /*
-    # {df_id} tbody tr th {{
+    #{self.df_id} tbody tr th {{
         border-bottom: 0.5px solid #00f;
         }}
-    # {df_id} tbody tr td {{
+    #{self.df_id} tbody tr td {{
         border-bottom: 0.5px solid #f00;
         }}
-    # {df_id} tbody td {{
+    #{self.df_id} tbody td {{
         padding-left: 10px;
         padding-right: 10px;
         }}
-    # {df_id} tbody tr td:nth-of-type(1)  {{
+    #{self.df_id} tbody tr td:nth-of-type(1)  {{
         border-left: 1.5px solid #000;
     }}
     */
-    # T6F2FE tbody td:nth-of-type({nindex + 1})  {{
+    #{self.df_id} tbody td:nth-of-type({nindex + 1})  {{
         border-left: 1.5px solid #000;
     }}
-    # {df_id} tbody tr td:nth-of-type(n + 2)  {{
+    #{self.df_id} tbody tr td:nth-of-type(n + 2)  {{
         border-left: 0.5px solid #000;
     }}
-    # {df_id} tbody th  {{
+    #{self.df_id} tbody th  {{
         vertical-align: top;
     }}
-    # {df_id} caption {{
+    #{self.df_id} caption {{
         padding-top: 10px;
         padding-bottom: 4px;
         font-size: 1.1em;
         text-align: left;
-        /* font-weight: bold; */
-        /* color: #f0f; */
-        }}
-    # {df_id} .gt_body_column {{
+        font-weight: bold;
+        caption-side: top;
+    }}
+    #{self.df_id} .gt_body_column {{
         border-left: 1px solid #000;
     }}
-    # {df_id} .gt_ruled_row_0 {{
+    #{self.df_id} .gt_ruled_row_0 {{
         border-top: {hrule_widths[0]}px solid #000;
     }}
-    # {df_id} .gt_ruled_row_1 {{
+    #{self.df_id} .gt_ruled_row_1 {{
         border-top: {hrule_widths[0]}px solid #444;
     }}
-    # {df_id} .gt_ruled_row_2 {{
+    #{self.df_id} .gt_ruled_row_2 {{
         border-top: {hrule_widths[0]}px solid #888;
     }}
-    # {df_id} .gt_left {{
+    #{self.df_id} .gt_left {{
         text-align: left;
         }}
-    # {df_id} .gt_center {{
+    #{self.df_id} .gt_center {{
         text-align: center;
         }}
-    # {df_id} .gt_right {{
+    #{self.df_id} .gt_right {{
         text-align: right;
         font-variant-numeric: tabular-nums;
         }}
-    # {df_id} .gt_head {{
+    #{self.df_id} .gt_head {{
         /* font-family: "Times New Roman", 'Courier New'; */
         font-size: {self.font_size}em;
         }}
-    # {df_id} td, th {{
+    #{self.df_id} td, th {{
       /* top, right, bottom left */
       padding: 2px 10px 2px 10px;
     }}
 ''')
         # ================================================
         style.append('</style>\n')
+
+        # OK
 
         if len(style) > 2:
             style = '\n'.join(style)
@@ -466,7 +469,8 @@ class GT(object):
         html = soup.prettify()
         self.df_html = html  # after alteration
         # return
-        logger.debug('CREATED HTML STYLE')
+        logger.info('CREATED HTML STYLE')
+
         return style + html
 
     @property
@@ -475,7 +479,7 @@ class GT(object):
 
     def _repr_latex_(self):
         """Generate a LaTeX tabular representation."""
-        logger.debug('CREATED LATEX STYLE')
+        logger.info('CREATED LATEX STYLE')
         # latex = self.df.to_latex(caption=self.caption, formatters=self._df_formatters)
         latex = self.df_to_tikz()
         return latex
@@ -486,7 +490,8 @@ class GT(object):
 
         Very ingenious GTP code with some SM enhancements.
         """
-        idx = self.df.index
+        # otherwise you alter the actual index
+        idx = self.df.index.copy()
         idx.names = [i for i in range(idx.nlevels)]
         # Determine at which level the index changes
         index_df = idx.to_frame(index=False)  # Convert MultiIndex to a DataFrame
@@ -570,9 +575,10 @@ class GT(object):
         # local variable
         df = self.df
 
+# \\begin{{{figure}}}{latex}
         header = """
-\\begin{{{figure}}}{latex}
 \\centering
+\\footnotesize
 {extra_defs}
 \\begin{{tikzpicture}}[
     auto,
@@ -591,9 +597,9 @@ class GT(object):
 {post_process}
 
 \\end{{tikzpicture}}
-{caption}
-\\end{{{figure}}}
 """
+# {caption}
+# \\end{{{figure}}}
 
         # make a safe float format
         if float_format is None:
@@ -634,9 +640,6 @@ class GT(object):
         else:
             nc_index = 0
 
-        # this is handled by the caller
-        # df = df.astype(float, errors='ignore')
-
         if nc_index:
             if vrule is None:
                 vrule = set()
@@ -656,9 +659,10 @@ class GT(object):
 
         # note this happens AFTER you have reset the index...need to pass number of index columns
         colw, mxmn, tabs = GT.guess_column_widths(df, nc_index=nc_index, float_format=wfloat_format, tabs=tabs,
-                                                    scale=scale, equal=equal)
+                                                  scale=scale, equal=equal)
         # print(colw, tabs)
         logger.debug(f'tabs: {tabs}')
+        logger.debug(f'colw: {colw}')
 
         # alignment dictionaries
         ad = {'l': 'left', 'r': 'right', 'c': 'center'}
@@ -728,7 +732,7 @@ class GT(object):
             for lvl in range(len(df.columns.levels)):
                 nl = ''
                 sparse_columns[lvl], mi_vrules[lvl] = GT._sparsify_mi(df.columns.get_level_values(lvl),
-                                                                        lvl == len(df.columns.levels) - 1)
+                                                                      lvl == len(df.columns.levels) - 1)
                 for cn, c, al in zip(df.columns, sparse_columns[lvl], align):
                     c = wfloat_format(c)
                     s = f'{nl} {{cell:{ad2[al]}{colw[cn]}s}} '
@@ -1093,13 +1097,13 @@ class GT(object):
                 ans = ef(x)
             return ans
         except ValueError as e:
-            logger.error(f'ValueError {e}')
+            logger.debug(f'ValueError {e}')
             return str(x)
         except TypeError as e:
-            logger.error(f'TypeError {e}')
+            logger.debug(f'TypeError {e}')
             return str(x)
         except AttributeError as e:
-            logger.error(f'AttributeError {e}')
+            logger.debug(f'AttributeError {e}')
             return str(x)
 
 # class GT_ORIGINAL(object):
