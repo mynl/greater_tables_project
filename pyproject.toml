@@ -4,15 +4,17 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "greater_tables"
-version = "1.0.0"
 description = "Perfect tables from pandas"
 authors = [{name = "Stephen J Mildehall", email = "mynl@me.com" }]
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.10"
-dependencies = ["pandas"]
+dependencies = ["pandas", "bs4"]
 classifiers = [
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
 ]
+
+[tool.setuptools.dynamic]
+version  = { attr = "greater_tables.__version__" }
