@@ -1,5 +1,6 @@
 # table formatting again
 from bs4 import BeautifulSoup
+from decimal import InvalidOperation
 from io import StringIO
 import logging
 import numpy as np
@@ -8,10 +9,12 @@ from pandas.api.types import is_datetime64_any_dtype, is_integer_dtype,\
     is_float_dtype   # , is_numeric_dtype
 import sys
 import warnings
+from .hasher import  df_short_hash
 
-
-# turn this fuck-test off
+# turn this fuck-fest off
 pd.set_option('future.no_silent_downcasting', True)
+# pandas complaining about casting columns eg putting object in float column
+warnings.simplefilter(action='ignore', category=FutureWarning)
 
 
 # GPT recommended approach
@@ -36,12 +39,13 @@ class GT(object):
     """Create greater_tables."""
 
     def __init__(self, df, caption='',
-                 aligners=None, integer_default_str='{x:,d}',
-                 float_default_str='{x:,.3f}',
-                 date_default_str='{x:%Y-%m-%d}',
+                 aligners=None, default_integer_str='{x:,d}',
+                 default_float_str='{x:,.3f}',
+                 default_date_str='{x:%Y-%m-%d}',
                  ratio_cols=None, ratio_default_str='{x:.1%}',
                  cast_to_floats=True, hrule_widths=None, vrule_widths=None,
                  column_names=False ,
+                 sparsify=True,
                  pef_precision=3, pef_lower=-3, pef_upper=6,
                  font_size=0.9, debug=False):
         """
@@ -58,11 +62,38 @@ class GT(object):
         :param aligners: None or dict (type or colname) -> left | center | right
         :param formatters: None or dict type -> format function to override defaults.
         """
+        if not df.columns.is_unique:
+            logger.warning('column names are not unqiue: will cause problems')
+
         self.df = df.copy(deep=True)   # the object being formatted
+        self.raw_df = df.copy(deep=True)
         if not column_names:
             self.df.columns.names = [None] * self.df.columns.nlevels
-        self.df_id = f'T{id(df):x}'.upper()
+        self.df_id = df_short_hash(self.df)
         self.caption = caption +  (' (id: ' + self.df_id + ')' if debug else '')
+
+        # before messing
+        self.nindex = self.df.index.nlevels
+        self.ncolumns = self.df.columns.nlevels
+        self.ncols = self.df.shape[1]
+        self.dt = self.df.dtypes
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=pd.errors.PerformanceWarning)
+            self.df = self.df.reset_index(drop=False, col_level=self.df.columns.nlevels - 1)
+
+        self.index_change_level = GT.changed_column(self.df.iloc[:, :self.nindex])
+        if self.ncolumns > 1:
+            # will be empty rows above the index headers
+            self.index_change_level = pd.Series([i[-1] for i in self.index_change_level])
+
+        self.column_change_level = GT.changed_level(self.raw_df.columns)
+
+        # sparsify
+        if sparsify and self.nindex > 1:
+            for c in self.df.columns[:self.nindex]:
+                # spartify returns some other stuff...
+                self.df[c], _ = GT._sparsify(self.df[c])
 
         # determine ratio columns
         if ratio_cols is not None and np.any(self.df.columns.duplicated()):
@@ -77,17 +108,21 @@ class GT(object):
                 self.ratio_cols = ['max_LR', 'gross_LR', 'net_LR', 'ceded_LR', 'LR', 'COC', 'CoC', 'ROE']
             elif ratio_cols is not None and not isinstance(ratio_cols, (tuple, list)):
                 self.ratio_cols = [ratio_cols]
+            else:
+                self.ratio_cols = ratio_cols
 
-        if cast_to_floats:
-            for i, c in enumerate(self.df.columns):
-                old_type = self.df.dtypes[c]
-                if not np.any((is_integer_dtype(self.df.iloc[:, i]),
-                               is_datetime64_any_dtype(self.df.iloc[:, i]))):
-                    try:
-                        self.df.iloc[:, i] = self.df.iloc[:, i].astype(float)
-                        logger.debug(f'coerce {i}={c} from {old_type} to float')
-                    except ValueError:
-                        logger.debug(f'coercing {i}={c} from {old_type} to float FAILED')
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=pd.errors.PerformanceWarning)
+            if cast_to_floats:
+                for i, c in enumerate(self.df.columns):
+                    old_type = self.df.dtypes[c]
+                    if not np.any((is_integer_dtype(self.df.iloc[:, i]),
+                                   is_datetime64_any_dtype(self.df.iloc[:, i]))):
+                        try:
+                            self.df.iloc[:, i] = self.df.iloc[:, i].astype(float)
+                            logger.debug(f'coerce {i}={c} from {old_type} to float')
+                        except ValueError:
+                            logger.debug(f'coercing {i}={c} from {old_type} to float FAILED')
 
         # now can determine types
         self.float_col_indices = []
@@ -120,39 +155,45 @@ class GT(object):
             aligners = []
         self.df_aligners = []
 
-        lrc = {'l': 'gt_left', 'r': 'gt_right', 'c': 'gt_center'}
-        for i, c in enumerate(df.columns):
-            if c in aligners:
-                self.df_aligners.append(lrc.get(aligners[c], 'gt_center'))
+        lrc = {'l': 'gt-left', 'r': 'gt-right', 'c': 'gt-center'}
+        # FIX INDEX ALIGNERS HERE
+        for i, c in enumerate(self.df.columns):
+            if i < self.nindex:
+                # index -> left
+                self.df_aligners.append('grt-left')
+            elif c in aligners:
+                self.df_aligners.append(lrc.get(aligners[c], 'grt-center'))
             elif c in self.ratio_cols or i in self.float_col_indices or i in self.integer_col_indices:
                 # number -> right
-                self.df_aligners.append('gt_right')
+                self.df_aligners.append('grt-right')
             elif i in self.date_col_indices:
                 # center dates, why not!
-                self.df_aligners.append('gt_center')
+                self.df_aligners.append('grt-center')
             else:
                 # all else, left
-                self.df_aligners.append('gt_left')
+                self.df_aligners.append('grt-left')
+
+        self.df_idx_aligners = self.df_aligners[:self.nindex]
 
         # do same for index - but klunky...
         # not actually sure you ever want right or centered?
-        self.df_idx_aligners = []
-        for ser in [self.df.index] if self.df.index.nlevels == 1 else (
-                self.df.index.get_level_values(i) for i in
-                range(self.df.index.nlevels)):
-            if is_datetime64_any_dtype(ser):
-                self.df_idx_aligners.append('gt_left')
-            elif is_integer_dtype(ser):
-                self.df_idx_aligners.append('gt_left')
-            elif is_float_dtype(ser):
-                self.df_idx_aligners.append('gt_left')
-            else:
-                self.df_idx_aligners.append('gt_left')
+        # self.df_idx_aligners = []
+        # for ser in [self.df.index] if self.df.index.nlevels == 1 else (
+        #         self.df.index.get_level_values(i) for i in
+        #         range(self.df.index.nlevels)):
+        #     if is_datetime64_any_dtype(ser):
+        #         self.df_idx_aligners.append('gt_left')
+        #     elif is_integer_dtype(ser):
+        #         self.df_idx_aligners.append('gt_left')
+        #     elif is_float_dtype(ser):
+        #         self.df_idx_aligners.append('gt_left')
+        #     else:
+        #         self.df_idx_aligners.append('gt_left')
 
         # store defaults
-        self.integer_default_str = integer_default_str
-        self.float_default_str = float_default_str    # VERY rarely used; for floats in cols that are not floats
-        self.date_default_str = date_default_str
+        self.default_integer_str = default_integer_str
+        self.default_float_str = default_float_str    # VERY rarely used; for floats in cols that are not floats
+        self.default_date_str = default_date_str
         self.ratio_default_str = ratio_default_str
         self.pef_precision = pef_precision
         self.pef_lower = pef_lower
@@ -164,32 +205,35 @@ class GT(object):
         # because of the problem of non-unique indexes use a list and
         # not a dict to pass the formatters to to_html
         self._df_formatters = None
-
         self.df_style = None
         self.df_html = None
+        # finally apply formaters, this radically alters the df
+        self.df_pre_applying_formatters = self.df.copy()
+        self.df = self.apply_formatters(self.df)
 
     # define the default and easy formatters ===================================================
-    def ratio(self, x):
+    def default_ratio(self, x):
         """Ratio formatter."""
         try:
             return self.ratio_default_str.format(x=x)
         except ValueError:
-            return x
+            return str(x)
 
-    def date(self, x):
+    def default_date(self, x):
         """Date formatter."""
         try:
-            return self.date_default_str.format(x=x)
+            return self.default_date_str.format(x=x)
             # return f'{x:%Y-%m-%d}'  # f"{dt:%H:%M:%S}"
         except ValueError:
-            return x
+            # logger.error(f'date error with {x=}')
+            return str(x)
 
-    def integer(self, x):
+    def default_integer(self, x):
         """Integer formatter."""
         try:
-            return self.integer_default_str.format(x=x)
+            return self.default_integer_str.format(x=x)
         except ValueError:
-            return x
+            return str(x)
 
     def default_formatter(self, x):
         """Universal formatter for other types."""
@@ -197,10 +241,10 @@ class GT(object):
             i = int(x)
             f = float(x)
             if i == f:
-                return self.integer_default_str.format(x=i)
+                return self.default_integer_str.format(x=i)
             else:
                 # TODo BEEF UP?
-                return self.float_default_str.format(x=f)
+                return self.default_float_str.format(x=f)
         except (TypeError, ValueError):
             return str(x)
 
@@ -246,7 +290,7 @@ class GT(object):
             def ff(x):
                 try:
                     return self.pef(x)
-                except (ValueError, TypeError):
+                except (ValueError, TypeError, InvalidOperation):
                     return str(x)
         else:
             def ff(x):
@@ -276,12 +320,12 @@ class GT(object):
                 # non-unique index so work with position i
                 if c in self.ratio_cols:
                     # print(f'{i} ratio')
-                    self._df_formatters.append(self.ratio)
+                    self._df_formatters.append(self.default_ratio)
                 elif i in self.date_col_indices:
-                    self._df_formatters.append(self.date)
+                    self._df_formatters.append(self.default_date)
                 elif i in self.integer_col_indices:
                     # print(f'{i} int')
-                    self._df_formatters.append(self.integer)
+                    self._df_formatters.append(self.default_integer)
                 elif i in self.float_col_indices:
                     # trickier approach...
                     self._df_formatters.append(self.make_float_formatter(self.df.iloc[:, i]))
@@ -295,7 +339,7 @@ class GT(object):
 
     def __repr__(self):
         """Basic representation."""
-        return f"GreaterTable wrapping df {len(self.df)} rows, id {self.df_id}"
+        return f"GreaterTable(df_id={self.df_id})"
 
     def _repr_html_(self):
         """
@@ -303,15 +347,21 @@ class GT(object):
 
         ratio cols like in constructor
         """
-        nindex = self.df.index.nlevels
-        ncolumns = self.df.columns.nlevels
-        ncols = self.df.shape[1]
-        dt = self.df.dtypes
+        # nindex = self.df.index.nlevels
+        # ncolumns = self.df.columns.nlevels
+        # ncols = self.df.shape[1]
+        # dt = self.df.dtypes
+
+        nindex = self.nindex
+        ncolumns = self.ncolumns
+        ncols = self.ncols
+        df = self.dt
 
         # call pandas built-in html converter
         # no escape so tex works
         html = self.df.to_html(table_id=self.df_id, formatters=self.df_formatters,
-                               index_names=True, escape=False)
+                               index_names=False, index=False, escape=True,
+                               border=0)
 
         hrule_widths = self.hrule_widths
         if hrule_widths is None:
@@ -363,12 +413,16 @@ class GT(object):
         /* grid below column elements */
         border-bottom: {hrule_widths[1]}px solid #000;
         }}
-    #{self.df_id} tbody tr th:nth-of-type(-n + {nindex -1}) {{
+    #{self.df_id} tbody tr th:nth-of-type(-n + {nindex - 1}) {{
         /* verticals in index columns; excluding the right most ?? if nindex=1?? */ 
         /* problem for sparse index entries */
         /* border-right: 0.5px solid #000; */
         }}
-    #{self.df_id} tbody tr td:nth-of-type(n + 2)  {{
+    #{self.df_id} tbody tr td:nth-of-type({nindex})  {{
+        /* offset the index verticals in the body */
+        border-right: {vrule_widths[0]}px solid #000;
+    }}
+    #{self.df_id} tbody tr td:nth-of-type(n + {nindex + 2})  {{
         /* verticals in the body; index cols are th not td so fixed from second */
         border-left: {vrule_widths[2]}px solid #000;
     }}
@@ -416,6 +470,7 @@ class GT(object):
     #{self.df_id} td, th {{
         /* top, right, bottom left cell padding */
         padding: 2px 10px 2px 10px;
+        vertical-align: top;
     }}
 ''')
         # ================================================
@@ -433,11 +488,14 @@ class GT(object):
 
         # center all heading rows
         for r in soup.select('thead tr'):
-            for td in r.find_all('th'):
-                td['class'] = 'gt_center gt_head'
+            for i, td in enumerate(r.find_all('th')):
+                if i < self.nindex:
+                    td['class'] = 'gt_left gt_head'
+                else:
+                    td['class'] = 'gt_center gt_head'
 
         # figure which index level changes for h rules
-        chg_level = self.changed_level()
+        chg_level = GT.changed_level(self.df.index)
         for i, r in zip(range(len(self.df)), soup.select('tbody tr')):
             # row rules: if not first row and new level 0
             if i and (i in chg_level):
@@ -486,14 +544,22 @@ class GT(object):
         latex = self.df_to_tikz()
         return latex
 
-    def changed_level(self):
+    @staticmethod
+    def changed_column(bit):
+        """Return the column that changes with each row."""
+        tf = bit.ne(bit.shift())
+        tf = tf.loc[tf.any(axis=1)]
+        return tf.idxmax(axis=1)
+
+    @staticmethod
+    def changed_level(idx):
         """
         Return the level of index that changes with each row.
 
         Very ingenious GTP code with some SM enhancements.
         """
         # otherwise you alter the actual index
-        idx = self.df.index.copy()
+        idx = idx.copy()
         idx.names = [i for i in range(idx.nlevels)]
         # Determine at which level the index changes
         index_df = idx.to_frame(index=False)  # Convert MultiIndex to a DataFrame
@@ -504,8 +570,27 @@ class GT(object):
         level_changes = tf.idxmax(axis=1)
         return level_changes
 
+    def apply_formatters(self, df):
+        """Replace df (the raw df) with formatted df, including the index."""
+        # because of non-unique indexes, index by position not name
+        data_formatters = self.df_formatters[self.nindex:]
+        index_formatters = self.df_formatters[:self.nindex]
+
+        for i, f in enumerate(data_formatters):
+            # apply cell by cell, f not necessarily vectorized
+            df.iloc[:, i + self.nindex] = list(map(f, df.iloc[:, i + self.nindex]))
+            # df.iloc[:, i] = df.iloc[:, i].astype(object)
+        # adjust the index
+        if df.index.nlevels == 1:
+            df.index = map(index_formatters[0], df.index)
+        else:
+            new_levels = [list(map(func, df.index.get_level_values(i))) for i, func in
+                        enumerate(index_formatters)]
+            df.index = df.index.set_levels(new_levels, verify_integrity=False)
+        return df
+
     def df_to_tikz(self, float_format=None, tabs=None,
-                   show_index=True, scale=0.717, column_sep=3 / 8, row_sep=1 / 8,
+                   show_index=False, scale=0.635, column_sep=3 / 8, row_sep=1 / 8,
                    figure='figure', extra_defs='', hrule=None, equal=False,
                    vrule=None, post_process='', label='', caption='', latex=None,
                    sparsify=1, clean_index=False):
@@ -574,13 +659,13 @@ class GT(object):
         :param caption:
         :return:
         """
-        # local variable
-        df = self.df.copy()
-
+        # local variable - with all formatters already applied
+        df = self.apply_formatters(self.raw_df)
+        if not df.columns.is_unique:
+            raise ValueError('tikz routine requires unique column names')
 # \\begin{{{figure}}}{latex}
         header = """
 \\centering
-\\footnotesize
 {extra_defs}
 \\begin{{tikzpicture}}[
     auto,
@@ -604,16 +689,16 @@ class GT(object):
 # \\end{{{figure}}}
 
         # make a safe float format
-        if float_format is None:
-            wfloat_format = GT.default_float_format
-        else:
-            # If you pass in a lambda function it won't have error handling
-            def _ff(x):
-                try:
-                    return float_format(x)
-                except:
-                    return x
-            wfloat_format = _ff
+        # if float_format is None:
+        #     wfloat_format = GT.default_float_format
+        # else:
+        #     # If you pass in a lambda function it won't have error handling
+        #     def _ff(x):
+        #         try:
+        #             return float_format(x)
+        #         except:
+        #             return x
+        #     wfloat_format = _ff
 
         if clean_index:
             # don't use the index
@@ -663,7 +748,8 @@ class GT(object):
         matrix_name = hex(abs(hash(str(df))))
 
         # note this happens AFTER you have reset the index...need to pass number of index columns
-        colw, mxmn, tabs = GT.guess_column_widths(df, nc_index=nc_index, float_format=wfloat_format, tabs=tabs,
+        # colw, mxmn, tabs = GT.guess_column_widths(df, nc_index=nc_index, float_format=wfloat_format, tabs=tabs,
+        colw, mxmn, tabs = GT.guess_column_widths(df, nc_index=nc_index, float_format=lambda x: str(x), tabs=tabs,
                                                   scale=scale, equal=equal)
         # print(colw, tabs)
         logger.debug(f'tabs: {tabs}')
@@ -739,7 +825,7 @@ class GT(object):
                 sparse_columns[lvl], mi_vrules[lvl] = GT._sparsify_mi(df.columns.get_level_values(lvl),
                                                                       lvl == len(df.columns.levels) - 1)
                 for cn, c, al in zip(df.columns, sparse_columns[lvl], align):
-                    c = wfloat_format(c)
+                    # c = wfloat_format(c)
                     s = f'{nl} {{cell:{ad2[al]}{colw[cn]}s}} '
                     nl = '\\&'
                     sio.write(s.format(cell=c + '\\grtspacer'))
@@ -748,7 +834,7 @@ class GT(object):
         else:
             nl = ''
             for c, al in zip(df.columns, align):
-                c = wfloat_format(c)
+                # c = wfloat_format(c)
                 s = f'{nl} {{cell:{ad2[al]}{colw[c]}s}} '
                 nl = '\\&'
                 sio.write(s.format(cell=c + '\\grtspacer'))
@@ -758,7 +844,7 @@ class GT(object):
         for idx, row in df.iterrows():
             nl = ''
             for c, cell, al in zip(df.columns, row, align):
-                cell = wfloat_format(cell)
+                # cell = wfloat_format(cell)
                 s = f'{nl} {{cell:{ad2[al]}{colw[c]}s}} '
                 nl = '\\&'
                 sio.write(s.format(cell=cell))
@@ -880,7 +966,6 @@ class GT(object):
             mxmn   affects aligmnent: are all columns the same width?
             tabs   affecets the actual output
         """
-
         # this
         # tabs from _tabs, an estimate column widths, determines the size of the table columns as displayed
         colw = dict.fromkeys(df.columns, 0)
