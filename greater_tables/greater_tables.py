@@ -2,14 +2,18 @@
 from bs4 import BeautifulSoup
 from decimal import InvalidOperation
 from io import StringIO
+from itertools import groupby
 import logging
 import numpy as np
 import pandas as pd
 from pandas.api.types import is_datetime64_any_dtype, is_integer_dtype,\
     is_float_dtype   # , is_numeric_dtype
+from pathlib import Path
 import sys
 import warnings
-from .hasher import  df_short_hash
+
+
+from .hasher import df_short_hash
 
 # turn this fuck-fest off
 pd.set_option('future.no_silent_downcasting', True)
@@ -25,7 +29,7 @@ if logger.hasHandlers():
     # Clear existing handlers
     logger.handlers.clear()
 # SET DEGBUUGER LEVEL
-LEVEL = logging.ERROR    # DEBUG or INFO, WARNING, ERROR, CRITICAL
+LEVEL = logging.WARNING    # DEBUG or INFO, WARNING, ERROR, CRITICAL
 logger.setLevel(LEVEL)
 handler = logging.StreamHandler(sys.stderr)
 handler.setLevel(LEVEL)
@@ -38,39 +42,80 @@ logger.info('Logger Setup; module recompiled.')
 class GT(object):
     """Create greater_tables."""
 
-    def __init__(self, df, caption='',
-                 aligners=None, default_integer_str='{x:,d}',
+    def __init__(self,
+                 df,
+                 caption='',
+                 aligners=None,
+                 ratio_cols=None,
+                 year_cols=None,
+                 default_integer_str='{x:,d}',
                  default_float_str='{x:,.3f}',
-                 default_date_str='{x:%Y-%m-%d}',
-                 ratio_cols=None, ratio_default_str='{x:.1%}',
-                 cast_to_floats=True, hrule_widths=None, vrule_widths=None,
-                 column_names=False ,
-                 sparsify=True,
-                 pef_precision=3, pef_lower=-3, pef_upper=6,
-                 font_size=0.9, debug=False):
+                 default_date_str='%Y-%m-%d',
+                 default_ratio_str='{x:.1%}',
+                 cast_to_floats=True,
+                 table_hrule_width=1,
+                 table_vrule_width=1,
+                 hrule_widths=None,
+                 vrule_widths=None,
+                 sparsify=True,             # index sparsification - almost certainly want this!
+                 sparsify_columns=True,     # column sparsification with colspans
+                 spacing='medium',          # tight, medium, wide
+                 padding_trbl=None,         # tuple of four ints for padding
+                 font_body=0.9,
+                 font_head=1.0,
+                 font_caption=1.1,
+                 font_bold_index=False,
+                 pef_precision=3,
+                 pef_lower=-3,
+                 pef_upper=6,
+                 debug=False):
         """
-        Create a greater_tables formatting object, setting defaults.
+        Create a greater_tables formatting object.
 
+        Provides html and latex output in quarto/Jupyter accessible manner.
         Wraps AND COPIES the dataframe df. WILL NOT REFLECT CHANGES TO DF.
 
-        Provides html, latex, and markdown output in quarto/Jupyter accessible manner.
+        Recommended usage is to derive from GT and set defaults suitable to your particular application.
+        In that way you can maintain a "house-style"
 
-        pef determines where engineering format is used; pef_precision
-
-        other date format '{%H:%M:%S}'
-
+        :param df: target DataFrame
+        :param caption: table caption, optional
         :param aligners: None or dict (type or colname) -> left | center | right
-        :param formatters: None or dict type -> format function to override defaults.
+        :param ratio_cols: None, or "all" or list of column names treated as ratios. Set defaults in derived class suitable to application.
+        :param year_cols: None, or "all" or list of column names treated as years (no commas, no decimals). Set defaults in derived class suitable to application.
+        :param default_integer_str: format f-string for integers, default '{x:,d}'
+        :param default_float_str: format f-string for floats, default '{x:,.3f}'
+        :param default_date_str: format f-string for dates, default '%Y-%m-%d'. NOTE: no braces or x!
+        :param default_ratio_str: format f-string for ratios, default '{x:.1%}'
+        :param cast_to_floats: if True, try to cast all non-integer, non-date columns to floats
+        :param table_hrule_width: width of the table top, botton and header hrule, default 1
+        :param table_vrule_width: width of the table vrule, separating the index from the body, default 1
+        :param hrule_widths: None or tuple of three ints for hrule widths (for use with multiindexes)
+        :param vrule_widths: None or tuple of three ints for vrule widths (for use when columns have multiindexes)
+        :param sparsify: if True, sparsify the index columns, you almost always want this to be true!
+        :param sparsify_columns: if True, sparsify the columns, default True, generally a better look, headings centered in colspans
+        :param spacing: 'tight', 'medium', 'wide' to quickly set cell padding. Medium is default (2, 10, 2, 10).
+        :param padding_trbl: None or tuple of four ints for padding, in order top, right, bottom, left.
+        :param font_body: font size for body text, default 0.9. Units in em.
+        :param font_head: font size for header text, default 1.0. Units in em.
+        :param font_caption: font size for caption text, default 1.1. Units in em.
+        :param font_bold_index: if True, make the index columns bold, default False.
+        :param pef_precision: precision (digits after period) for pandas engineering format, default 3.
+        :param pef_lower: apply engineering format to floats with absolute value < 10**pef_lower; default -3.
+        :param pef_upper: apply engineering format to floats with absolute value > 10**pef_upper; default 6.
+        :param debug: if True, add id to caption and use colored lines in table, default False.
         """
         if not df.columns.is_unique:
             logger.warning('column names are not unqiue: will cause problems')
 
         self.df = df.copy(deep=True)   # the object being formatted
         self.raw_df = df.copy(deep=True)
-        if not column_names:
-            self.df.columns.names = [None] * self.df.columns.nlevels
+        # if not column_names:
+        # get rid of column names
+        # self.df.columns.names = [None] * self.df.columns.nlevels
         self.df_id = df_short_hash(self.df)
-        self.caption = caption +  (' (id: ' + self.df_id + ')' if debug else '')
+        self.debug = debug
+        self.caption = caption + (' (id: ' + self.df_id + ')' if self.debug else '')
 
         # before messing
         self.nindex = self.df.index.nlevels
@@ -81,19 +126,14 @@ class GT(object):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=pd.errors.PerformanceWarning)
             self.df = self.df.reset_index(drop=False, col_level=self.df.columns.nlevels - 1)
-
+            # want the new index to be ints - that is not default if old was multiindex
+            self.df.index = np.arange(self.df.shape[0], dtype=int)
         self.index_change_level = GT.changed_column(self.df.iloc[:, :self.nindex])
         if self.ncolumns > 1:
             # will be empty rows above the index headers
             self.index_change_level = pd.Series([i[-1] for i in self.index_change_level])
 
         self.column_change_level = GT.changed_level(self.raw_df.columns)
-
-        # sparsify
-        if sparsify and self.nindex > 1:
-            for c in self.df.columns[:self.nindex]:
-                # spartify returns some other stuff...
-                self.df[c], _ = GT._sparsify(self.df[c])
 
         # determine ratio columns
         if ratio_cols is not None and np.any(self.df.columns.duplicated()):
@@ -104,12 +144,22 @@ class GT(object):
                 self.ratio_cols = []
             elif ratio_cols == 'all':
                 self.ratio_cols = [i for i in self.df.columns]
-            elif ratio_cols == 'base' or ratio_cols == 'default':
-                self.ratio_cols = ['max_LR', 'gross_LR', 'net_LR', 'ceded_LR', 'LR', 'COC', 'CoC', 'ROE']
             elif ratio_cols is not None and not isinstance(ratio_cols, (tuple, list)):
                 self.ratio_cols = [ratio_cols]
             else:
                 self.ratio_cols = ratio_cols
+
+        # determine year columns
+        if year_cols is not None and np.any(self.df.columns.duplicated()):
+            logger.warning('Year cols specified with non-unique column names: ignoring request.')
+            self.year_cols = []
+        else:
+            if year_cols is None:
+                self.year_cols = []
+            elif year_cols is not None and not isinstance(year_cols, (tuple, list)):
+                self.year_cols = [year_cols]
+            else:
+                self.year_cols = year_cols
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=pd.errors.PerformanceWarning)
@@ -155,7 +205,7 @@ class GT(object):
             aligners = []
         self.df_aligners = []
 
-        lrc = {'l': 'gt-left', 'r': 'gt-right', 'c': 'gt-center'}
+        lrc = {'l': 'grt-left', 'r': 'grt-right', 'c': 'grt-center'}
         # FIX INDEX ALIGNERS HERE
         for i, c in enumerate(self.df.columns):
             if i < self.nindex:
@@ -166,6 +216,8 @@ class GT(object):
             elif c in self.ratio_cols or i in self.float_col_indices or i in self.integer_col_indices:
                 # number -> right
                 self.df_aligners.append('grt-right')
+            elif c in self.year_cols:
+                self.df_aligners.append('grt-center')
             elif i in self.date_col_indices:
                 # center dates, why not!
                 self.df_aligners.append('grt-center')
@@ -175,63 +227,84 @@ class GT(object):
 
         self.df_idx_aligners = self.df_aligners[:self.nindex]
 
-        # do same for index - but klunky...
-        # not actually sure you ever want right or centered?
-        # self.df_idx_aligners = []
-        # for ser in [self.df.index] if self.df.index.nlevels == 1 else (
-        #         self.df.index.get_level_values(i) for i in
-        #         range(self.df.index.nlevels)):
-        #     if is_datetime64_any_dtype(ser):
-        #         self.df_idx_aligners.append('gt_left')
-        #     elif is_integer_dtype(ser):
-        #         self.df_idx_aligners.append('gt_left')
-        #     elif is_float_dtype(ser):
-        #         self.df_idx_aligners.append('gt_left')
-        #     else:
-        #         self.df_idx_aligners.append('gt_left')
-
         # store defaults
         self.default_integer_str = default_integer_str
         self.default_float_str = default_float_str    # VERY rarely used; for floats in cols that are not floats
-        self.default_date_str = default_date_str
-        self.ratio_default_str = ratio_default_str
+        self.default_date_str = default_date_str.replace('{x:', '').replace('}', '')
+        self.default_ratio_str = default_ratio_str
         self.pef_precision = pef_precision
         self.pef_lower = pef_lower
         self.pef_upper = pef_upper
         self._pef = None
-        self.font_size = font_size
-        self.hrule_widths = hrule_widths
-        self.vrule_widths = vrule_widths
+        self.hrule_widths = hrule_widths or (0, 0, 0)
+        self.vrule_widths = vrule_widths or (0, 0, 0)
+        self.table_hrule_width = table_hrule_width
+        self.table_vrule_width = table_vrule_width
+        self.font_body = font_body
+        self.font_head = font_head
+        self.font_caption = font_caption
+        self.font_bold_index = font_bold_index
+        self.sparsify_columns = sparsify_columns
+
+        if padding_trbl is None:
+            if spacing == 'tight':
+                padding_trbl = (0, 5, 0, 5)
+            elif spacing == 'medium':
+                padding_trbl = (2, 10, 2, 10)
+            elif spacing == 'wide':
+                padding_trbl = (4, 15, 4, 15)
+            else:
+                raise ValueError('spacing must be tight, medium, or wide or tuple of four ints.')
+        try:
+            self.padt, self.padr, self.padb, self.padl = padding_trbl
+        except ValueError:
+            logger.error(f'padding_trbl {padding_trbl=}, must be four ints, defaultign to medium')
+            self.padt, self.padr, self.padb, self.padl = 2, 10, 2, 10
+
         # because of the problem of non-unique indexes use a list and
         # not a dict to pass the formatters to to_html
         self._df_formatters = None
         self.df_style = None
         self.df_html = None
-        # finally apply formaters, this radically alters the df
+        # finally sparsify and then apply formaters
+        # this radically alters the df, so keep a copy for now...
         self.df_pre_applying_formatters = self.df.copy()
         self.df = self.apply_formatters(self.df)
+        # sparsify
+        if sparsify and self.nindex > 1:
+            for c in self.df.columns[:self.nindex]:
+                # spartify returns some other stuff...
+                self.df[c], _ = GT.sparsify(self.df[c])
 
     # define the default and easy formatters ===================================================
-    def default_ratio(self, x):
+    def default_ratio_formatter(self, x):
         """Ratio formatter."""
         try:
-            return self.ratio_default_str.format(x=x)
+            return self.default_ratio_str.format(x=x)
         except ValueError:
             return str(x)
 
-    def default_date(self, x):
+    def default_date_formatter(self, x):
         """Date formatter."""
         try:
-            return self.default_date_str.format(x=x)
+            return x.strftime(self.default_date_str) if pd.notna(x) else ""
+            # return self.default_date_str.format(x=x)
             # return f'{x:%Y-%m-%d}'  # f"{dt:%H:%M:%S}"
         except ValueError:
             # logger.error(f'date error with {x=}')
             return str(x)
 
-    def default_integer(self, x):
+    def default_integer_formatter(self, x):
         """Integer formatter."""
         try:
             return self.default_integer_str.format(x=x)
+        except ValueError:
+            return str(x)
+
+    def default_year_formatter(self, x):
+        """Year formatter."""
+        try:
+            return f'{int(x):d}'
         except ValueError:
             return str(x)
 
@@ -320,12 +393,14 @@ class GT(object):
                 # non-unique index so work with position i
                 if c in self.ratio_cols:
                     # print(f'{i} ratio')
-                    self._df_formatters.append(self.default_ratio)
+                    self._df_formatters.append(self.default_ratio_formatter)
+                elif c in self.year_cols:
+                    self._df_formatters.append(self.default_year_formatter)
                 elif i in self.date_col_indices:
-                    self._df_formatters.append(self.default_date)
+                    self._df_formatters.append(self.default_date_formatter)
                 elif i in self.integer_col_indices:
                     # print(f'{i} int')
-                    self._df_formatters.append(self.default_integer)
+                    self._df_formatters.append(self.default_integer_formatter)
                 elif i in self.float_col_indices:
                     # trickier approach...
                     self._df_formatters.append(self.make_float_formatter(self.df.iloc[:, i]))
@@ -347,201 +422,231 @@ class GT(object):
 
         ratio cols like in constructor
         """
-        # nindex = self.df.index.nlevels
-        # ncolumns = self.df.columns.nlevels
-        # ncols = self.df.shape[1]
-        # dt = self.df.dtypes
+        self.df_style = self.make_style()
+        self.df_html = self.make_html()
+        logger.info('CREATED HTML STYLE')
+        return self.df_style + self.df_html
 
-        nindex = self.nindex
-        ncolumns = self.ncolumns
-        ncols = self.ncols
-        df = self.dt
+    def make_style(self):
+        if self.debug:
+            head_tb = '#0ff'
+            body_b = '#f0f'
+            h0 = '#f00'
+            h1 = '#b00'
+            h2 = '#900'
+            bh0 = '#f00'
+            bh1 = '#b00'
+            v0 = '#0f0'
+            v1 = '#0a0'
+            v2 = '#090'
+        else:
+            head_tb = '#000'
+            body_b = '#000'
+            h0 = '#000'
+            h1 = '#000'
+            h2 = '#000'
+            bh0 = '#000'
+            bh1 = '#000'
+            v0 = '#000'
+            v1 = '#000'
+            v2 = '#000'
+        table_hrule = self.table_hrule_width
+        table_vrule = self.table_vrule_width
+        # for local use
+        padt, padr, padb, padl = self.padt, self.padr, self.padb, self.padl
 
-        # call pandas built-in html converter
-        # no escape so tex works
-        html = self.df.to_html(table_id=self.df_id, formatters=self.df_formatters,
-                               index_names=False, index=False, escape=True,
-                               border=0)
-
-        hrule_widths = self.hrule_widths
-        if hrule_widths is None:
-            if nindex > 1:
-                hrule_widths = (1.5, 1.0, 0)
-            else:
-                hrule_widths = (0, 0, 0)
-        vrule_widths = self.vrule_widths
-        if vrule_widths is None:
-            if nindex > 1:
-                vrule_widths = (1.5, 1.0, 0)
-            else:
-                vrule_widths = (0, 0, 0)
-
-        # start to build style
-        style = []
-        style.append('<style>')
-        style.append(f'''
+        style = f'''
+<style>
     #{self.df_id}  {{
     border-collapse: collapse;
     font-family: "Roboto", "Open Sans Condensed", "Arial", 'Segoe UI', sans-serif;
-    font-size: {self.font_size}em;
+    font-size: {self.font_body}em;
     width: auto;
     border: none;
-    overflow: auto;    }}
+    overflow: auto;
+    }}
+    /* tag formats */
     #{self.df_id} thead {{
         /* top and bottom of header */
-        border-top: 2px solid #000;
-        border-bottom: 2px solid #000;
+        border-top: {table_hrule}px solid {head_tb};
+        border-bottom: {table_hrule}px solid {head_tb};
+        font-size: {self.font_head}em;
         }}
     #{self.df_id} tbody {{
-        /* bottom of body */ 
-        border-bottom: 2px solid #000;
+        /* bottom of body */
+        border-bottom: {table_hrule}px solid {body_b};
         }}
-    #{self.df_id} thead tr:nth-of-type({ncolumns+1}) th:nth-of-type(-n + {nindex - 1}) {{
-        /* separate index column names in bottom row of header, ncolumns = number of levels in columns */
-        /* border-right: 0.5px solid #000; */
-        }}
-    #{self.df_id} thead th:nth-of-type({nindex+1}) {{
-        /* separate column headers from index on left first */
-        border-left: {vrule_widths[0]}px solid #000;
-        }}
-    #{self.df_id} thead tr th:nth-of-type(n+{nindex+2}) {{
-        /* grid around column elements, may overwrite left vertical of columns */
-        /* nindex + 2 because left and want to exclude the first column */
-        border-left: {vrule_widths[1]}px solid #000;
-        }}
-    #{self.df_id} thead tr th:nth-of-type(n+{nindex+1}) {{
-        /* grid below column elements */
-        border-bottom: {hrule_widths[1]}px solid #000;
-        }}
-    #{self.df_id} tbody tr th:nth-of-type(-n + {nindex - 1}) {{
-        /* verticals in index columns; excluding the right most ?? if nindex=1?? */ 
-        /* problem for sparse index entries */
-        /* border-right: 0.5px solid #000; */
-        }}
-    #{self.df_id} tbody tr td:nth-of-type({nindex})  {{
-        /* offset the index verticals in the body */
-        border-right: {vrule_widths[0]}px solid #000;
-    }}
-    #{self.df_id} tbody tr td:nth-of-type(n + {nindex + 2})  {{
-        /* verticals in the body; index cols are th not td so fixed from second */
-        border-left: {vrule_widths[2]}px solid #000;
-    }}
     #{self.df_id} tbody th  {{
         vertical-align: top;
     }}
     #{self.df_id} caption {{
-        padding-top: 10px;
-        padding-bottom: 4px;
-        font-size: 1.1em;
+        padding: {2 * padt}px {padr}px {2 * padb}px {padl}px;
+        font-size: {self.font_caption}em;
         text-align: left;
         font-weight: bold;
         caption-side: top;
     }}
-    #{self.df_id} .gt_body_column {{
-        /* separate index from body (version 2!)  */
-        border-left: {vrule_widths[0]}px solid #000;
+    #{self.df_id} td, th {{
+        /* top, right, bottom left cell padding */
+        padding: {padt}px {padr}px {padb}px {padl}px;
+        vertical-align: top;
     }}
-    #{self.df_id} .gt_ruled_row_0 {{
-        /* bold h lines to separate level 1 mindex groups */
-        border-top: {hrule_widths[0]}px solid #000;
+    /* class overrides */
+    #{self.df_id} .grt-hrule-0 {{
+        border-top: {self.hrule_widths[0]}px solid {h0};
     }}
-    #{self.df_id} .gt_ruled_row_1 {{
-        /* bold h lines to separate level 2 mindex groups */
-        border-top: {hrule_widths[1]}px solid #000;
+    #{self.df_id} .grt-hrule-1 {{
+        border-top: {self.hrule_widths[1]}px solid {h1};
     }}
-    #{self.df_id} .gt_ruled_row_2 {{
-        /* bold h lines to separate level 3 mindex groups */
-        border-top: {hrule_widths[2]}px solid #000;
+    #{self.df_id} .grt-hrule-2 {{
+        border-top: {self.hrule_widths[2]}px solid {h2};
     }}
-    #{self.df_id} .gt_left {{
+    /* for the header, there if you have v lines you want h lines
+       hence use vrule_widths */
+    #{self.df_id} .grt-bhrule-0 {{
+        border-bottom: {self.vrule_widths[0]}px solid {bh0};
+    }}
+    #{self.df_id} .grt-bhrule-1 {{
+        border-bottom: {self.vrule_widths[1]}px solid {bh1};
+    }}
+    #{self.df_id} .grt-vrule-index {{
+        border-left: {table_vrule}px solid {v0};
+    }}
+    #{self.df_id} .grt-vrule-0 {{
+        border-left: {self.vrule_widths[0]}px solid {v0};
+    }}
+    #{self.df_id} .grt-vrule-1 {{
+        border-left: {self.vrule_widths[1]}px solid {v1};
+    }}
+    #{self.df_id} .grt-vrule-2 {{
+        border-left: {self.vrule_widths[2]}px solid {v2};
+    }}
+    #{self.df_id} .grt-left {{
         text-align: left;
     }}
-    #{self.df_id} .gt_center {{
+    #{self.df_id} .grt-center {{
         text-align: center;
     }}
-    #{self.df_id} .gt_right {{
+    #{self.df_id} .grt-right {{
         text-align: right;
         font-variant-numeric: tabular-nums;
     }}
-    #{self.df_id} .gt_head {{
-        /* font-family: "Times New Roman", 'Courier New'; */
-        font-size: {self.font_size}em;
+    #{self.df_id} .grt-head {{
+        font-family: "Times New Roman", 'Courier New';
+        font-size: {self.font_head}em;
     }}
-    #{self.df_id} td, th {{
-        /* top, right, bottom left cell padding */
-        padding: 2px 10px 2px 10px;
-        vertical-align: top;
+    #{self.df_id} .grt-bold {{
+        font-weight: bold;
     }}
-''')
-        # ================================================
-        style.append('</style>\n')
+</style>
+'''
+        return style
 
-        if len(style) > 2:
-            style = '\n'.join(style)
+    def make_html(self):
+        """Convert a pandas DataFrame to an HTML table with sparsification."""
+        index_name_to_level = dict(zip(self.raw_df.index.names, range(self.nindex)))
+        index_change_level = self.index_change_level.map(index_name_to_level)
+        # this is easier and computed in the init
+        column_change_level = self.column_change_level
+
+        # Start table
+        html = [f'<table id="{self.df_id}">']
+        if self.caption != '':
+            html.append(f'<caption>{self.caption}</caption>')
+
+        # Process header: , allow_duplicates=True) means can create cols with the same name
+        bit = self.df.T.reset_index(drop=False, allow_duplicates=True)
+        idx_header = bit.iloc[:self.nindex, :self.ncolumns]
+        columns = bit.iloc[self.nindex:, :self.ncolumns]
+
+        # TODO Add header aligners
+        if self.sparsify_columns:
+            # this is TRANSPOSED!!
+            html.append("<thead>")
+            for i in range(self.ncolumns):
+                # one per row of columns m index, usually only 1
+                html.append("<tr>")
+                for j, r in enumerate(idx_header.iloc[:, i]):
+                    # columns one per level of index
+                    html.append(f'<th class="grt-left">{r}</th>')
+                cum_col = 0  # keep track of where we are up to
+                for j, (nm, g) in enumerate(groupby(columns.iloc[:, i])):
+                    hrule = f'grt-bhrule-{i}' if i < self.ncolumns - 1 else ''
+                    colspan = sum(1 for _ in g)
+                    if 0 < j:
+                        vrule = f'grt-vrule-{column_change_level[cum_col]}'
+                    elif j == 0:
+                        # start with the first column come what may
+                        vrule = f'grt-vrule-index'
+                    html.append(f'<th colspan="{colspan}" class="grt-center {hrule} {vrule}">{nm}</th>')
+                    cum_col += colspan
+                html.append("</tr>")
+            html.append("</thead>")
         else:
-            style = ''
-        self.df_style = style
-        self.df_rawhtml = html
+            # this is TRANSPOSED!!
+            html.append("<thead>")
+            for i in range(self.ncolumns):
+                # one per row of columns m index, usually only 1
+                html.append("<tr>")
+                for j, r in enumerate(idx_header.iloc[:, i]):
+                    # columns one per level of index
+                    html.append(f'<th class="grt-left">{r}</th>')
+                for j, r in enumerate(columns.iloc[:, i]):
+                    # one per column of dataframe
+                    # figure how high up mindex the vrules go
+                    # all headings get hrules, it's the vrules that are tricky
+                    hrule = f'grt-bhrule-{i}' if i < self.ncolumns - 1 else ''
+                    if 0 < j < self.ncols and i >= column_change_level[j]:
+                        vrule = f'grt-vrule-{column_change_level[j]}'
+                    elif j == 0:
+                        # start with the first column come what may
+                        vrule = f'grt-vrule-index'
+                    else:
+                        vrule = ''
+                    html.append(f'<th class="grt-center {hrule} {vrule}">{r}</th>')
+                html.append("</tr>")
+            html.append("</thead>")
 
-        # now alter html using bs4
-        soup = BeautifulSoup(html, 'html.parser')
-
-        # center all heading rows
-        for r in soup.select('thead tr'):
-            for i, td in enumerate(r.find_all('th')):
-                if i < self.nindex:
-                    td['class'] = 'gt_left gt_head'
-                else:
-                    td['class'] = 'gt_center gt_head'
-
-        # figure which index level changes for h rules
-        chg_level = GT.changed_level(self.df.index)
-        for i, r in zip(range(len(self.df)), soup.select('tbody tr')):
-            # row rules: if not first row and new level 0
-            if i and (i in chg_level):
-                lv = chg_level.loc[i]
-                r['class'] = f'gt_ruled_row_{lv}'
-            # to handle sparse index you have to work from the right!
-            for a, td in zip(self.df_idx_aligners[::-1], r.find_all('th')[::-1]):
-                td['class'] = f'{a} gt_head'
-                # td['style'] = 'text-align: left;'
-            for a, td in zip(self.df_aligners, r.find_all('td')):
-                td['class'] = a
-            # find the body column
-            td = r.find_all('td')[-ncols]
-            if td is not None:
-                # print(f'Adding body col to {td.text}')
-                existing_classes = td.get('class', '')  # Get existing classes as a list, or an empty list if none
-                td['class'] = existing_classes + ' gt_body_column'  # Append new classes
-
-        if self.caption != "":
-            table = soup.find('table')
-            if table:
-                c = soup.new_tag('caption')
-                c.string = self.caption
-                c['class'] = 'gt_caption'
-                table.insert(0, c)
-
-        # take out dataframe
-        table = soup.find("table", {"class": "dataframe"})
-        if table:
-            del table["class"]
-        html = soup.prettify()
-        self.df_html = html  # after alteration
-        # return
-        logger.info('CREATED HTML STYLE')
-        return style + html
+        bold_idx = 'grt-bold' if self.font_bold_index else ''
+        html.append("<tbody>")
+        for i, (n, r) in enumerate(self.df.iterrows()):
+            # one per row of dataframe
+            html.append("<tr>")
+            hrule = ''
+            for j, c in enumerate(r.iloc[:self.nindex]):
+                # dx = data in index
+                # if this is the level that changes for this row
+                # will use a top rule  hence omit i = 0 which already has an hrule
+                if i > 0 and hrule == '' and j == index_change_level[i]:
+                    hrule = f'grt-hrule-{j}'
+                # html.append(f'<td class="grt-dx-r-{i} grt-dx-c-{j} {self.df_aligners[j]} {hrule}">{c}</td>')
+                html.append(f'<td class="{bold_idx} {self.df_aligners[j]} {hrule}">{c}</td>')
+            for j, c in enumerate(r.iloc[self.nindex:]):
+                # first col left handled by index/body divider
+                if 0 < j < self.ncols:
+                    vrule = f'grt-vrule-{column_change_level[j]}'
+                elif j == 0:
+                    # start with the first column come what may
+                    vrule = f'grt-vrule-index'
+                # html.append(f'<td class="grt-data-r-{i} grt-data-c-{j} {self.df_aligners[j+self.nindex]} {hrule} {vrule}">{c}</td>')
+                html.append(f'<td class="{self.df_aligners[j+self.nindex]} {hrule} {vrule}">{c}</td>')
+            html.append("</tr>")
+        html.append("</tbody>")
+        return '\n'.join(html)
 
     @property
     def html(self):
-        return ('' if self.df_style  is None else self.df_style) + (
+        code = ('' if self.df_style is None else self.df_style) + (
             '' if self.df_html is None else self.df_html)
+        soup = BeautifulSoup(code, 'html.parser')
+        return soup.prettify()
 
     def _repr_latex_(self):
         """Generate a LaTeX tabular representation."""
-        logger.info('CREATED LATEX STYLE')
+        # return ''
         # latex = self.df.to_latex(caption=self.caption, formatters=self._df_formatters)
-        latex = self.df_to_tikz()
+        latex = self.make_tikz()
+        logger.info('CREATED LATEX STYLE')
         return latex
 
     @staticmethod
@@ -570,30 +675,75 @@ class GT(object):
         level_changes = tf.idxmax(axis=1)
         return level_changes
 
-    def apply_formatters(self, df):
-        """Replace df (the raw df) with formatted df, including the index."""
-        # because of non-unique indexes, index by position not name
-        data_formatters = self.df_formatters[self.nindex:]
-        index_formatters = self.df_formatters[:self.nindex]
+    @staticmethod
+    def apply_formatters_work(df, formatters):
+        """Apply formatters to a DataFrame."""
+        new_df = pd.DataFrame({i: map(f, df[c])
+                               for i, f, c in zip(range(len(df.columns)),
+                                                  formatters,
+                                                  df.columns)})
+        new_df.columns = df.columns
+        return new_df
 
-        for i, f in enumerate(data_formatters):
-            # apply cell by cell, f not necessarily vectorized
-            df.iloc[:, i + self.nindex] = list(map(f, df.iloc[:, i + self.nindex]))
-            # df.iloc[:, i] = df.iloc[:, i].astype(object)
-        # adjust the index
-        if df.index.nlevels == 1:
-            df.index = map(index_formatters[0], df.index)
+    def apply_formatters(self, df, mode='adjusted'):
+        """
+        Replace df (the raw df) with formatted df, including the index.
+
+        If mode is 'adjusted' operates on columns only, does not touch the
+        index. Otherwise, called from tikz and operating on raw_df
+        """
+        if mode == 'adjusted':
+            # apply to df where the index has been reset
+            # number of columns = len(self.df_formatters)
+            return GT.apply_formatters_work(df, self.df_formatters)
+        elif mode == 'raw':
+            # work on raw_df where the index has not been reset
+            # because of non-unique indexes, index by position not name
+            # create the df and the index separately
+            data_formatters = self.df_formatters[self.nindex:]
+            new_body = GT.apply_formatters_work(df, data_formatters)
+            # now create the index
+            index_formatters = self.df_formatters[:self.nindex]
+            df_index = df.reset_index(drop=False, col_level=self.df.columns.nlevels - 1).iloc[:, :self.nindex]
+            new_index = GT.apply_formatters_work(df_index, index_formatters)
+            # put them back together
+            new_df = pd.concat([new_index, new_body], axis=1)
+            new_df = new_df.set_index(list(df_index.columns))
+            return new_df
         else:
-            new_levels = [list(map(func, df.index.get_level_values(i))) for i, func in
-                        enumerate(index_formatters)]
-            df.index = df.index.set_levels(new_levels, verify_integrity=False)
-        return df
+            raise ValueError(f'unknown mode {mode}')
 
-    def df_to_tikz(self, float_format=None, tabs=None,
-                   show_index=False, scale=0.635, column_sep=3 / 8, row_sep=1 / 8,
-                   figure='figure', extra_defs='', hrule=None, equal=False,
-                   vrule=None, post_process='', label='', caption='', latex=None,
-                   sparsify=1, clean_index=False):
+        # df.index = df.index.set_levels(new_levels, verify_integrity=False)
+
+        ## PROBLEMS
+        # if mode == 'adjusted':
+        #     for i, f in enumerate(self.df_formatters):
+        #         # apply cell by cell, f not necessarily vectorized
+        #         df.iloc[:, i] = list(map(f, df.iloc[:, i]))
+        # elif mode == 'raw':
+        #     # work on raw_df where the index has not been reset
+        #     # because of non-unique indexes, index by position not name
+        #     index_formatters = self.df_formatters[:self.nindex]
+        #     data_formatters = self.df_formatters[self.nindex:]
+        #     for i, f in enumerate(data_formatters):
+        #         # apply cell by cell, f not necessarily vectorized
+        #         df.iloc[:, i] = list(map(f, df.iloc[:, i]))
+        #     # adjust the index
+        #     if df.index.nlevels == 1:
+        #         df.index = map(index_formatters[0], df.index)
+        #     else:
+        #         new_levels = [list(map(func, df.index.get_level_values(i))) for i, func in
+        #                       enumerate(index_formatters)]
+        #         df.index = df.index.set_levels(new_levels, verify_integrity=False)
+        # else:
+        #     raise ValueError(f'unknown mode {mode}')
+        # return df
+
+    def make_tikz(self, float_format=None, tabs=None,
+                  show_index=False, scale=0.635, column_sep=3 / 8, row_sep=1 / 8,
+                  figure='figure', extra_defs='', hrule=None, equal=False,
+                  vrule=None, post_process='', label='', caption='', latex=None,
+                  sparsify=1, clean_index=False):
         """
         Write DataFrame to custom tikz matrix to allow greater control of
         formatting and insertion of horizontal divider lines
@@ -660,7 +810,7 @@ class GT(object):
         :return:
         """
         # local variable - with all formatters already applied
-        df = self.apply_formatters(self.raw_df)
+        df = self.apply_formatters(self.raw_df.copy(), mode='raw')
         if not df.columns.is_unique:
             raise ValueError('tikz routine requires unique column names')
 # \\begin{{{figure}}}{latex}
@@ -722,7 +872,7 @@ class GT(object):
                 if hrule is None:
                     hrule = set()
             for i in range(sparsify):
-                df.iloc[:, i], rules = GT._sparsify(df.iloc[:, i])
+                df.iloc[:, i], rules = GT.sparsify(df.iloc[:, i])
                 # print(rules, len(rules), len(df))
                 # don't want lines everywhere
                 if len(rules) < len(df) - 1:
@@ -822,8 +972,8 @@ class GT(object):
         if isinstance(df.columns, pd.MultiIndex):
             for lvl in range(len(df.columns.levels)):
                 nl = ''
-                sparse_columns[lvl], mi_vrules[lvl] = GT._sparsify_mi(df.columns.get_level_values(lvl),
-                                                                      lvl == len(df.columns.levels) - 1)
+                sparse_columns[lvl], mi_vrules[lvl] = GT.sparsify_mi(df.columns.get_level_values(lvl),
+                                                                     lvl == len(df.columns.levels) - 1)
                 for cn, c, al in zip(df.columns, sparse_columns[lvl], align):
                     # c = wfloat_format(c)
                     s = f'{nl} {{cell:{ad2[al]}{colw[cn]}s}} '
@@ -944,7 +1094,7 @@ class GT(object):
             label = f'\\label{{tab:{label}}}'
         if caption == '':
             if label != '':
-                logger.warning(f'You have a label but no caption; the label {label} will be ignored.')
+                logger.info(f'You have a label but no caption; the label {label} will be ignored.')
             caption = '% caption placeholder'
         else:
             caption = f'\\caption{{{caption} {label}}}'
@@ -1003,7 +1153,6 @@ class GT(object):
                     mxmn[c] = (_.max(), _.min())
                 except:
                     e = sys.exc_info()[0]
-                    print(c, 'ERROR', e)
                     logger.error(f'{c} error {e} DO SOMETHING ABOUT THIS...if it never occurs dont need the if')
                     colw[c] = df[c].str.len().max()
                     mxmn[c] = (df[c].str.len().max(), df[c].str.len().min())
@@ -1055,7 +1204,7 @@ class GT(object):
         return colw, mxmn, tabs
 
     @staticmethod
-    def _sparsify(col):
+    def sparsify(col):
         """
         sparsify col values, col a pd.Series or dict, with items and accessor
         column results from a reset_index so has index 0,1,2... this is relied upon.
@@ -1073,7 +1222,7 @@ class GT(object):
         return new_col, rules
 
     @staticmethod
-    def _sparsify_mi(mi, bottom_level=False):
+    def sparsify_mi(mi, bottom_level=False):
         """
         as above for a multi index level, without the benefit of the index...
         really all should use this function
@@ -1196,437 +1345,95 @@ class GT(object):
             logger.debug(f'AttributeError {e}')
             return str(x)
 
-# class GT_ORIGINAL(object):
+    def save_html(self, fn):
+        """Save HTML to file."""
+        p = Path(fn)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p = p.with_suffix('.html')
+        soup = BeautifulSoup(self.html, 'html.parser')
+        p.write_text(soup.prettify(), encodign='utf-8')
+        logger.info(f'Saved to {p}')
 
-#     def __init__(self, aligners=None, formatters=None, ratio_cols=None,
-#                  precision=3, pef_lower=-3, pef_upper=6, font_size=0.9):
-#         """
-#         Create a greater_tables formatting object, setting defaults.
 
-#         :param aligners: None or dict type -> left | center | right
-#         :param formatters: None or dict type -> format function
-#         """
-#         # set defaults
-#         if aligners is None:
-#             aligners = {}
-#         _base_aligners = {'number': 'right', 'date': 'center', 'str': 'left',
-#                           'object': 'left'}
-#         self.aligner = _base_aligners.update(aligners)
+class sGT(GT):
+    """Standard GT with Steve House-Style defaults."""
+    def __init__(self, df, caption="", guess_years=True, ratio_cols_regex='lr|roe|coc', **kwargs):
+        """Create Steve House-Style Formatter."""
+        nindex = df.index.nlevels
+        ncolumns = df.columns.nlevels
+        if ratio_cols_regex != '' and ncolumns == 1:
+            ratio_cols = list(df.filter(regex=ratio_cols_regex).columns)
+        else:
+            ratio_cols = None
 
-#         if formatters is None:
-#             formatters = {}
-#         _base_formatters = {int: GT._integer, float: GT._float, 'else': GT._default}
-#         self.formatter_cache = _base_formatters.update(formatters)
+        if guess_years:
+            year_cols = sGT.guess_years(df)
+        else:
+            year_cols = kwargs.get('year_cols', None)
 
-#         _base_ratios = ['max_LR', 'gross_LR', 'net_LR', 'ceded_LR', 'LR',
-#                         'COC', 'CoC', 'ROE']
-#         self.ratio_cols = _base_ratios if ratio_cols is None else ratio_cols
+        # rule sizes
+        hrule_widths = (1.5, 1, 0) if nindex > 1 else None
+        vrule_widths = (1.5, 1, 0.5) if ncolumns > 1 else None
 
-#         self.precision = precision
-#         self.pef_lower = pef_lower
-#         self.pef_upper = pef_upper
-#         self._pef = None
-#         self.font_size = font_size
+        table_hrule_width = 1 if nindex == 1 else 2
+        table_vrule_width = 1 if ncolumns == 1 else 2
 
-#         # archive what is used
-#         self.formatter_cache = LRUCache(maxsize=10)
-#         self.aligner_cache = LRUCache(maxsize=10)
-#         self.last_id = ''
-#         self.last_style = None
-#         self.last_html = None
+        # padding
+        nr, nc = df.shape
+        pad_tb = 4 if nr < 10 else (2 if nr < 20 else 1)
+        pad_lr = 10 if nc < 4 else (5 if nc < 8 else 2)
+        pad = (pad_tb, pad_lr, pad_tb, pad_lr)
 
-#     @property
-#     def html(self):
-#         return self.last_style + self.last_html
+        font_body = 0.9 if nr < 20 else (0.8 if nr < 40 else 0.7)
+        font_caption = 1.1 * font_body
+        font_head = 1.1 * font_body
 
-#     # default formatters
-#     @staticmethod
-#     def _ratio(x):
-#         try:
-#             return f'{x:.1%}'
-#         except:
-#             return x
+        pef_lower = -3
+        pef_upper = 6
+        pef_precision = 3
 
-#     @staticmethod
-#     def _date(x):
-#         try:
-#             return f'{x:%Y-%m-%d}'  # f"{dt:%H:%M:%S}"
-#         except:
-#             return x
+        defaults = {
+            'ratio_cols': ratio_cols,
+            'year_cols': year_cols,
+            'default_integer_str': '{x:,.0f}',
+            'default_float_str': '{x:,.3f}',
+            'default_date_str': '%Y-%m-%d',
+            'default_ratio_str': '{x:.1%}',
+            'cast_to_floats': True,
+            'table_hrule_width': table_hrule_width,
+            'table_vrule_width': table_vrule_width,
+            'hrule_widths': hrule_widths,
+            'vrule_widths': vrule_widths,
+            'sparsify': True,
+            'sparsify_columns': True,
+            'padding_trbl': pad,
+            'font_body': font_body,
+            'font_head': font_head,
+            'font_caption': font_caption,
+            'pef_precision': pef_precision,
+            'pef_lower': pef_lower,
+            'pef_upper': pef_upper,
+            'debug': False
+        }
+        defaults.update(kwargs)
+        super().__init__(df, caption=caption, **defaults)
 
-#     @staticmethod
-#     def _float(x):
-#         try:
-#             return f'{x:,.3f}'
-#         except:
-#             return x
+    @staticmethod
+    def guess_years(df):
+        """Try to guess which columns (body or index) are years.
 
-#     @staticmethod
-#     def _integer(x):
-#         try:
-#             return f'{x:,d}'
-#         except:
-#             return x
+        A column is considered a year if:
+        - It is numeric (integer or convertible to integer)
+        - All values are within a reasonable range (e.g., 1800–2100)
+        """
+        year_columns = []
+        df = df.reset_index(drop=False)
+        for col in df.columns:
+            try:
+                series = pd.to_numeric(df[col], errors='coerce').dropna()
+                if series.dtype.kind in 'iu' and series.between(1800, 2100).all():
+                    year_columns.append(col)
+            except Exception:
+                continue
 
-#     @staticmethod
-#     def _default(x):
-#         try:
-#             i = int(x)
-#             f = float(x)
-#             if i == f:
-#                 return f'{i:,d}'
-#             else:
-#                 return f'{i:,.3f}'
-#         except ValueError:
-#             return str(x)
-
-#     def pef(self, x):
-#         """Pandas engineering format."""
-#         if self._pef is None:
-#             self._pef = pd.io.formats.format.EngFormatter(accuracy=self.precision, use_eng_prefix=True)
-#         return self._pef(x)
-
-#     def make_float_formatter(self, ser):
-#         """
-#         Make a float formatter suitable for the Series ser.
-
-#         Obeys these rules:
-#         * All elements in the column are formatted consistently
-#         * ...
-
-#         """
-#         amean = ser.abs().mean()
-#         # mean = ser.mean()
-#         # mn = ser.min()
-#         # mx = ser.max()
-#         # smallest = ser.abs().min()
-#         # sd = ser.sd()
-#         # p10, p50, p90 = np.quantile(ser, [0.1, .5, 0.9], method='inverted_cdf')
-#         # pl = 10. ** self.pef_lower
-#         # pu = 10. ** self.pef_upper
-#         if amean < 1:
-#             precision = 5
-#         elif amean < 10:
-#             precision = 3
-#         elif amean < 20000:
-#             precision = 2
-#         else:
-#             precision = 0
-#         fmt = f'{{x:,.{precision}f}}'
-#         logger.info(f'{ser.name=}, {amean=}, {fmt=}')
-
-#         def ff(x):
-#             try:
-#                 if x == int(x):
-#                     return f'{x:,.0f}.'
-#                 else:
-#                     return fmt.format(x=x)
-#             except:
-#                 return str(x)
-#         return ff
-
-#     @property
-#     def last_formatter(self):  # noqa
-#         return self.formatter_cache.get(self.last_id, 'None defined.')
-
-#     @property
-#     def last_aligner(self):  # noqa
-#         return self.aligner_cache.get(self.last_id, 'None defined.')
-
-#     def to_html(self, df, table_id, caption='', ratio_cols=None, **kwargs):
-#         """
-#         Convert to html with suitable number formatting.
-
-#         Step 1 of apply format, separated so it can be called stand-alone.
-#         """
-#         if ratio_cols is not None and np.any(df.columns.duplicated()):
-#             logger.warning('Ratio cols specified with non-unique column names: ignoring request.')
-#         else:
-#             if ratio_cols == 'all':
-#                 ratio_cols = [i for i in df.columns]
-#             elif ratio_cols == 'default':
-#                 ratio_cols = self.ratio_cols
-#             elif ratio_cols is not None and type(ratio_cols) != list:
-#                 ratio_cols = [ratio_cols]
-#             # check index valid
-#             elif ratio_cols is None:
-#                 ratio_cols = []
-
-#         # because of non-unique indexes, index by position not
-#         # name
-#         float_cols = df.select_dtypes(include=["float64", "float32", "float"]).columns
-#         float_cols = [j for j, i in enumerate(df.columns) if i in float_cols]
-#         integer_cols = df.select_dtypes(include=["int64", "int32", "int"]).columns
-#         integer_cols = [j for j, i in enumerate(df.columns) if i in integer_cols]
-#         date_cols = df.select_dtypes(include=["datetime64"]).columns
-#         date_cols = [j for j, i in enumerate(df.columns) if i in date_cols]
-
-#         # because of the problem of non-unique indexes use a list and
-#         # not a dict to pass the formatters to to_html
-#         formatter_list = []
-
-#         for i, c in enumerate(df.columns):
-#             # set a default, note here can have
-#             # non-unique index so work with position i
-#             if c in ratio_cols:
-#                 # print(f'{i} ratio')
-#                 formatter_list.append(self._ratio)
-#             elif i in date_cols:
-#                 formatter_list.append(self._date)
-#             elif i in integer_cols:
-#                 # print(f'{i} int')
-#                 formatter_list.append(self._integer)
-#             elif i in float_cols:
-#                 # trickier approach...
-#                 formatter_list.append(self.make_float_formatter(df.iloc[:, i]))
-#             else:
-#                 # print(f'{i} default')
-#                 formatter_list.append(self._default)
-#         # logger.info(str(formatter_list))
-#         # formatter_list is now a list of length equal to cols in df
-#         assert len(formatter_list) == df.shape[1], f'Something wrong: {len(formatter_list)=} != {df.shape=}'
-#         self.formatter_cache[table_id] = formatter_list
-#         html = df.to_html(table_id=table_id, formatters=formatter_list, **kwargs)
-#         return html
-
-#     def apply_format(self, df, caption='', hrule_widths=None, ratio_cols=None, **kwargs):
-#         """
-#         Apply format to df.
-
-#         ratio cols like in constructor
-#         """
-#         self.last_id = table_id = f'T{id(df):x}'[::2].upper()
-
-#         nindex = df.index.nlevels
-#         ncolumns = df.columns.nlevels
-#         ncols = df.shape[1]
-
-#         dt = df.dtypes
-
-#         html = self.to_html(df, table_id, caption=caption, ratio_cols=ratio_cols, **kwargs)
-
-#         # for now...
-#         # guess: index l, numeric r rest l
-#         idx = 'l' * df.index.nlevels
-#         numeric_cols = df.select_dtypes('number').columns
-#         rc = ''.join('r' if c in numeric_cols else 'l' for c in df.columns)
-#         col_align = idx + rc
-
-#         if hrule_widths is None:
-#             if nindex > 1:
-#                 hrule_widths = (1.5, 1.0, 0.5)
-#             else:
-#                 hrule_widths = (0, 0, 0)
-#         # start to build style
-#         style = []
-#         style.append('<style>')
-#         style.append(f'''#{table_id}  {{
-#     border-collapse: collapse;
-#     font-family: "Roboto", "Open Sans Condensed", "Arial", 'Segoe UI', sans-serif;
-#     font-size: {self.font_size}em;
-#     /* line-height: normal;
-#     margin-left: auto;
-#     margin-right: auto; */
-#     width: auto;
-#     overflow: auto;    }}
-#     #{table_id} thead {{
-#         border-top: 2px solid #000;
-#         border-bottom: 2px solid #000;
-#         }}
-#     #{table_id} tbody {{
-#         border-bottom: 2px solid #000;
-#         }}
-#     #{table_id} thead tr:nth-of-type({ncolumns+1}) th:nth-of-type(-n + {nindex - 1}) {{
-#         border-right: 0.5px solid #000;
-#         }}
-#     #{table_id} thead th:nth-of-type({nindex+1}) {{
-#         border-left: 1.5px solid #000;
-#         border-bottom: 0.5px solid #000;
-#         }}
-#     #{table_id} thead th:nth-of-type(n+{nindex+2}) {{
-#         border-left: 0.5px solid #000;
-#         border-bottom: 0.5px solid #000;
-#         }}
-#     #{table_id} thead th:nth-of-type({nindex}) {{
-#         border-bottom: 0.5px solid #000;
-#         }}
-#     #{table_id} tbody tr th:nth-of-type(-n + {nindex - 1}) {{
-#         border-right: 0.5px solid #000;
-#         }}
-#     /*
-#     #{table_id} tbody tr th {{
-#         border-bottom: 0.5px solid #00f;
-#         }}
-#     #{table_id} tbody tr td {{
-#         border-bottom: 0.5px solid #f00;
-#         }}
-#     #{table_id} tbody td {{
-#         padding-left: 10px;
-#         padding-right: 10px;
-#         }}
-#     #{table_id} tbody tr td:nth-of-type(1)  {{
-#         border-left: 1.5px solid #000;
-#     }}
-#     */
-#     #T6F2FE tbody td:nth-of-type({nindex + 1})  {{
-#         border-left: 1.5px solid #000;
-#     }}
-#     #{table_id} tbody tr td:nth-of-type(n + 2)  {{
-#         border-left: 0.5px solid #000;
-#     }}
-#     #{table_id} tbody th  {{
-#         vertical-align: top;
-#     }}
-#     #{table_id} caption {{
-#         padding-top: 10px;
-#         padding-bottom: 4px;
-#         font-size: 1.1em;
-#         text-align: left;
-#         /* font-weight: bold; */
-#         /* color: #f0f; */
-#         }}
-#     #{table_id} .gt_body_column {{
-#         border-left: 1px solid #000;
-#     }}
-#     #{table_id} .gt_ruled_row_0 {{
-#         border-top: {hrule_widths[0]}px solid #000;
-#     }}
-#     #{table_id} .gt_ruled_row_1 {{
-#         border-top: {hrule_widths[0]}px solid #444;
-#     }}
-#     #{table_id} .gt_ruled_row_2 {{
-#         border-top: {hrule_widths[0]}px solid #888;
-#     }}
-#     #{table_id} .gt_left {{
-#         text-align: left;
-#         }}
-#     #{table_id} .gt_center {{
-#         text-align: center;
-#         }}
-#     #{table_id} .gt_right {{
-#         text-align: right;
-#         font-variant-numeric: tabular-nums;
-#         }}
-#     #{table_id} .gt_head {{
-#         /* font-family: "Times New Roman", 'Courier New'; */
-#         font-size: {self.font_size}em;
-#         }}
-#     #{table_id} td, th {{
-#       /* top, right, bottom left */
-#       padding: 2px 10px 2px 10px;
-#     }}
-# ''')
-#         # ================================================
-#         style.append('</style>\n')
-
-#         if len(style) > 2:
-#             style = '\n'.join(style)
-#         else:
-#             style = ''
-#         self.last_style = style
-#         self.last_rawhtml = html
-
-#         # now alter html using bs4
-#         soup = BeautifulSoup(html, 'html.parser')
-
-#         # center all heading rows
-#         for r in soup.select('thead tr'):
-#             for td in r.find_all('th'):
-#                 td['class'] = 'gt_center gt_head'
-#                 # td['style'] = 'text-align: left;'
-
-#         # in each body row: headings left
-#         alignment = []
-#         for y in dt.values:
-#             # if index is not unique this can return > 1 element
-#             # know in same order as df.columns, so can use
-#             # this approach
-#             if y in (int, float):
-#                 a = 'gt_right'
-#             elif y == object:
-#                 # print(c, 'object')
-#                 a = 'gt_left'
-#             else:
-#                 # print(c, type(c), 'else')
-#                 a = 'gt_center'
-#             alignment.append(a)
-
-#         idx_alignment = []
-#         if nindex == 1:
-#             idx_alignment.append(df.index.dtype)
-#         else:
-#             for c, t in df.index.dtypes.items():
-#                 if t in (int, float):
-#                     a = 'gt_right'
-#                 elif t == object:
-#                     a = 'gt_left'
-#                 else:
-#                     a = 'gt_center'
-#                 idx_alignment.append(a)
-
-#         # figure which index level changes for h rules
-#         chg_level = GT.changed_level(df)
-#         for i, r in zip(range(len(df)), soup.select('tbody tr')):
-#             # row rules: if not first row and new level 0
-#             if i and (i in chg_level):
-#                 lv = chg_level.loc[i]
-#                 r['class'] = f'gt_ruled_row_{lv}'
-#             # to handle sparse index you have to work from the right!
-#             for a, td in zip(idx_alignment[::-1], r.find_all('th')[::-1]):
-#                 td['class'] = f'{a} gt_head'
-#                 # td['style'] = 'text-align: left;'
-#             for a, td in zip(alignment, r.find_all('td')):
-#                 td['class'] = a
-#             # find the body column
-#             td = r.find_all('td')[-ncols]
-#             if td is not None:
-#                 # print(f'Adding body col to {td.text}')
-#                 existing_classes = td.get('class', '')  # Get existing classes as a list, or an empty list if none
-#                 td['class'] = existing_classes + ' gt_body_column'  # Append new classes
-#         if caption != "":
-#             table = soup.find('table')
-
-#             # Add a caption
-#             if table:
-#                 c = soup.new_tag('caption')
-#                 c.string = caption
-#                 c['class'] = 'gt_caption'
-#                 table.insert(0, c)
-
-#         # take out dataframe
-#         table = soup.find("table", {"class": "dataframe"})
-#         if table:
-#             del table["class"]
-
-#         html = soup.prettify()
-#         self.last_html = html  # after alteration
-#         # return
-#         return style + html
-
-#     __call__ = apply_format
-
-#     def apply_styles(self, html):
-#         """
-#         Apply css styles to the base table.
-
-#         Whine.
-#         """
-#         pass
-
-#     @staticmethod
-#     def changed_level(df):
-#         """
-#         Return the level of index that changes with each row.
-
-#         Very ingenious GTP code with some SM enhancements.
-#         """
-#         idx = df.index
-#         idx.names = [i for i in range(idx.nlevels)]
-#         # Determine at which level the index changes
-#         index_df = idx.to_frame(index=False)  # Convert MultiIndex to a DataFrame
-#         # true / false match last row
-#         tf = index_df.ne(index_df.shift())
-#         # changes need at least one true
-#         tf = tf.loc[tf.any(axis=1)]
-#         level_changes = tf.idxmax(axis=1)
-#         return level_changes
+        return year_columns
