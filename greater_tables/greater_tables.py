@@ -289,12 +289,10 @@ class GT(object):
     def default_date_formatter(self, x):
         """Date formatter."""
         try:
-            print(x, self.default_date_str)
             return x.strftime(self.default_date_str) if pd.notna(x) else ""
             # return self.default_date_str.format(x=x)
             # return f'{x:%Y-%m-%d}'  # f"{dt:%H:%M:%S}"
         except ValueError:
-            print('eeror ')
             logger.error(f'date error with {x=}')
             return str(x)
 
@@ -1364,7 +1362,7 @@ class sGT(GT):
         vrule_widths = (1.5, 1, 0.5) if ncolumns > 1 else None
 
         table_hrule_width = 1 if nindex == 1 else 2
-        table_vrule_width = 1 if ncolumns == 1 else 2
+        table_vrule_width = 1 if ncolumns == 1 else (1.5 if ncolumns == 2 else 2)
 
         # padding
         nr, nc = df.shape
