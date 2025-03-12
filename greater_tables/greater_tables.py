@@ -9,6 +9,7 @@ import pandas as pd
 from pandas.api.types import is_datetime64_any_dtype, is_integer_dtype,\
     is_float_dtype   # , is_numeric_dtype
 from pathlib import Path
+import re
 import sys
 import warnings
 
@@ -52,7 +53,6 @@ class GT(object):
                  default_float_str='{x:,.3f}',
                  default_date_str='%Y-%m-%d',
                  default_ratio_str='{x:.1%}',
-                 cast_to_floats=True,
                  table_hrule_width=1,
                  table_vrule_width=1,
                  hrule_widths=None,
@@ -68,6 +68,7 @@ class GT(object):
                  pef_precision=3,
                  pef_lower=-3,
                  pef_upper=6,
+                 cast_to_floats=True,
                  debug=False):
         """
         Create a greater_tables formatting object.
@@ -107,7 +108,6 @@ class GT(object):
         """
         if not df.columns.is_unique:
             raise ValueError('df column names are not unique')
-
         self.df = df.copy(deep=True)   # the object being formatted
         self.raw_df = df.copy(deep=True)
         # if not column_names:
@@ -171,7 +171,7 @@ class GT(object):
                         try:
                             self.df.iloc[:, i] = self.df.iloc[:, i].astype(float)
                             logger.debug(f'coerce {i}={c} from {old_type} to float')
-                        except ValueError:
+                        except (ValueError, TypeError):
                             logger.debug(f'coercing {i}={c} from {old_type} to float FAILED')
 
         # now can determine types
@@ -264,8 +264,10 @@ class GT(object):
         # because of the problem of non-unique indexes use a list and
         # not a dict to pass the formatters to to_html
         self._df_formatters = None
-        self.df_style = None
-        self.df_html = None
+        self.df_style = ''
+        self.df_html = ''
+        self._clean_html = ''
+        self.tex = ''
         # finally sparsify and then apply formaters
         # this radically alters the df, so keep a copy for now...
         self.df_pre_applying_formatters = self.df.copy()
@@ -287,11 +289,13 @@ class GT(object):
     def default_date_formatter(self, x):
         """Date formatter."""
         try:
+            print(x, self.default_date_str)
             return x.strftime(self.default_date_str) if pd.notna(x) else ""
             # return self.default_date_str.format(x=x)
             # return f'{x:%Y-%m-%d}'  # f"{dt:%H:%M:%S}"
         except ValueError:
-            # logger.error(f'date error with {x=}')
+            print('eeror ')
+            logger.error(f'date error with {x=}')
             return str(x)
 
     def default_integer_formatter(self, x):
@@ -425,10 +429,7 @@ class GT(object):
 
         ratio cols like in constructor
         """
-        self.df_style = self.make_style()
-        self.df_html = self.make_html()
-        logger.info('CREATED HTML STYLE')
-        return self.df_style + self.df_html
+        return self.html
 
     def make_style(self):
         if self.debug:
@@ -643,14 +644,34 @@ class GT(object):
                 html.append(f'<td class="{self.df_aligners[j+self.nindex]} {hrule} {vrule}">{c}</td>')
             html.append("</tr>")
         html.append("</tbody>")
-        return '\n'.join(html)
+        text = '\n'.join(html)
+        text = GT.clean_html_tex(text)
+        logger.info('CREATED HTML')
+        return text
+
+    def clean_style(self, soup):
+        """Minify CSS inside <style> blocks and remove /* ... */ comments."""
+        if not self.debug:
+            for style_tag in soup.find_all("style"):
+                if style_tag.string:
+                    # Remove CSS comments
+                    cleaned_css = re.sub(r'/\*.*?\*/', '', style_tag.string, flags=re.DOTALL)
+                    # Minify whitespace
+                    cleaned_css = re.sub(r'\s+', ' ', cleaned_css).strip()
+                    style_tag.string.replace_with(cleaned_css)
+        return soup
 
     @property
     def html(self):
-        code = ('' if self.df_style is None else self.df_style) + (
-            '' if self.df_html is None else self.df_html)
-        soup = BeautifulSoup(code, 'html.parser')
-        return soup.prettify()
+        if self._clean_html == '':
+            code = ["<div class='greater-table'>",
+                self.make_style() if self.df_style == '' else self.df_style,
+                self.make_html() if self.df_html == '' else self.df_html,
+                    "</div>"]
+            soup = BeautifulSoup('\n'.join(code), 'html.parser')
+            soup = self.clean_style(soup)
+            self._clean_html = str(soup) # .prettify()
+        return self._clean_html
 
     def _repr_latex_(self):
         """Generate a LaTeX tabular representation."""
@@ -723,11 +744,21 @@ class GT(object):
         else:
             raise ValueError(f'unknown mode {mode}')
 
-    def make_tikz(self, float_format=None, tabs=None,
-                  show_index=True, scale=0.635, column_sep=3 / 8, row_sep=1 / 8,
-                  figure='figure', extra_defs='', hrule=None, equal=False,
-                  vrule=None, post_process='', label='', latex=None,
-                  sparsify=1, clean_index=False):
+    def make_tikz(self,
+                  float_format=None,
+                  tabs=None,
+                  scale=0.635,
+                  column_sep=3 / 8,
+                  row_sep=1 / 8,
+                  figure='figure',
+                  extra_defs='',
+                  hrule=None,
+                  equal=False,
+                  vrule=None,
+                  post_process='',
+                  label='',
+                  latex=None,
+                  sparsify=1):
         """
         Write DataFrame to custom tikz matrix to allow greater control of
         formatting and insertion of horizontal divider lines
@@ -797,6 +828,7 @@ class GT(object):
         df = self.apply_formatters(self.raw_df.copy(), mode='raw')
         caption = self.caption
         if not df.columns.is_unique:
+            # possible index/body column interaction
             raise ValueError('tikz routine requires unique column names')
 # \\begin{{{figure}}}{latex}
         header = """
@@ -823,66 +855,38 @@ class GT(object):
 # {caption}
 # \\end{{{figure}}}
 
-        # make a safe float format
-        # if float_format is None:
-        #     wfloat_format = GT.default_float_format
-        # else:
-        #     # If you pass in a lambda function it won't have error handling
-        #     def _ff(x):
-        #         try:
-        #             return float_format(x)
-        #         except:
-        #             return x
-        #     wfloat_format = _ff
+        # always a good idea to do this...need to deal with underscores
+        # and it handles index types that are not strings
+        df = GT.clean_index(df)
 
-        if clean_index:
-            # don't use the index
-            # but you do use the columns, this does both
-            # logger.debug(df.columns)
-            df = GT.clean_index(df)
-            # logger.debug(df.columns)
+        # we are always showing the index...may regret that???
+        # put condition here if needed
+        nc_index = df.index.nlevels
+        # col_level puts the label at the bottom of the column m index.
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=pd.errors.PerformanceWarning)
+            df = df.reset_index(drop=False, col_level=df.columns.nlevels - 1)
+        if sparsify:
+            if hrule is None:
+                hrule = set()
+        for i in range(sparsify):
+            df.iloc[:, i], rules = GT.sparsify(df.iloc[:, i])
+            # don't want lines everywhere
+            if len(rules) < len(df) - 1:
+                hrule = set(hrule).union(rules)
 
-        # index
-        if show_index:
-            nc_index = df.index.nlevels
-            # if isinstance(df.index, pd.MultiIndex):
-            #     nc_index = len(df.index.levels)
-            #     # df = df.copy().reset_index(drop=False, col_level=df.columns.nlevels - 1)
-            # else:
-            #     nc_index = 1
-            # col_level puts the label at the bottom of the column m index.
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", category=pd.errors.PerformanceWarning)
-                df = df.reset_index(drop=False, col_level=df.columns.nlevels - 1)
-            if sparsify:
-                if hrule is None:
-                    hrule = set()
-            for i in range(sparsify):
-                df.iloc[:, i], rules = GT.sparsify(df.iloc[:, i])
-                # print(rules, len(rules), len(df))
-                # don't want lines everywhere
-                if len(rules) < len(df) - 1:
-                    hrule = set(hrule).union(rules)
+        if vrule is None:
+            vrule = set()
         else:
-            nc_index = 0
-
-        if nc_index:
-            if vrule is None:
-                vrule = set()
-            else:
-                vrule = set(vrule)
-            # to the left of... +1
-            vrule.add(nc_index + 1)
+            vrule = set(vrule)
+        # to the left of... +1
+        vrule.add(nc_index + 1)
 
         nr_columns = df.columns.nlevels
-        # if isinstance(df.columns, pd.MultiIndex):
-        #     nr_columns = len(df.columns.levels)
-        # else:
-        #     nr_columns = 1
-        logger.debug(f'rows in columns {nr_columns}, cols in index {nc_index}')
+        logger.info(f'rows in columns {nr_columns}, columns in index {nc_index}')
 
         # internal TeX code (same as HTML code)
-        matrix_name = self.df_id #  hex(abs(hash(str(df))))
+        matrix_name = self.df_id
 
         # note this happens AFTER you have reset the index...need to pass number of index columns
         # have also converted everything to formatted strings
@@ -890,25 +894,23 @@ class GT(object):
         colw, mxmn, tabs = GT.guess_column_widths(df, nc_index=nc_index, float_format=lambda x: x, tabs=tabs,
                                                   scale=scale, equal=equal)
         # print(colw, tabs)
-        logger.debug(f'tabs: {tabs}')
-        logger.debug(f'colw: {colw}')
+        logger.info(f'tabs: {tabs}')
+        logger.info(f'colw: {colw}')
 
-        # alignment dictionaries
+        # alignment dictionaries - these are still used below
         ad = {'l': 'left', 'r': 'right', 'c': 'center'}
         ad2 = {'l': '<', 'r': '>', 'c': '^'}
-        # guess alignments: TODO add dates?
+        #  use df_aligners, at this point the index has been reset
         align = []
-        for n, i in zip(df.columns, df.dtypes):
-            x, n = mxmn[n]
-            if x == n and len(align) == 0:
+        for n, i in zip(df.columns, self.df_aligners):
+            if i == 'grt-left':
                 align.append('l')
-            elif i == object and x == n:
-                align.append('c')
-            elif i == object:
-                align.append('l')
-            else:
+            elif i == 'grt-right':
                 align.append('r')
-        logger.debug(align)
+            elif i == 'grt-center':
+                align.append('c')
+            else:
+                align.append('l')
 
         # start writing
         sio = StringIO()
@@ -1088,7 +1090,8 @@ class GT(object):
             caption = f'\\caption{{{caption} {label}}}'
         sio.write(footer.format(figure=figure, post_process=post_process, caption=caption))
 
-        return sio.getvalue()
+        self.tex = sio.getvalue()
+        return self.tex
 
     @staticmethod
     def guess_column_widths(df, nc_index, float_format, tabs=None, scale=1, equal=False):
@@ -1234,7 +1237,10 @@ class GT(object):
     @staticmethod
     def clean_name(n):
         """
-        escape underscores for using a name in a DataFrame index
+        Escape underscores for using a name in a DataFrame index
+        and converts to a string.
+
+        Called by Tikz routines.
 
         :param n:
         :return:
@@ -1244,9 +1250,10 @@ class GT(object):
                 # quote underscores that are not in dollars
                 return '$'.join((i if n % 2 else i.replace('_', '\\_') for n, i in enumerate(n.split('$'))))
             else:
-                return n
+                # can't contain an underscore!
+                return str(n)
         except:
-            return n
+            return str(n)
 
     # @staticmethod
     # def clean_underscores(s):
@@ -1259,46 +1266,33 @@ class GT(object):
     #     return np.all([s[x.start() - 1] == '\\' for x in re.finditer('_', s)])
 
     @staticmethod
+    def clean_html_tex(text):
+        """
+        Clean TeX entries in HTML: $ -> \( and \) and $$ to \[ \].
+
+        Apply after all other HTML rendering steps.
+        """
+        text = re.sub(r'\$\$(.*?)\$\$', r'\\[\1\\]', text, flags=re.DOTALL)
+        # Convert inline math: $...$ → \(...\)
+        text = re.sub(r'(?<!\$)\$(.*?)(?<!\\)\$(?!\$)', r'\\(\1\\)', text)
+        return text
+
+    @staticmethod
     def clean_index(df):
         """
-        escape _ for columns and index
-        whether multi or not
-
-        !!! you can do this with a renamer...
+        escape _ for columns and index, being careful about subscripts
+        in TeX formulas.
 
         :param df:
         :return:
         """
-
-        idx_names = df.index.names
-        col_names = df.columns.names
-
-        if isinstance(df.columns, pd.core.indexes.multi.MultiIndex):
-            df.columns = GT.clean_mindex_work(df.columns)
-        else:
-            df.columns = map(GT.clean_name, df.columns)
-
-        # index
-        if isinstance(df.index, pd.core.indexes.multi.MultiIndex):
-            df.index = GT.clean_mindex_work(df.index)
-        else:
-            df.index = map(GT.clean_name, df.index)
-        df.index.names = idx_names
-        df.columns.names = col_names
-        return df
-
-    @staticmethod
-    def clean_mindex_work(idx):
-        for i, lv in enumerate(idx.levels):
-            if lv.dtype == 'object':
-                repl = map(GT.clean_name, lv)
-                idx = idx.set_levels(repl, level=i)
-        return idx
+        return df.rename(index=GT.clean_name, columns=GT.clean_name)
 
     @staticmethod
     def default_float_format(x, neng=3):
         """
         the endless quest for the perfect float formatter...
+        NOT USED AT THE MINUTE.
 
         tester::
 
@@ -1345,13 +1339,18 @@ class GT(object):
 
 
 class sGT(GT):
-    """Standard GT with Steve House-Style defaults."""
-    def __init__(self, df, caption="", guess_years=True, ratio_cols_regex='lr|roe|coc', **kwargs):
+    """
+    Example standard GT with Steve House-Style defaults.
+
+    Each application can create its own defaults by subclassing GT
+    in this way.
+    """
+    def __init__(self, df, caption="", guess_years=True, ratio_regex='lr|roe|coc', **kwargs):
         """Create Steve House-Style Formatter."""
         nindex = df.index.nlevels
         ncolumns = df.columns.nlevels
-        if ratio_cols_regex != '' and ncolumns == 1:
-            ratio_cols = list(df.filter(regex=ratio_cols_regex).columns)
+        if ratio_regex != '' and ncolumns == 1:
+            ratio_cols = df.filter(regex=ratio_regex).columns.to_list()
         else:
             ratio_cols = None
 
@@ -1369,13 +1368,13 @@ class sGT(GT):
 
         # padding
         nr, nc = df.shape
-        pad_tb = 4 if nr < 10 else (2 if nr < 20 else 1)
-        pad_lr = 10 if nc < 4 else (5 if nc < 8 else 2)
+        pad_tb = 4 if nr < 16 else (2 if nr < 25 else 1)
+        pad_lr = 10 if nc < 9 else (5 if nc < 13 else 2)
         pad = (pad_tb, pad_lr, pad_tb, pad_lr)
 
-        font_body = 0.75 if nr < 20 else (0.7 if nr < 40 else 0.6)
-        font_caption = 1.1 * font_body
-        font_head = 1.1 * font_body
+        font_body = 0.9 if nr < 25 else (0.8 if nr < 41 else 0.7)
+        font_caption = np.round(1.1 * font_body, 2)
+        font_head = np.round(1.1 * font_body, 2)
 
         pef_lower = -3
         pef_upper = 6
