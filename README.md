@@ -1,16 +1,12 @@
 # Greater Tables
 
-Creating presentation quality tables from pandas dataframes is
-frustrating. It is hard to left-align text and right-align numbers using
-pandas `display` or `df.to_html`. The `great_tables` package does a
-really nice job with pandas and polars dataframes but does not support
-indexes or TeX output.
+Creating presentation quality tables from pandas dataframes is frustrating. It is hard to left-align text and right-align numbers using pandas `display` or `df.to_html`. The  `great_tables` package does a really nice job with pandas and polars dataframes but does not support indexes or TeX output. 
 
-This package is provides consistent HTML and TeX table output with
-flexible type-based formatting, and table rules. Its main class `GT` can
-be subclassed to set appropriate defaults for your project.
+This package provides consistent HTML and TeX table output with flexible type-based formatting, and table rules. Neither output relies on the pandas `to_html` or `to_latex` functions. TeX output uses Tikz tables for very tight control over layout and grid lines. The package is designed for use in Jupyter Lab notebooks Quarto documents.
 
-The project is currently in **beta** status.
+Usage: the main class `GT` should be subclassed to set appropriate defaults for your project. `sGT` provides an example.
+
+The project is currently in **beta** status. HTML output is better developed than TeX.
 
 ## The Name
 
@@ -36,7 +32,7 @@ import pandas as pd
 import numpy as np
 from greater_tables import sGT
 level_1 = ["Group A", "Group A", "Group B", "Group B", 'Group C']
-level_2 = ['Sub 1', 'Sub 2', 'Sub 2', 'Sub 1', 'Sub 1']
+level_2 = ['Sub 1', 'Sub 2', 'Sub 2', 'Sub 3', 'Sub 3']
 
 multi_index = pd.MultiIndex.from_arrays([level_1, level_2])
 
@@ -49,167 +45,25 @@ hard = pd.DataFrame(
 'b': 10. ** np.linspace(-9, 9, 5),
 'c': np.linspace(601, 4000, 5),
 'd': pd.date_range(start=start, end=end, periods=5),
-'e': 'once upon a time, lived happily ever after, not in Kansas anymore, neutrinos are hard to detect, risk is hard to define'.split(',')
+'e': 'once upon a time, risk is hard to define, not in Kansas anymore, neutrinos are hard to detect,  $\\int_\\infty^\\infty e^{-x^2/2}dx$ is a hard integral'.split(',')
 }).set_index('x')
 hard.columns = multi_index
-print(sGT(hard, 'A hard table.').html) 
+sGT(hard, 'A hard table.')
 ```
 
- 
+![HTML output.](img/hard-html.png){width=66%}
 
- 
+![TeX output.](img/hard-tex.png){width=66%}
 
-<style>#TS76FPUXL623T { border-collapse: collapse; font-family: "Roboto", "Open Sans Condensed", "Arial", 'Segoe UI', sans-serif; font-size: 0.9em; width: auto; border: none; overflow: auto; } #TS76FPUXL623T caption { padding: 8px 10px 4px 10px; font-size: 0.99em; text-align: center; font-weight: normal; caption-side: top; } #TS76FPUXL623T thead { border-top: 1px solid #000; border-bottom: 1px solid #000; font-size: 0.99em; } #TS76FPUXL623T tbody { border-bottom: 1px solid #000; } #TS76FPUXL623T th { vertical-align: bottom; padding: 8px 10px 8px 10px; } #TS76FPUXL623T td { padding: 4px 10px 4px 10px; vertical-align: top; } #TS76FPUXL623T .grt-hrule-0 { border-top: 0px solid #000; } #TS76FPUXL623T .grt-hrule-1 { border-top: 0px solid #000; } #TS76FPUXL623T .grt-hrule-2 { border-top: 0px solid #000; } #TS76FPUXL623T .grt-bhrule-0 { border-bottom: 1.5px solid #000; } #TS76FPUXL623T .grt-bhrule-1 { border-bottom: 1px solid #000; } #TS76FPUXL623T .grt-vrule-index { border-left: 1.5px solid #000; } #TS76FPUXL623T .grt-vrule-0 { border-left: 1.5px solid #000; } #TS76FPUXL623T .grt-vrule-1 { border-left: 1px solid #000; } #TS76FPUXL623T .grt-vrule-2 { border-left: 0.5px solid #000; } #TS76FPUXL623T .grt-left { text-align: left; } #TS76FPUXL623T .grt-center { text-align: center; } #TS76FPUXL623T .grt-right { text-align: right; font-variant-numeric: tabular-nums; } #TS76FPUXL623T .grt-head { font-family: "Times New Roman", 'Courier New'; font-size: 0.99em; } #TS76FPUXL623T .grt-bold { font-weight: bold; }</style>
-<table id="TS76FPUXL623T">
-<caption>
-A hard table.
-</caption>
-<thead>
-<tr>
-<th class="grt-left">
-</th>
-<th class="grt-center grt-bhrule-0 grt-vrule-index" colspan="2">
-Group A
-</th>
-<th class="grt-center grt-bhrule-0 grt-vrule-0" colspan="2">
-Group B
-</th>
-<th class="grt-center grt-bhrule-0 grt-vrule-0" colspan="1">
-Group C
-</th>
-</tr>
-<tr>
-<th class="grt-left">
-x
-</th>
-<th class="grt-center grt-vrule-index" colspan="1">
-Sub 1
-</th>
-<th class="grt-center grt-vrule-1" colspan="1">
-Sub 2
-</th>
-<th class="grt-center grt-vrule-0" colspan="1">
-Sub 2
-</th>
-<th class="grt-center grt-vrule-1" colspan="1">
-Sub 1
-</th>
-<th class="grt-center grt-vrule-0" colspan="1">
-Sub 1
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="grt-left">
-2020
-</td>
-<td class="grt-right grt-vrule-index">
-100
-</td>
-<td class="grt-right grt-vrule-1">
-1.000n
-</td>
-<td class="grt-right grt-vrule-0">
-601.00
-</td>
-<td class="grt-center grt-vrule-1">
-2025-03-12
-</td>
-<td class="grt-left grt-vrule-0">
-once upon a time
-</td>
-</tr>
-<tr>
-<td class="grt-left grt-hrule-0">
-2021
-</td>
-<td class="grt-right grt-hrule-0 grt-vrule-index">
-105
-</td>
-<td class="grt-right grt-hrule-0 grt-vrule-1">
-31.623u
-</td>
-<td class="grt-right grt-hrule-0 grt-vrule-0">
-1,450.75
-</td>
-<td class="grt-center grt-hrule-0 grt-vrule-1">
-2025-05-24
-</td>
-<td class="grt-left grt-hrule-0 grt-vrule-0">
-lived happily ever after
-</td>
-</tr>
-<tr>
-<td class="grt-left grt-hrule-0">
-2022
-</td>
-<td class="grt-right grt-hrule-0 grt-vrule-index">
-2,000
-</td>
-<td class="grt-right grt-hrule-0 grt-vrule-1">
-1.000
-</td>
-<td class="grt-right grt-hrule-0 grt-vrule-0">
-2,300.50
-</td>
-<td class="grt-center grt-hrule-0 grt-vrule-1">
-2025-08-06
-</td>
-<td class="grt-left grt-hrule-0 grt-vrule-0">
-not in Kansas anymore
-</td>
-</tr>
-<tr>
-<td class="grt-left grt-hrule-0">
-2023
-</td>
-<td class="grt-right grt-hrule-0 grt-vrule-index">
-2,025
-</td>
-<td class="grt-right grt-hrule-0 grt-vrule-1">
-31.623k
-</td>
-<td class="grt-right grt-hrule-0 grt-vrule-0">
-3,150.25
-</td>
-<td class="grt-center grt-hrule-0 grt-vrule-1">
-2025-10-18
-</td>
-<td class="grt-left grt-hrule-0 grt-vrule-0">
-neutrinos are hard to detect
-</td>
-</tr>
-<tr>
-<td class="grt-left grt-hrule-0">
-2024
-</td>
-<td class="grt-right grt-hrule-0 grt-vrule-index">
-100,000
-</td>
-<td class="grt-right grt-hrule-0 grt-vrule-1">
-1.000G
-</td>
-<td class="grt-right grt-hrule-0 grt-vrule-0">
-4,000.00
-</td>
-<td class="grt-center grt-hrule-0 grt-vrule-1">
-2025-12-31
-</td>
-<td class="grt-left grt-hrule-0 grt-vrule-0">
-risk is hard to define
-</td>
-</tr>
-</tbody>
-</table>
+The output illustrates:
 
- 
-Note the following features:
-
+-   Quarto or Jupyter automatically the class's `_repr_html_` method (or
+    `_repr_latex_` for pdf/TeX/Beamer output), providing seamless
+    integration across different output formats.
 -   Text is left-aligned, numbers are right-aligned.
 -   The index is displayed, was detected as likely years, and formatted
     without a comma separator.
--   The first column of integers does have a comma separator.
+-   The first column of integers does have a comma thousands separator.
 -   The second column of floats spans several orders of magnitude and is
     formatted using Engineering format, n for nano through G for giga.
 -   The third column of floats is formatted with a comma separator and
