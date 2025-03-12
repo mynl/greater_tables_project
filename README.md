@@ -1,20 +1,3 @@
----
-jupyter:
-  jupytext:
-    formats: ipynb,qmd
-    text_representation:
-      extension: .qmd
-      format_name: quarto
-      format_version: 1.0
-      jupytext_version: 1.16.4
-  keep-ipynb: true
-  kernelspec:
-    display_name: Python 3 (ipykernel)
-    language: python
-    name: python3
-toc-title: Table of contents
----
-
 # Greater Tables
 
 Creating presentation quality tables from pandas dataframes is
