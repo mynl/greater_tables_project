@@ -28,7 +28,7 @@ logger.propagate = False
 if logger.hasHandlers():
     # Clear existing handlers
     logger.handlers.clear()
-# SET DEGBUUGER LEVEL
+# SET DEGBUGGER LEVEL
 LEVEL = logging.WARNING    # DEBUG or INFO, WARNING, ERROR, CRITICAL
 logger.setLevel(LEVEL)
 handler = logging.StreamHandler(sys.stderr)
@@ -106,7 +106,7 @@ class GT(object):
         :param debug: if True, add id to caption and use colored lines in table, default False.
         """
         if not df.columns.is_unique:
-            logger.warning('column names are not unqiue: will cause problems')
+            raise ValueError('df column names are not unique')
 
         self.df = df.copy(deep=True)   # the object being formatted
         self.raw_df = df.copy(deep=True)
@@ -368,6 +368,9 @@ class GT(object):
         else:
             def ff(x):
                 try:
+                    return fmt.format(x=x)
+                    # well and good but results in ugly differences
+                    # by entries in a column
                     if x == int(x) and np.abs(x) < pu:
                         return f'{x:,.0f}.'
                     else:
@@ -466,6 +469,13 @@ class GT(object):
     overflow: auto;
     }}
     /* tag formats */
+    #{self.df_id} caption {{
+        padding: {2 * padt}px {padr}px {padb}px {padl}px;
+        font-size: {self.font_caption}em;
+        text-align: center;
+        font-weight: normal;
+        caption-side: top;
+    }}
     #{self.df_id} thead {{
         /* top and bottom of header */
         border-top: {table_hrule}px solid {head_tb};
@@ -476,17 +486,11 @@ class GT(object):
         /* bottom of body */
         border-bottom: {table_hrule}px solid {body_b};
         }}
-    #{self.df_id} tbody th  {{
-        vertical-align: top;
-    }}
-    #{self.df_id} caption {{
+    #{self.df_id} th  {{
+        vertical-align: bottom;
         padding: {2 * padt}px {padr}px {2 * padb}px {padl}px;
-        font-size: {self.font_caption}em;
-        text-align: left;
-        font-weight: bold;
-        caption-side: top;
     }}
-    #{self.df_id} td, th {{
+    #{self.df_id} td {{
         /* top, right, bottom left cell padding */
         padding: {padt}px {padr}px {padb}px {padl}px;
         vertical-align: top;
@@ -554,14 +558,14 @@ class GT(object):
         if self.caption != '':
             html.append(f'<caption>{self.caption}</caption>')
 
-        # Process header: , allow_duplicates=True) means can create cols with the same name
+        # Process header: allow_duplicates=True means can create cols with the same name
         bit = self.df.T.reset_index(drop=False, allow_duplicates=True)
         idx_header = bit.iloc[:self.nindex, :self.ncolumns]
         columns = bit.iloc[self.nindex:, :self.ncolumns]
 
         # TODO Add header aligners
+        # this is TRANSPOSED!!
         if self.sparsify_columns:
-            # this is TRANSPOSED!!
             html.append("<thead>")
             for i in range(self.ncolumns):
                 # one per row of columns m index, usually only 1
@@ -570,7 +574,15 @@ class GT(object):
                     # columns one per level of index
                     html.append(f'<th class="grt-left">{r}</th>')
                 cum_col = 0  # keep track of where we are up to
-                for j, (nm, g) in enumerate(groupby(columns.iloc[:, i])):
+                # here, the groupby needs to consider all levels at and above i
+                # this concats all the levels
+                # need :i+1 to get down to the ith level
+                for j, (nm, g) in enumerate(groupby(columns.iloc[:, :i+1].
+                        apply(lambda x: ':::'.join(str(i) for i in x), axis=1))):
+                    # ::: needs to be something that does not appear in the col names
+                    # need to combine for groupby but be able to split off the last level
+                    # picks off the name of the bottom level
+                    nm = nm.split(':::')[-1]
                     hrule = f'grt-bhrule-{i}' if i < self.ncolumns - 1 else ''
                     colspan = sum(1 for _ in g)
                     if 0 < j:
@@ -583,7 +595,6 @@ class GT(object):
                 html.append("</tr>")
             html.append("</thead>")
         else:
-            # this is TRANSPOSED!!
             html.append("<thead>")
             for i in range(self.ncolumns):
                 # one per row of columns m index, usually only 1
@@ -678,10 +689,8 @@ class GT(object):
     @staticmethod
     def apply_formatters_work(df, formatters):
         """Apply formatters to a DataFrame."""
-        new_df = pd.DataFrame({i: map(f, df[c])
-                               for i, f, c in zip(range(len(df.columns)),
-                                                  formatters,
-                                                  df.columns)})
+        new_df = pd.DataFrame({i: map(f, df.iloc[:, i])
+                               for i, f in enumerate(formatters)})
         new_df.columns = df.columns
         return new_df
 
@@ -709,40 +718,15 @@ class GT(object):
             # put them back together
             new_df = pd.concat([new_index, new_body], axis=1)
             new_df = new_df.set_index(list(df_index.columns))
+            new_df.index.names = df.index.names
             return new_df
         else:
             raise ValueError(f'unknown mode {mode}')
 
-        # df.index = df.index.set_levels(new_levels, verify_integrity=False)
-
-        ## PROBLEMS
-        # if mode == 'adjusted':
-        #     for i, f in enumerate(self.df_formatters):
-        #         # apply cell by cell, f not necessarily vectorized
-        #         df.iloc[:, i] = list(map(f, df.iloc[:, i]))
-        # elif mode == 'raw':
-        #     # work on raw_df where the index has not been reset
-        #     # because of non-unique indexes, index by position not name
-        #     index_formatters = self.df_formatters[:self.nindex]
-        #     data_formatters = self.df_formatters[self.nindex:]
-        #     for i, f in enumerate(data_formatters):
-        #         # apply cell by cell, f not necessarily vectorized
-        #         df.iloc[:, i] = list(map(f, df.iloc[:, i]))
-        #     # adjust the index
-        #     if df.index.nlevels == 1:
-        #         df.index = map(index_formatters[0], df.index)
-        #     else:
-        #         new_levels = [list(map(func, df.index.get_level_values(i))) for i, func in
-        #                       enumerate(index_formatters)]
-        #         df.index = df.index.set_levels(new_levels, verify_integrity=False)
-        # else:
-        #     raise ValueError(f'unknown mode {mode}')
-        # return df
-
     def make_tikz(self, float_format=None, tabs=None,
-                  show_index=False, scale=0.635, column_sep=3 / 8, row_sep=1 / 8,
+                  show_index=True, scale=0.635, column_sep=3 / 8, row_sep=1 / 8,
                   figure='figure', extra_defs='', hrule=None, equal=False,
-                  vrule=None, post_process='', label='', caption='', latex=None,
+                  vrule=None, post_process='', label='', latex=None,
                   sparsify=1, clean_index=False):
         """
         Write DataFrame to custom tikz matrix to allow greater control of
@@ -811,6 +795,7 @@ class GT(object):
         """
         # local variable - with all formatters already applied
         df = self.apply_formatters(self.raw_df.copy(), mode='raw')
+        caption = self.caption
         if not df.columns.is_unique:
             raise ValueError('tikz routine requires unique column names')
 # \\begin{{{figure}}}{latex}
@@ -859,11 +844,12 @@ class GT(object):
 
         # index
         if show_index:
-            if isinstance(df.index, pd.MultiIndex):
-                nc_index = len(df.index.levels)
-                # df = df.copy().reset_index(drop=False, col_level=df.columns.nlevels - 1)
-            else:
-                nc_index = 1
+            nc_index = df.index.nlevels
+            # if isinstance(df.index, pd.MultiIndex):
+            #     nc_index = len(df.index.levels)
+            #     # df = df.copy().reset_index(drop=False, col_level=df.columns.nlevels - 1)
+            # else:
+            #     nc_index = 1
             # col_level puts the label at the bottom of the column m index.
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", category=pd.errors.PerformanceWarning)
@@ -888,18 +874,20 @@ class GT(object):
             # to the left of... +1
             vrule.add(nc_index + 1)
 
-        if isinstance(df.columns, pd.MultiIndex):
-            nr_columns = len(df.columns.levels)
-        else:
-            nr_columns = 1
+        nr_columns = df.columns.nlevels
+        # if isinstance(df.columns, pd.MultiIndex):
+        #     nr_columns = len(df.columns.levels)
+        # else:
+        #     nr_columns = 1
         logger.debug(f'rows in columns {nr_columns}, cols in index {nc_index}')
 
-        # internal TeX code
-        matrix_name = hex(abs(hash(str(df))))
+        # internal TeX code (same as HTML code)
+        matrix_name = self.df_id #  hex(abs(hash(str(df))))
 
         # note this happens AFTER you have reset the index...need to pass number of index columns
+        # have also converted everything to formatted strings
         # colw, mxmn, tabs = GT.guess_column_widths(df, nc_index=nc_index, float_format=wfloat_format, tabs=tabs,
-        colw, mxmn, tabs = GT.guess_column_widths(df, nc_index=nc_index, float_format=lambda x: str(x), tabs=tabs,
+        colw, mxmn, tabs = GT.guess_column_widths(df, nc_index=nc_index, float_format=lambda x: x, tabs=tabs,
                                                   scale=scale, equal=equal)
         # print(colw, tabs)
         logger.debug(f'tabs: {tabs}')
@@ -1113,8 +1101,9 @@ class GT(object):
         :param tabs:
         :return:
             colw   affects how the table is printed in the md file (actual width of data elements)
-            mxmn   affects aligmnent: are all columns the same width?
-            tabs   affecets the actual output
+            mxmn   affects alignment: are all columns the same width?
+            tabs   affects the actual output
+            equal  if True, all try to make all data columns the same width (can be rejected)
         """
         # this
         # tabs from _tabs, an estimate column widths, determines the size of the table columns as displayed
@@ -1384,7 +1373,7 @@ class sGT(GT):
         pad_lr = 10 if nc < 4 else (5 if nc < 8 else 2)
         pad = (pad_tb, pad_lr, pad_tb, pad_lr)
 
-        font_body = 0.9 if nr < 20 else (0.8 if nr < 40 else 0.7)
+        font_body = 0.75 if nr < 20 else (0.7 if nr < 40 else 0.6)
         font_caption = 1.1 * font_body
         font_head = 1.1 * font_body
 
@@ -1427,13 +1416,12 @@ class sGT(GT):
         - All values are within a reasonable range (e.g., 1800–2100)
         """
         year_columns = []
-        df = df.reset_index(drop=False)
-        for col in df.columns:
+        df = df.reset_index(drop=False, col_level=df.columns.nlevels - 1)
+        for i, col in enumerate(df.columns):
             try:
                 series = pd.to_numeric(df[col], errors='coerce').dropna()
                 if series.dtype.kind in 'iu' and series.between(1800, 2100).all():
                     year_columns.append(col)
             except Exception:
                 continue
-
         return year_columns
