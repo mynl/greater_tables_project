@@ -37,7 +37,7 @@ handler.setLevel(LEVEL)
 formatter = logging.Formatter('%(asctime)s | %(levelname)s |  %(funcName)-15s | %(message)s')
 handler.setFormatter(formatter)
 logger.addHandler(handler)
-logger.info('Logger Setup; module recompiled.')
+logger.info(f'Logger Setup; {__name__} module recompiled.')
 
 
 class GT(object):
@@ -573,6 +573,17 @@ class GT(object):
                     # columns one per level of index
                     html.append(f'<th class="grt-left">{r}</th>')
                 cum_col = 0  # keep track of where we are up to
+                # if not for col span issue you could just to this:
+                # for j in range(self.ncols):
+                #     hrule = f'grt-bhrule-{i}' if i < self.ncolumns - 1 else ''
+                #     if j == 0:
+                #         # start with the first column come what may
+                #         vrule = f'grt-vrule-index'
+                #     elif j >= self.column_change_level[i]:
+                #         vrule = f'grt-vrule-{column_change_level[cum_col]}'
+                #     else:
+                #         vrule = ''
+                #     html.append(f'<th colspan="{colspan}" class="grt-center {hrule} {vrule}">{nm}</th>')
                 # here, the groupby needs to consider all levels at and above i
                 # this concats all the levels
                 # need :i+1 to get down to the ith level
@@ -759,15 +770,15 @@ class GT(object):
                   sparsify=1):
         """
         Write DataFrame to custom tikz matrix to allow greater control of
-        formatting and insertion of horizontal divider lines
+        formatting and insertion of horizontal and vertical divider lines
 
-        Estimates tabs from text width of fields (not so great if includes TeX);
-        manual override available. Tabs gives the widths of each field in
-        em (width of M)
+        Estimates tabs from text width of fields (not so great if includes
+        a lot of TeX macros) with a manual override available. Tabs gives
+        the widths of each field in em (width of M)
 
-        Standard row height = 1.5em seems to work - set in meta
+        Standard row height = 1.5em seems to work - set in meta.
 
-        first and last thick rules by default
+        first and last thick rules
         others below (Python, zero-based) row number, excluding title row
 
         keyword arguments : value (no newlines in value) escape back slashes!
@@ -783,7 +794,7 @@ class GT(object):
 
         sparsify  number of cols of multi index to sparsify
 
-        Issue: colunn with floats and spaces or missing causess problems (VaR, TVaR, EPD, mean and CV table)
+        Issue: column with floats and spaces or missing causes problems (VaR, TVaR, EPD, mean and CV table)
 
         From great.pres_maker.df_to_tikz
 
@@ -824,14 +835,14 @@ class GT(object):
         """
         # local variable - with all formatters already applied
         df = self.apply_formatters(self.raw_df.copy(), mode='raw')
-        caption = self.caption
+        caption = ''
         if not df.columns.is_unique:
             # possible index/body column interaction
             raise ValueError('tikz routine requires unique column names')
 # \\begin{{{figure}}}{latex}
+# \\centering
+# {extra_defs}
         header = """
-\\centering
-{extra_defs}
 \\begin{{tikzpicture}}[
     auto,
     transform shape,
@@ -853,9 +864,11 @@ class GT(object):
 # {caption}
 # \\end{{{figure}}}
 
-        # always a good idea to do this...need to deal with underscores
+        # always a good idea to do this...need to deal with underscores, %
         # and it handles index types that are not strings
         df = GT.clean_index(df)
+        # make sure percents are escaped f
+        df = df.replace(r"(?<!\\)%", r"\%", regex=True)
 
         # we are always showing the index...may regret that???
         # put condition here if needed
@@ -1081,11 +1094,11 @@ class GT(object):
             lt = label
             label = f'\\label{{tab:{label}}}'
         if caption == '':
-            if label != '':
+            if lt != '':
                 logger.info(f'You have a label but no caption; the label {label} will be ignored.')
             caption = '% caption placeholder'
         else:
-            caption = f'\\caption{{{caption} {label}}}'
+            caption = f'\\caption{{{self.caption} {label}}}'
         sio.write(footer.format(figure=figure, post_process=post_process, caption=caption))
 
         self.tex = sio.getvalue()
@@ -1236,7 +1249,7 @@ class GT(object):
     def clean_name(n):
         """
         Escape underscores for using a name in a DataFrame index
-        and converts to a string.
+        and converts to a string. Also escape %.
 
         Called by Tikz routines.
 
@@ -1246,7 +1259,8 @@ class GT(object):
         try:
             if type(n) == str:
                 # quote underscores that are not in dollars
-                return '$'.join((i if n % 2 else i.replace('_', '\\_') for n, i in enumerate(n.split('$'))))
+                return '$'.join((i if n % 2 else i.replace('_', '\\_').replace('%', '\\%')
+                                 for n, i in enumerate(n.split('$'))))
             else:
                 # can't contain an underscore!
                 return str(n)
@@ -1268,7 +1282,7 @@ class GT(object):
         """
         Clean TeX entries in HTML: $ -> \( and \) and $$ to \[ \].
 
-        Apply after all other HTML rendering steps.
+        Apply after all other HTML rendering steps. HTML rendering only.
         """
         text = re.sub(r'\$\$(.*?)\$\$', r'\\[\1\\]', text, flags=re.DOTALL)
         # Convert inline math: $...$ → \(...\)
@@ -1347,10 +1361,13 @@ class sGT(GT):
         """Create Steve House-Style Formatter."""
         nindex = df.index.nlevels
         ncolumns = df.columns.nlevels
-        if ratio_regex != '' and ncolumns == 1:
-            ratio_cols = df.filter(regex=ratio_regex).columns.to_list()
+        if 'ratio_cols' in kwargs:
+            ratio_cols = kwargs['ratio_cols']
         else:
-            ratio_cols = None
+            if ratio_regex != '' and ncolumns == 1:
+                ratio_cols = df.filter(regex=ratio_regex).columns.to_list()
+            else:
+                ratio_cols = None
 
         if guess_years:
             year_cols = sGT.guess_years(df)
@@ -1366,9 +1383,12 @@ class sGT(GT):
 
         # padding
         nr, nc = df.shape
-        pad_tb = 4 if nr < 16 else (2 if nr < 25 else 1)
-        pad_lr = 10 if nc < 9 else (5 if nc < 13 else 2)
-        pad = (pad_tb, pad_lr, pad_tb, pad_lr)
+        if 'padding_trbl' in kwargs:
+            padding_trbl = kwargs['padding_trbl']
+        else:
+            pad_tb = 4 if nr < 16 else (2 if nr < 25 else 1)
+            pad_lr = 10 if nc < 9 else (5 if nc < 13 else 2)
+            padding_trbl = (pad_tb, pad_lr, pad_tb, pad_lr)
 
         font_body = 0.9 if nr < 25 else (0.8 if nr < 41 else 0.7)
         font_caption = np.round(1.1 * font_body, 2)
@@ -1392,7 +1412,7 @@ class sGT(GT):
             'vrule_widths': vrule_widths,
             'sparsify': True,
             'sparsify_columns': True,
-            'padding_trbl': pad,
+            'padding_trbl': padding_trbl,
             'font_body': font_body,
             'font_head': font_head,
             'font_caption': font_caption,

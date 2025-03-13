@@ -1,0 +1,2734 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.6.36">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Stephen J. Mildenhall">
+<meta name="dcterms.date" content="2025-03-13">
+
+<title>All Tables Test - New TestDFGenerator test_suite</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script><script src="tables_files/libs/clipboard/clipboard.min.js"></script>
+<script src="tables_files/libs/quarto-html/quarto.js"></script>
+<script src="tables_files/libs/quarto-html/popper.min.js"></script>
+<script src="tables_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="tables_files/libs/quarto-html/anchor.min.js"></script>
+<link href="tables_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="tables_files/libs/quarto-html/quarto-syntax-highlighting-01c78b5cd655e4cd89133cf59d535862.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="tables_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="tables_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="tables_files/libs/bootstrap/bootstrap-fcfb2e27d9f44eaf269ffcda1f840c64.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<style>html{ scroll-behavior: smooth; }</style>
+<link rel="icon" href="img/favicon.ico" type="image/x-icon">
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" integrity="sha512-c3Nl8+7g4LMSTdrm621y7kf9v3SDPnhxLNhcjFJbKECVnmZHTdo+IRO05sNLTH/D3vA6u1X32ehoLC7WFVdheg==" crossorigin="anonymous"></script>
+
+<script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">In this chapter:</h2>
+   
+  <ul>
+  <li><a href="#python-set-up" id="toc-python-set-up" class="nav-link active" data-scroll-target="#python-set-up"><span class="header-section-number">1</span> Python set-up</a></li>
+  <li><a href="#a-hard-rules-table" id="toc-a-hard-rules-table" class="nav-link" data-scroll-target="#a-hard-rules-table"><span class="header-section-number">2</span> A Hard-Rules table</a></li>
+  <li><a href="#a-table-with-tex" id="toc-a-table-with-tex" class="nav-link" data-scroll-target="#a-table-with-tex"><span class="header-section-number">3</span> A Table with TeX</a></li>
+  <li><a href="#greater_tables-test-suite" id="toc-greater_tables-test-suite" class="nav-link" data-scroll-target="#greater_tables-test-suite"><span class="header-section-number">4</span> Greater_tables Test Suite</a>
+  <ul class="collapse">
+  <li><a href="#test-table-basic" id="toc-test-table-basic" class="nav-link" data-scroll-target="#test-table-basic"><span class="header-section-number">4.1</span> Test Table: basic</a></li>
+  <li><a href="#test-table-timeseries" id="toc-test-table-timeseries" class="nav-link" data-scroll-target="#test-table-timeseries"><span class="header-section-number">4.2</span> Test Table: timeseries</a></li>
+  <li><a href="#test-table-multiindex" id="toc-test-table-multiindex" class="nav-link" data-scroll-target="#test-table-multiindex"><span class="header-section-number">4.3</span> Test Table: multiindex</a></li>
+  <li><a href="#test-table-multicolumns" id="toc-test-table-multicolumns" class="nav-link" data-scroll-target="#test-table-multicolumns"><span class="header-section-number">4.4</span> Test Table: multicolumns</a></li>
+  <li><a href="#test-table-complex" id="toc-test-table-complex" class="nav-link" data-scroll-target="#test-table-complex"><span class="header-section-number">4.5</span> Test Table: complex</a></li>
+  </ul></li>
+  </ul>
+<div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="tables.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li></ul></div></nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">All Tables Test - New TestDFGenerator test_suite</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Stephen J. Mildenhall <a href="mailto:mynl@me.com" class="quarto-title-author-email"><i class="bi bi-envelope"></i></a> <a href="https://orcid.org/0000-0001-6956-0098" class="quarto-title-author-orcid"> <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA2ZpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYwIDYxLjEzNDc3NywgMjAxMC8wMi8xMi0xNzozMjowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDo1N0NEMjA4MDI1MjA2ODExOTk0QzkzNTEzRjZEQTg1NyIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDozM0NDOEJGNEZGNTcxMUUxODdBOEVCODg2RjdCQ0QwOSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDozM0NDOEJGM0ZGNTcxMUUxODdBOEVCODg2RjdCQ0QwOSIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ1M1IE1hY2ludG9zaCI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOkZDN0YxMTc0MDcyMDY4MTE5NUZFRDc5MUM2MUUwNEREIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjU3Q0QyMDgwMjUyMDY4MTE5OTRDOTM1MTNGNkRBODU3Ii8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+84NovQAAAR1JREFUeNpiZEADy85ZJgCpeCB2QJM6AMQLo4yOL0AWZETSqACk1gOxAQN+cAGIA4EGPQBxmJA0nwdpjjQ8xqArmczw5tMHXAaALDgP1QMxAGqzAAPxQACqh4ER6uf5MBlkm0X4EGayMfMw/Pr7Bd2gRBZogMFBrv01hisv5jLsv9nLAPIOMnjy8RDDyYctyAbFM2EJbRQw+aAWw/LzVgx7b+cwCHKqMhjJFCBLOzAR6+lXX84xnHjYyqAo5IUizkRCwIENQQckGSDGY4TVgAPEaraQr2a4/24bSuoExcJCfAEJihXkWDj3ZAKy9EJGaEo8T0QSxkjSwORsCAuDQCD+QILmD1A9kECEZgxDaEZhICIzGcIyEyOl2RkgwAAhkmC+eAm0TAAAAABJRU5ErkJggg=="></a></p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">March 13, 2025</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="python-set-up" class="level1" data-number="1">
+<h1 data-number="1"><span class="header-section-number">1</span> Python set-up</h1>
+<div id="setup" class="cell" data-execution_count="1">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> HTML, display</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib <span class="im">as</span> mpl</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.dates <span class="im">as</span> mdates</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> greater_tables <span class="im">as</span> gter</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> greater_tables.utilities <span class="im">as</span> gtu</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> greater_tables <span class="im">import</span> GT, sGT</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>gter.logger.setLevel(gter.logging.WARNING)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>…code build completed.</p>
+</section>
+<section id="a-hard-rules-table" class="level1" data-number="2">
+<h1 data-number="2"><span class="header-section-number">2</span> A Hard-Rules table</h1>
+<p>Second level index has mixed types. Range of magnitudes. Picking out years.</p>
+<div class="cell" data-execution_count="2">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>level_1 <span class="op">=</span> [<span class="st">"A"</span>, <span class="st">"A"</span>, <span class="st">"B"</span>, <span class="st">"B"</span>, <span class="st">'C'</span>]</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>level_2 <span class="op">=</span> [<span class="st">'Int'</span>, <span class="st">'Float'</span>, <span class="st">'Float'</span>, <span class="dv">3</span>, <span class="st">'Longer Text'</span>]</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>multi_index <span class="op">=</span> pd.MultiIndex.from_arrays([level_1, level_2],</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>        names<span class="op">=</span>[<span class="st">"Level 1"</span>, <span class="st">"Level 2"</span>])</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>start <span class="op">=</span> pd.Timestamp.today().normalize()  <span class="co"># Today's date, normalized to midnight</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>end <span class="op">=</span> pd.Timestamp(<span class="ss">f"</span><span class="sc">{</span>start<span class="sc">.</span>year<span class="sc">}</span><span class="ss">-12-31"</span>)  <span class="co"># End of the year</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>hard <span class="op">=</span> pd.DataFrame(</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>{<span class="st">'years!'</span>: np.arange(<span class="dv">2000</span>, <span class="dv">2025</span>, dtype<span class="op">=</span><span class="bu">int</span>),</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="st">'a'</span>: np.array(np.<span class="bu">round</span>(np.linspace(<span class="op">-</span><span class="dv">100000</span>, <span class="dv">100000</span>, <span class="dv">25</span>), <span class="dv">0</span>), dtype<span class="op">=</span><span class="bu">int</span>),</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="st">'b'</span>: <span class="fl">9.3</span> <span class="op">**</span> np.linspace(<span class="op">-</span><span class="dv">12</span>, <span class="dv">12</span>, <span class="dv">25</span>),</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="st">'c'</span>: np.linspace(<span class="op">-</span><span class="dv">1601</span>, <span class="dv">4000</span>, <span class="dv">25</span>),</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="st">'d'</span>: pd.date_range(start<span class="op">=</span>start, end<span class="op">=</span>end, periods<span class="op">=</span><span class="dv">25</span>),</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="st">'e'</span>: (<span class="st">'once upon a time, risk is hard to define, not in Kansas anymore, '</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>        <span class="st">'neutrinos are hard to detect,  '</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Adam Smith is the father of economics'</span>.split(<span class="st">','</span>) <span class="op">*</span> <span class="dv">5</span>)</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>}).set_index(<span class="st">'years!'</span>)</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a><span class="co"># hard = hard.head()</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>hard.columns <span class="op">=</span> multi_index</span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>hard</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div id="tbl-hard-rules" class="cell quarto-float quarto-figure quarto-figure-left anchored" data-execution_count="2">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-hard-rules-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;1: Quarto generated caption
+</figcaption>
+<div aria-describedby="tbl-hard-rules-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display" data-execution_count="16">
+<div>
+
+<table class="dataframe table table-sm table-striped small">
+  <thead>
+    <tr>
+      <th>Level 1</th>
+      <th colspan="2" halign="left">A</th>
+      <th colspan="2" halign="left">B</th>
+      <th>C</th>
+    </tr>
+    <tr>
+      <th>Level 2</th>
+      <th>Int</th>
+      <th>Float</th>
+      <th>Float</th>
+      <th>3</th>
+      <th>Longer Text</th>
+    </tr>
+    <tr>
+      <th>years!</th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>2000</th>
+      <td>-100000</td>
+      <td>2.388937e-12</td>
+      <td>-1601.000</td>
+      <td>2025-03-13 00:00:00</td>
+      <td>once upon a time</td>
+    </tr>
+    <tr>
+      <th>2001</th>
+      <td>-91667</td>
+      <td>2.221711e-11</td>
+      <td>-1367.625</td>
+      <td>2025-03-25 05:00:00</td>
+      <td>risk is hard to define</td>
+    </tr>
+    <tr>
+      <th>2002</th>
+      <td>-83333</td>
+      <td>2.066191e-10</td>
+      <td>-1134.250</td>
+      <td>2025-04-06 10:00:00</td>
+      <td>not in Kansas anymore</td>
+    </tr>
+    <tr>
+      <th>2003</th>
+      <td>-75000</td>
+      <td>1.921558e-09</td>
+      <td>-900.875</td>
+      <td>2025-04-18 15:00:00</td>
+      <td>neutrinos are hard to detect</td>
+    </tr>
+    <tr>
+      <th>2004</th>
+      <td>-66667</td>
+      <td>1.787049e-08</td>
+      <td>-667.500</td>
+      <td>2025-04-30 20:00:00</td>
+      <td>Adam Smith is the father of economics</td>
+    </tr>
+    <tr>
+      <th>2005</th>
+      <td>-58333</td>
+      <td>1.661955e-07</td>
+      <td>-434.125</td>
+      <td>2025-05-13 01:00:00</td>
+      <td>once upon a time</td>
+    </tr>
+    <tr>
+      <th>2006</th>
+      <td>-50000</td>
+      <td>1.545619e-06</td>
+      <td>-200.750</td>
+      <td>2025-05-25 06:00:00</td>
+      <td>risk is hard to define</td>
+    </tr>
+    <tr>
+      <th>2007</th>
+      <td>-41667</td>
+      <td>1.437425e-05</td>
+      <td>32.625</td>
+      <td>2025-06-06 11:00:00</td>
+      <td>not in Kansas anymore</td>
+    </tr>
+    <tr>
+      <th>2008</th>
+      <td>-33333</td>
+      <td>1.336805e-04</td>
+      <td>266.000</td>
+      <td>2025-06-18 16:00:00</td>
+      <td>neutrinos are hard to detect</td>
+    </tr>
+    <tr>
+      <th>2009</th>
+      <td>-25000</td>
+      <td>1.243229e-03</td>
+      <td>499.375</td>
+      <td>2025-06-30 21:00:00</td>
+      <td>Adam Smith is the father of economics</td>
+    </tr>
+    <tr>
+      <th>2010</th>
+      <td>-16667</td>
+      <td>1.156203e-02</td>
+      <td>732.750</td>
+      <td>2025-07-13 02:00:00</td>
+      <td>once upon a time</td>
+    </tr>
+    <tr>
+      <th>2011</th>
+      <td>-8333</td>
+      <td>1.075269e-01</td>
+      <td>966.125</td>
+      <td>2025-07-25 07:00:00</td>
+      <td>risk is hard to define</td>
+    </tr>
+    <tr>
+      <th>2012</th>
+      <td>0</td>
+      <td>1.000000e+00</td>
+      <td>1199.500</td>
+      <td>2025-08-06 12:00:00</td>
+      <td>not in Kansas anymore</td>
+    </tr>
+    <tr>
+      <th>2013</th>
+      <td>8333</td>
+      <td>9.300000e+00</td>
+      <td>1432.875</td>
+      <td>2025-08-18 17:00:00</td>
+      <td>neutrinos are hard to detect</td>
+    </tr>
+    <tr>
+      <th>2014</th>
+      <td>16667</td>
+      <td>8.649000e+01</td>
+      <td>1666.250</td>
+      <td>2025-08-30 22:00:00</td>
+      <td>Adam Smith is the father of economics</td>
+    </tr>
+    <tr>
+      <th>2015</th>
+      <td>25000</td>
+      <td>8.043570e+02</td>
+      <td>1899.625</td>
+      <td>2025-09-12 03:00:00</td>
+      <td>once upon a time</td>
+    </tr>
+    <tr>
+      <th>2016</th>
+      <td>33333</td>
+      <td>7.480520e+03</td>
+      <td>2133.000</td>
+      <td>2025-09-24 08:00:00</td>
+      <td>risk is hard to define</td>
+    </tr>
+    <tr>
+      <th>2017</th>
+      <td>41667</td>
+      <td>6.956884e+04</td>
+      <td>2366.375</td>
+      <td>2025-10-06 13:00:00</td>
+      <td>not in Kansas anymore</td>
+    </tr>
+    <tr>
+      <th>2018</th>
+      <td>50000</td>
+      <td>6.469902e+05</td>
+      <td>2599.750</td>
+      <td>2025-10-18 18:00:00</td>
+      <td>neutrinos are hard to detect</td>
+    </tr>
+    <tr>
+      <th>2019</th>
+      <td>58333</td>
+      <td>6.017009e+06</td>
+      <td>2833.125</td>
+      <td>2025-10-30 23:00:00</td>
+      <td>Adam Smith is the father of economics</td>
+    </tr>
+    <tr>
+      <th>2020</th>
+      <td>66667</td>
+      <td>5.595818e+07</td>
+      <td>3066.500</td>
+      <td>2025-11-12 04:00:00</td>
+      <td>once upon a time</td>
+    </tr>
+    <tr>
+      <th>2021</th>
+      <td>75000</td>
+      <td>5.204111e+08</td>
+      <td>3299.875</td>
+      <td>2025-11-24 09:00:00</td>
+      <td>risk is hard to define</td>
+    </tr>
+    <tr>
+      <th>2022</th>
+      <td>83333</td>
+      <td>4.839823e+09</td>
+      <td>3533.250</td>
+      <td>2025-12-06 14:00:00</td>
+      <td>not in Kansas anymore</td>
+    </tr>
+    <tr>
+      <th>2023</th>
+      <td>91667</td>
+      <td>4.501035e+10</td>
+      <td>3766.625</td>
+      <td>2025-12-18 19:00:00</td>
+      <td>neutrinos are hard to detect</td>
+    </tr>
+    <tr>
+      <th>2024</th>
+      <td>100000</td>
+      <td>4.185963e+11</td>
+      <td>4000.000</td>
+      <td>2025-12-31 00:00:00</td>
+      <td>Adam Smith is the father of economics</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+</div>
+</div>
+</figure>
+</div>
+</div>
+<p><code>sGT</code> format</p>
+<div class="cell" data-execution_count="3">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>sGT(hard, <span class="st">'A table with varied columns.'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div id="tbl-hard-rules-2" class="cell quarto-float quarto-figure quarto-figure-left anchored" data-execution_count="3">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-hard-rules-2-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;2: Quarto generated caption
+</figcaption>
+<div aria-describedby="tbl-hard-rules-2-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display" data-execution_count="17">
+<div class="greater-table">
+<style>#TCNHUD5MISXWZ { border-collapse: collapse; font-family: "Roboto", "Open Sans Condensed", "Arial", 'Segoe UI', sans-serif; font-size: 0.8em; width: auto; border: none; overflow: auto; } #TCNHUD5MISXWZ caption { padding: 2px 10px 1px 10px; font-size: 0.88em; text-align: center; font-weight: normal; caption-side: top; } #TCNHUD5MISXWZ thead { border-top: 1px solid #000; border-bottom: 1px solid #000; font-size: 0.88em; } #TCNHUD5MISXWZ tbody { border-bottom: 1px solid #000; } #TCNHUD5MISXWZ th { vertical-align: bottom; padding: 2px 10px 2px 10px; } #TCNHUD5MISXWZ td { padding: 1px 10px 1px 10px; vertical-align: top; } #TCNHUD5MISXWZ .grt-hrule-0 { border-top: 0px solid #000; } #TCNHUD5MISXWZ .grt-hrule-1 { border-top: 0px solid #000; } #TCNHUD5MISXWZ .grt-hrule-2 { border-top: 0px solid #000; } #TCNHUD5MISXWZ .grt-bhrule-0 { border-bottom: 1.5px solid #000; } #TCNHUD5MISXWZ .grt-bhrule-1 { border-bottom: 1px solid #000; } #TCNHUD5MISXWZ .grt-vrule-index { border-left: 1.5px solid #000; } #TCNHUD5MISXWZ .grt-vrule-0 { border-left: 1.5px solid #000; } #TCNHUD5MISXWZ .grt-vrule-1 { border-left: 1px solid #000; } #TCNHUD5MISXWZ .grt-vrule-2 { border-left: 0.5px solid #000; } #TCNHUD5MISXWZ .grt-left { text-align: left; } #TCNHUD5MISXWZ .grt-center { text-align: center; } #TCNHUD5MISXWZ .grt-right { text-align: right; font-variant-numeric: tabular-nums; } #TCNHUD5MISXWZ .grt-head { font-family: "Times New Roman", 'Courier New'; font-size: 0.88em; } #TCNHUD5MISXWZ .grt-bold { font-weight: bold; }</style>
+<table id="TCNHUD5MISXWZ">
+<caption>A table with varied columns.</caption>
+<thead>
+<tr>
+<th class="grt-left"></th>
+<th class="grt-center grt-bhrule-0 grt-vrule-index" colspan="2">A</th>
+<th class="grt-center grt-bhrule-0 grt-vrule-0" colspan="2">B</th>
+<th class="grt-center grt-bhrule-0 grt-vrule-0" colspan="1">C</th>
+</tr>
+<tr>
+<th class="grt-left">years!</th>
+<th class="grt-center grt-vrule-index" colspan="1">Int</th>
+<th class="grt-center grt-vrule-1" colspan="1">Float</th>
+<th class="grt-center grt-vrule-0" colspan="1">Float</th>
+<th class="grt-center grt-vrule-1" colspan="1">3</th>
+<th class="grt-center grt-vrule-0" colspan="1">Longer Text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="grt-left">2000</td>
+<td class="grt-right grt-vrule-index">-100,000</td>
+<td class="grt-right grt-vrule-1"> 2.389p</td>
+<td class="grt-right grt-vrule-0">-1,601.00</td>
+<td class="grt-center grt-vrule-1">2025-03-13</td>
+<td class="grt-left grt-vrule-0">once upon a time</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2001</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index">-91,667</td>
+<td class="grt-right grt-hrule-0 grt-vrule-1"> 22.217p</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">-1,367.62</td>
+<td class="grt-center grt-hrule-0 grt-vrule-1">2025-03-25</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0"> risk is hard to define</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2002</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index">-83,333</td>
+<td class="grt-right grt-hrule-0 grt-vrule-1"> 206.619p</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">-1,134.25</td>
+<td class="grt-center grt-hrule-0 grt-vrule-1">2025-04-06</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0"> not in Kansas anymore</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2003</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index">-75,000</td>
+<td class="grt-right grt-hrule-0 grt-vrule-1"> 1.922n</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">-900.88</td>
+<td class="grt-center grt-hrule-0 grt-vrule-1">2025-04-18</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0"> neutrinos are hard to detect</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2004</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index">-66,667</td>
+<td class="grt-right grt-hrule-0 grt-vrule-1"> 17.870n</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">-667.50</td>
+<td class="grt-center grt-hrule-0 grt-vrule-1">2025-04-30</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0">  Adam Smith is the father of economics</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2005</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index">-58,333</td>
+<td class="grt-right grt-hrule-0 grt-vrule-1"> 166.196n</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">-434.12</td>
+<td class="grt-center grt-hrule-0 grt-vrule-1">2025-05-13</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0">once upon a time</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2006</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index">-50,000</td>
+<td class="grt-right grt-hrule-0 grt-vrule-1"> 1.546u</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">-200.75</td>
+<td class="grt-center grt-hrule-0 grt-vrule-1">2025-05-25</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0"> risk is hard to define</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2007</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index">-41,667</td>
+<td class="grt-right grt-hrule-0 grt-vrule-1"> 14.374u</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">32.62</td>
+<td class="grt-center grt-hrule-0 grt-vrule-1">2025-06-06</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0"> not in Kansas anymore</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2008</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index">-33,333</td>
+<td class="grt-right grt-hrule-0 grt-vrule-1"> 133.681u</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">266.00</td>
+<td class="grt-center grt-hrule-0 grt-vrule-1">2025-06-18</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0"> neutrinos are hard to detect</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2009</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index">-25,000</td>
+<td class="grt-right grt-hrule-0 grt-vrule-1"> 1.243m</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">499.38</td>
+<td class="grt-center grt-hrule-0 grt-vrule-1">2025-06-30</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0">  Adam Smith is the father of economics</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2010</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index">-16,667</td>
+<td class="grt-right grt-hrule-0 grt-vrule-1"> 11.562m</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">732.75</td>
+<td class="grt-center grt-hrule-0 grt-vrule-1">2025-07-13</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0">once upon a time</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2011</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index">-8,333</td>
+<td class="grt-right grt-hrule-0 grt-vrule-1"> 107.527m</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">966.12</td>
+<td class="grt-center grt-hrule-0 grt-vrule-1">2025-07-25</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0"> risk is hard to define</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2012</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index">0</td>
+<td class="grt-right grt-hrule-0 grt-vrule-1"> 1.000</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">1,199.50</td>
+<td class="grt-center grt-hrule-0 grt-vrule-1">2025-08-06</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0"> not in Kansas anymore</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2013</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index">8,333</td>
+<td class="grt-right grt-hrule-0 grt-vrule-1"> 9.300</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">1,432.88</td>
+<td class="grt-center grt-hrule-0 grt-vrule-1">2025-08-18</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0"> neutrinos are hard to detect</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2014</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index">16,667</td>
+<td class="grt-right grt-hrule-0 grt-vrule-1"> 86.490</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">1,666.25</td>
+<td class="grt-center grt-hrule-0 grt-vrule-1">2025-08-30</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0">  Adam Smith is the father of economics</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2015</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index">25,000</td>
+<td class="grt-right grt-hrule-0 grt-vrule-1"> 804.357</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">1,899.62</td>
+<td class="grt-center grt-hrule-0 grt-vrule-1">2025-09-12</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0">once upon a time</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2016</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index">33,333</td>
+<td class="grt-right grt-hrule-0 grt-vrule-1"> 7.481k</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">2,133.00</td>
+<td class="grt-center grt-hrule-0 grt-vrule-1">2025-09-24</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0"> risk is hard to define</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2017</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index">41,667</td>
+<td class="grt-right grt-hrule-0 grt-vrule-1"> 69.569k</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">2,366.38</td>
+<td class="grt-center grt-hrule-0 grt-vrule-1">2025-10-06</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0"> not in Kansas anymore</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2018</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index">50,000</td>
+<td class="grt-right grt-hrule-0 grt-vrule-1"> 646.990k</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">2,599.75</td>
+<td class="grt-center grt-hrule-0 grt-vrule-1">2025-10-18</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0"> neutrinos are hard to detect</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2019</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index">58,333</td>
+<td class="grt-right grt-hrule-0 grt-vrule-1"> 6.017M</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">2,833.12</td>
+<td class="grt-center grt-hrule-0 grt-vrule-1">2025-10-30</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0">  Adam Smith is the father of economics</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2020</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index">66,667</td>
+<td class="grt-right grt-hrule-0 grt-vrule-1"> 55.958M</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">3,066.50</td>
+<td class="grt-center grt-hrule-0 grt-vrule-1">2025-11-12</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0">once upon a time</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2021</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index">75,000</td>
+<td class="grt-right grt-hrule-0 grt-vrule-1"> 520.411M</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">3,299.88</td>
+<td class="grt-center grt-hrule-0 grt-vrule-1">2025-11-24</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0"> risk is hard to define</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2022</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index">83,333</td>
+<td class="grt-right grt-hrule-0 grt-vrule-1"> 4.840G</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">3,533.25</td>
+<td class="grt-center grt-hrule-0 grt-vrule-1">2025-12-06</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0"> not in Kansas anymore</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2023</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index">91,667</td>
+<td class="grt-right grt-hrule-0 grt-vrule-1"> 45.010G</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">3,766.62</td>
+<td class="grt-center grt-hrule-0 grt-vrule-1">2025-12-18</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0"> neutrinos are hard to detect</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2024</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index">100,000</td>
+<td class="grt-right grt-hrule-0 grt-vrule-1"> 418.596G</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">4,000.00</td>
+<td class="grt-center grt-hrule-0 grt-vrule-1">2025-12-31</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0">  Adam Smith is the father of economics</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+</div>
+</figure>
+</div>
+</div>
+<p>Illustrate some alternatives.</p>
+<div class="cell" data-execution_count="4">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="in">#| label: tbl-hard-rules-3</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="in">#| tbl-cap: Quarto generated caption</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="in">display(sGT(hard.sample(5).sort_index(), 'No v rules, but h rules',</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="in">        vrule_widths=(0,0,0),</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="in">        hrule_widths=(1,0,0)))</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="in">display(sGT(hard.sample(5).sort_index(),</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="in">        'Change default date and integer formats',</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="in">        default_date_str='%m-%d', default_integer_str='[{x:d}]'))</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="in">display(sGT(hard.sample(5).sort_index(),</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="in">        'Change padding, debug mode lines',</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="in">        default_date_str='%m-%d', default_integer_str='[{x:d}]',</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a><span class="in">        padding_trbl=(10, 10, 20, 20), debug=True))</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div id="tbl-hard-rules-3" class="cell quarto-float quarto-figure quarto-figure-left anchored" data-execution_count="4">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-hard-rules-3-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;3: Quarto generated caption
+</figcaption>
+<div aria-describedby="tbl-hard-rules-3-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display">
+<div class="greater-table">
+<style>#TFXNGOEILM4AI { border-collapse: collapse; font-family: "Roboto", "Open Sans Condensed", "Arial", 'Segoe UI', sans-serif; font-size: 0.9em; width: auto; border: none; overflow: auto; } #TFXNGOEILM4AI caption { padding: 8px 10px 4px 10px; font-size: 0.99em; text-align: center; font-weight: normal; caption-side: top; } #TFXNGOEILM4AI thead { border-top: 1px solid #000; border-bottom: 1px solid #000; font-size: 0.99em; } #TFXNGOEILM4AI tbody { border-bottom: 1px solid #000; } #TFXNGOEILM4AI th { vertical-align: bottom; padding: 8px 10px 8px 10px; } #TFXNGOEILM4AI td { padding: 4px 10px 4px 10px; vertical-align: top; } #TFXNGOEILM4AI .grt-hrule-0 { border-top: 1px solid #000; } #TFXNGOEILM4AI .grt-hrule-1 { border-top: 0px solid #000; } #TFXNGOEILM4AI .grt-hrule-2 { border-top: 0px solid #000; } #TFXNGOEILM4AI .grt-bhrule-0 { border-bottom: 0px solid #000; } #TFXNGOEILM4AI .grt-bhrule-1 { border-bottom: 0px solid #000; } #TFXNGOEILM4AI .grt-vrule-index { border-left: 1.5px solid #000; } #TFXNGOEILM4AI .grt-vrule-0 { border-left: 0px solid #000; } #TFXNGOEILM4AI .grt-vrule-1 { border-left: 0px solid #000; } #TFXNGOEILM4AI .grt-vrule-2 { border-left: 0px solid #000; } #TFXNGOEILM4AI .grt-left { text-align: left; } #TFXNGOEILM4AI .grt-center { text-align: center; } #TFXNGOEILM4AI .grt-right { text-align: right; font-variant-numeric: tabular-nums; } #TFXNGOEILM4AI .grt-head { font-family: "Times New Roman", 'Courier New'; font-size: 0.99em; } #TFXNGOEILM4AI .grt-bold { font-weight: bold; }</style>
+<table id="TFXNGOEILM4AI">
+<caption>No v rules, but h rules</caption>
+<thead>
+<tr>
+<th class="grt-left"></th>
+<th class="grt-center grt-bhrule-0 grt-vrule-index" colspan="2">A</th>
+<th class="grt-center grt-bhrule-0 grt-vrule-0" colspan="2">B</th>
+<th class="grt-center grt-bhrule-0 grt-vrule-0" colspan="1">C</th>
+</tr>
+<tr>
+<th class="grt-left">years!</th>
+<th class="grt-center grt-vrule-index" colspan="1">Int</th>
+<th class="grt-center grt-vrule-1" colspan="1">Float</th>
+<th class="grt-center grt-vrule-0" colspan="1">Float</th>
+<th class="grt-center grt-vrule-1" colspan="1">3</th>
+<th class="grt-center grt-vrule-0" colspan="1">Longer Text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="grt-left">2007</td>
+<td class="grt-right grt-vrule-index">-41,667</td>
+<td class="grt-right grt-vrule-1"> 14.374u</td>
+<td class="grt-right grt-vrule-0">32.62</td>
+<td class="grt-center grt-vrule-1">2025-06-06</td>
+<td class="grt-left grt-vrule-0"> not in Kansas anymore</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2012</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index">0</td>
+<td class="grt-right grt-hrule-0 grt-vrule-1"> 1.000</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">1,199.50</td>
+<td class="grt-center grt-hrule-0 grt-vrule-1">2025-08-06</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0"> not in Kansas anymore</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2016</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index">33,333</td>
+<td class="grt-right grt-hrule-0 grt-vrule-1"> 7.481k</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">2,133.00</td>
+<td class="grt-center grt-hrule-0 grt-vrule-1">2025-09-24</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0"> risk is hard to define</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2020</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index">66,667</td>
+<td class="grt-right grt-hrule-0 grt-vrule-1"> 55.958M</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">3,066.50</td>
+<td class="grt-center grt-hrule-0 grt-vrule-1">2025-11-12</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0">once upon a time</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2021</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index">75,000</td>
+<td class="grt-right grt-hrule-0 grt-vrule-1"> 520.411M</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">3,299.88</td>
+<td class="grt-center grt-hrule-0 grt-vrule-1">2025-11-24</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0"> risk is hard to define</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="cell-output cell-output-display">
+<div class="greater-table">
+<style>#TUWSFT7EPZ6SQ { border-collapse: collapse; font-family: "Roboto", "Open Sans Condensed", "Arial", 'Segoe UI', sans-serif; font-size: 0.9em; width: auto; border: none; overflow: auto; } #TUWSFT7EPZ6SQ caption { padding: 8px 10px 4px 10px; font-size: 0.99em; text-align: center; font-weight: normal; caption-side: top; } #TUWSFT7EPZ6SQ thead { border-top: 1px solid #000; border-bottom: 1px solid #000; font-size: 0.99em; } #TUWSFT7EPZ6SQ tbody { border-bottom: 1px solid #000; } #TUWSFT7EPZ6SQ th { vertical-align: bottom; padding: 8px 10px 8px 10px; } #TUWSFT7EPZ6SQ td { padding: 4px 10px 4px 10px; vertical-align: top; } #TUWSFT7EPZ6SQ .grt-hrule-0 { border-top: 0px solid #000; } #TUWSFT7EPZ6SQ .grt-hrule-1 { border-top: 0px solid #000; } #TUWSFT7EPZ6SQ .grt-hrule-2 { border-top: 0px solid #000; } #TUWSFT7EPZ6SQ .grt-bhrule-0 { border-bottom: 1.5px solid #000; } #TUWSFT7EPZ6SQ .grt-bhrule-1 { border-bottom: 1px solid #000; } #TUWSFT7EPZ6SQ .grt-vrule-index { border-left: 1.5px solid #000; } #TUWSFT7EPZ6SQ .grt-vrule-0 { border-left: 1.5px solid #000; } #TUWSFT7EPZ6SQ .grt-vrule-1 { border-left: 1px solid #000; } #TUWSFT7EPZ6SQ .grt-vrule-2 { border-left: 0.5px solid #000; } #TUWSFT7EPZ6SQ .grt-left { text-align: left; } #TUWSFT7EPZ6SQ .grt-center { text-align: center; } #TUWSFT7EPZ6SQ .grt-right { text-align: right; font-variant-numeric: tabular-nums; } #TUWSFT7EPZ6SQ .grt-head { font-family: "Times New Roman", 'Courier New'; font-size: 0.99em; } #TUWSFT7EPZ6SQ .grt-bold { font-weight: bold; }</style>
+<table id="TUWSFT7EPZ6SQ">
+<caption>Change default date and integer formats</caption>
+<thead>
+<tr>
+<th class="grt-left"></th>
+<th class="grt-center grt-bhrule-0 grt-vrule-index" colspan="2">A</th>
+<th class="grt-center grt-bhrule-0 grt-vrule-0" colspan="2">B</th>
+<th class="grt-center grt-bhrule-0 grt-vrule-0" colspan="1">C</th>
+</tr>
+<tr>
+<th class="grt-left">years!</th>
+<th class="grt-center grt-vrule-index" colspan="1">Int</th>
+<th class="grt-center grt-vrule-1" colspan="1">Float</th>
+<th class="grt-center grt-vrule-0" colspan="1">Float</th>
+<th class="grt-center grt-vrule-1" colspan="1">3</th>
+<th class="grt-center grt-vrule-0" colspan="1">Longer Text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="grt-left">2001</td>
+<td class="grt-right grt-vrule-index">[-91667]</td>
+<td class="grt-right grt-vrule-1"> 22.217p</td>
+<td class="grt-right grt-vrule-0">-1,367.62</td>
+<td class="grt-center grt-vrule-1">03-25</td>
+<td class="grt-left grt-vrule-0"> risk is hard to define</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2005</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index">[-58333]</td>
+<td class="grt-right grt-hrule-0 grt-vrule-1"> 166.196n</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">-434.12</td>
+<td class="grt-center grt-hrule-0 grt-vrule-1">05-13</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0">once upon a time</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2015</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index">[25000]</td>
+<td class="grt-right grt-hrule-0 grt-vrule-1"> 804.357</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">1,899.62</td>
+<td class="grt-center grt-hrule-0 grt-vrule-1">09-12</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0">once upon a time</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2019</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index">[58333]</td>
+<td class="grt-right grt-hrule-0 grt-vrule-1"> 6.017M</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">2,833.12</td>
+<td class="grt-center grt-hrule-0 grt-vrule-1">10-30</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0">  Adam Smith is the father of economics</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2021</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index">[75000]</td>
+<td class="grt-right grt-hrule-0 grt-vrule-1"> 520.411M</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">3,299.88</td>
+<td class="grt-center grt-hrule-0 grt-vrule-1">11-24</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0"> risk is hard to define</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="cell-output cell-output-display">
+<div class="greater-table">
+<style>
+    #TSQHMUQ4QTEY5  {
+    border-collapse: collapse;
+    font-family: "Roboto", "Open Sans Condensed", "Arial", 'Segoe UI', sans-serif;
+    font-size: 0.9em;
+    width: auto;
+    border: none;
+    overflow: auto;
+    }
+    /* tag formats */
+    #TSQHMUQ4QTEY5 caption {
+        padding: 20px 10px 20px 20px;
+        font-size: 0.99em;
+        text-align: center;
+        font-weight: normal;
+        caption-side: top;
+    }
+    #TSQHMUQ4QTEY5 thead {
+        /* top and bottom of header */
+        border-top: 1px solid #0ff;
+        border-bottom: 1px solid #0ff;
+        font-size: 0.99em;
+        }
+    #TSQHMUQ4QTEY5 tbody {
+        /* bottom of body */
+        border-bottom: 1px solid #f0f;
+        }
+    #TSQHMUQ4QTEY5 th  {
+        vertical-align: bottom;
+        padding: 20px 10px 40px 20px;
+    }
+    #TSQHMUQ4QTEY5 td {
+        /* top, right, bottom left cell padding */
+        padding: 10px 10px 20px 20px;
+        vertical-align: top;
+    }
+    /* class overrides */
+    #TSQHMUQ4QTEY5 .grt-hrule-0 {
+        border-top: 0px solid #f00;
+    }
+    #TSQHMUQ4QTEY5 .grt-hrule-1 {
+        border-top: 0px solid #b00;
+    }
+    #TSQHMUQ4QTEY5 .grt-hrule-2 {
+        border-top: 0px solid #900;
+    }
+    /* for the header, there if you have v lines you want h lines
+       hence use vrule_widths */
+    #TSQHMUQ4QTEY5 .grt-bhrule-0 {
+        border-bottom: 1.5px solid #f00;
+    }
+    #TSQHMUQ4QTEY5 .grt-bhrule-1 {
+        border-bottom: 1px solid #b00;
+    }
+    #TSQHMUQ4QTEY5 .grt-vrule-index {
+        border-left: 1.5px solid #0f0;
+    }
+    #TSQHMUQ4QTEY5 .grt-vrule-0 {
+        border-left: 1.5px solid #0f0;
+    }
+    #TSQHMUQ4QTEY5 .grt-vrule-1 {
+        border-left: 1px solid #0a0;
+    }
+    #TSQHMUQ4QTEY5 .grt-vrule-2 {
+        border-left: 0.5px solid #090;
+    }
+    #TSQHMUQ4QTEY5 .grt-left {
+        text-align: left;
+    }
+    #TSQHMUQ4QTEY5 .grt-center {
+        text-align: center;
+    }
+    #TSQHMUQ4QTEY5 .grt-right {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+    }
+    #TSQHMUQ4QTEY5 .grt-head {
+        font-family: "Times New Roman", 'Courier New';
+        font-size: 0.99em;
+    }
+    #TSQHMUQ4QTEY5 .grt-bold {
+        font-weight: bold;
+    }
+</style>
+<table id="TSQHMUQ4QTEY5">
+<caption>Change padding, debug mode lines (id: TSQHMUQ4QTEY5)</caption>
+<thead>
+<tr>
+<th class="grt-left"></th>
+<th class="grt-center grt-bhrule-0 grt-vrule-index" colspan="2">A</th>
+<th class="grt-center grt-bhrule-0 grt-vrule-0" colspan="2">B</th>
+<th class="grt-center grt-bhrule-0 grt-vrule-0" colspan="1">C</th>
+</tr>
+<tr>
+<th class="grt-left">years!</th>
+<th class="grt-center grt-vrule-index" colspan="1">Int</th>
+<th class="grt-center grt-vrule-1" colspan="1">Float</th>
+<th class="grt-center grt-vrule-0" colspan="1">Float</th>
+<th class="grt-center grt-vrule-1" colspan="1">3</th>
+<th class="grt-center grt-vrule-0" colspan="1">Longer Text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="grt-left">2010</td>
+<td class="grt-right grt-vrule-index">[-16667]</td>
+<td class="grt-right grt-vrule-1"> 11.562m</td>
+<td class="grt-right grt-vrule-0">732.75</td>
+<td class="grt-center grt-vrule-1">07-13</td>
+<td class="grt-left grt-vrule-0">once upon a time</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2011</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index">[-8333]</td>
+<td class="grt-right grt-hrule-0 grt-vrule-1"> 107.527m</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">966.12</td>
+<td class="grt-center grt-hrule-0 grt-vrule-1">07-25</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0"> risk is hard to define</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2015</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index">[25000]</td>
+<td class="grt-right grt-hrule-0 grt-vrule-1"> 804.357</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">1,899.62</td>
+<td class="grt-center grt-hrule-0 grt-vrule-1">09-12</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0">once upon a time</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2019</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index">[58333]</td>
+<td class="grt-right grt-hrule-0 grt-vrule-1"> 6.017M</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">2,833.12</td>
+<td class="grt-center grt-hrule-0 grt-vrule-1">10-30</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0">  Adam Smith is the father of economics</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2024</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index">[100000]</td>
+<td class="grt-right grt-hrule-0 grt-vrule-1"> 418.596G</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">4,000.00</td>
+<td class="grt-center grt-hrule-0 grt-vrule-1">12-31</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0">  Adam Smith is the father of economics</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+</div>
+</figure>
+</div>
+</div>
+<p>Here is the raw output.</p>
+<div id="raw-output" class="cell" data-execution_count="5">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>f <span class="op">=</span> sGT(hard.head(<span class="dv">4</span>), debug<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'HTML output</span><span class="ch">\n</span><span class="st">'</span>)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(f._repr_html_())</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'</span><span class="ch">\n\n\n</span><span class="st">TeX output</span><span class="ch">\n</span><span class="st">'</span>)</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(f._repr_latex_())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>HTML output
+
+&lt;div class="greater-table"&gt;
+&lt;style&gt;
+    #T5OTIZGG6UTFR  {
+    border-collapse: collapse;
+    font-family: "Roboto", "Open Sans Condensed", "Arial", 'Segoe UI', sans-serif;
+    font-size: 0.9em;
+    width: auto;
+    border: none;
+    overflow: auto;
+    }
+    /* tag formats */
+    #T5OTIZGG6UTFR caption {
+        padding: 8px 10px 4px 10px;
+        font-size: 0.99em;
+        text-align: center;
+        font-weight: normal;
+        caption-side: top;
+    }
+    #T5OTIZGG6UTFR thead {
+        /* top and bottom of header */
+        border-top: 1px solid #0ff;
+        border-bottom: 1px solid #0ff;
+        font-size: 0.99em;
+        }
+    #T5OTIZGG6UTFR tbody {
+        /* bottom of body */
+        border-bottom: 1px solid #f0f;
+        }
+    #T5OTIZGG6UTFR th  {
+        vertical-align: bottom;
+        padding: 8px 10px 8px 10px;
+    }
+    #T5OTIZGG6UTFR td {
+        /* top, right, bottom left cell padding */
+        padding: 4px 10px 4px 10px;
+        vertical-align: top;
+    }
+    /* class overrides */
+    #T5OTIZGG6UTFR .grt-hrule-0 {
+        border-top: 0px solid #f00;
+    }
+    #T5OTIZGG6UTFR .grt-hrule-1 {
+        border-top: 0px solid #b00;
+    }
+    #T5OTIZGG6UTFR .grt-hrule-2 {
+        border-top: 0px solid #900;
+    }
+    /* for the header, there if you have v lines you want h lines
+       hence use vrule_widths */
+    #T5OTIZGG6UTFR .grt-bhrule-0 {
+        border-bottom: 1.5px solid #f00;
+    }
+    #T5OTIZGG6UTFR .grt-bhrule-1 {
+        border-bottom: 1px solid #b00;
+    }
+    #T5OTIZGG6UTFR .grt-vrule-index {
+        border-left: 1.5px solid #0f0;
+    }
+    #T5OTIZGG6UTFR .grt-vrule-0 {
+        border-left: 1.5px solid #0f0;
+    }
+    #T5OTIZGG6UTFR .grt-vrule-1 {
+        border-left: 1px solid #0a0;
+    }
+    #T5OTIZGG6UTFR .grt-vrule-2 {
+        border-left: 0.5px solid #090;
+    }
+    #T5OTIZGG6UTFR .grt-left {
+        text-align: left;
+    }
+    #T5OTIZGG6UTFR .grt-center {
+        text-align: center;
+    }
+    #T5OTIZGG6UTFR .grt-right {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+    }
+    #T5OTIZGG6UTFR .grt-head {
+        font-family: "Times New Roman", 'Courier New';
+        font-size: 0.99em;
+    }
+    #T5OTIZGG6UTFR .grt-bold {
+        font-weight: bold;
+    }
+&lt;/style&gt;
+&lt;table id="T5OTIZGG6UTFR"&gt;
+&lt;caption&gt; (id: T5OTIZGG6UTFR)&lt;/caption&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th class="grt-left"&gt;&lt;/th&gt;
+&lt;th class="grt-center grt-bhrule-0 grt-vrule-index" colspan="2"&gt;A&lt;/th&gt;
+&lt;th class="grt-center grt-bhrule-0 grt-vrule-0" colspan="2"&gt;B&lt;/th&gt;
+&lt;th class="grt-center grt-bhrule-0 grt-vrule-0" colspan="1"&gt;C&lt;/th&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;th class="grt-left"&gt;years!&lt;/th&gt;
+&lt;th class="grt-center grt-vrule-index" colspan="1"&gt;Int&lt;/th&gt;
+&lt;th class="grt-center grt-vrule-1" colspan="1"&gt;Float&lt;/th&gt;
+&lt;th class="grt-center grt-vrule-0" colspan="1"&gt;Float&lt;/th&gt;
+&lt;th class="grt-center grt-vrule-1" colspan="1"&gt;3&lt;/th&gt;
+&lt;th class="grt-center grt-vrule-0" colspan="1"&gt;Longer Text&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td class="grt-left"&gt;2000&lt;/td&gt;
+&lt;td class="grt-right grt-vrule-index"&gt;-100,000&lt;/td&gt;
+&lt;td class="grt-right grt-vrule-1"&gt; 2.389p&lt;/td&gt;
+&lt;td class="grt-right grt-vrule-0"&gt;-1,601.00&lt;/td&gt;
+&lt;td class="grt-center grt-vrule-1"&gt;2025-03-13&lt;/td&gt;
+&lt;td class="grt-left grt-vrule-0"&gt;once upon a time&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td class="grt-left grt-hrule-0"&gt;2001&lt;/td&gt;
+&lt;td class="grt-right grt-hrule-0 grt-vrule-index"&gt;-91,667&lt;/td&gt;
+&lt;td class="grt-right grt-hrule-0 grt-vrule-1"&gt; 22.217p&lt;/td&gt;
+&lt;td class="grt-right grt-hrule-0 grt-vrule-0"&gt;-1,367.62&lt;/td&gt;
+&lt;td class="grt-center grt-hrule-0 grt-vrule-1"&gt;2025-03-25&lt;/td&gt;
+&lt;td class="grt-left grt-hrule-0 grt-vrule-0"&gt; risk is hard to define&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td class="grt-left grt-hrule-0"&gt;2002&lt;/td&gt;
+&lt;td class="grt-right grt-hrule-0 grt-vrule-index"&gt;-83,333&lt;/td&gt;
+&lt;td class="grt-right grt-hrule-0 grt-vrule-1"&gt; 206.619p&lt;/td&gt;
+&lt;td class="grt-right grt-hrule-0 grt-vrule-0"&gt;-1,134.25&lt;/td&gt;
+&lt;td class="grt-center grt-hrule-0 grt-vrule-1"&gt;2025-04-06&lt;/td&gt;
+&lt;td class="grt-left grt-hrule-0 grt-vrule-0"&gt; not in Kansas anymore&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td class="grt-left grt-hrule-0"&gt;2003&lt;/td&gt;
+&lt;td class="grt-right grt-hrule-0 grt-vrule-index"&gt;-75,000&lt;/td&gt;
+&lt;td class="grt-right grt-hrule-0 grt-vrule-1"&gt; 1.922n&lt;/td&gt;
+&lt;td class="grt-right grt-hrule-0 grt-vrule-0"&gt;-900.88&lt;/td&gt;
+&lt;td class="grt-center grt-hrule-0 grt-vrule-1"&gt;2025-04-18&lt;/td&gt;
+&lt;td class="grt-left grt-hrule-0 grt-vrule-0"&gt; neutrinos are hard to detect&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;&lt;/div&gt;
+
+
+
+TeX output
+
+
+\begin{tikzpicture}[
+    auto,
+    transform shape,
+    nosep/.style={inner sep=0},
+    table/.style={
+        matrix of nodes,
+        row sep=0.125em,
+        column sep=0.375em,
+        nodes in empty cells,
+        nodes={rectangle, scale=0.635, text badly ragged},
+    row 1/.style={nodes={text=black, anchor=north, inner ysep=0, text height=0, text depth=0}},
+    row 2/.style={nodes={text=black, anchor=south, inner ysep=.2em, minimum height=1.3em, font=\bfseries}},
+    row 3/.style={nodes={text=black, anchor=south, inner ysep=.2em, minimum height=1.3em, font=\bfseries}},
+    column  1/.style={nodes={align=left  }, text height=0.9em, text depth=0.2em, inner xsep=0.375em, inner ysep=0, text width=3.60em},
+    column  2/.style={nodes={align=right }, nosep, text width=6.59em},
+    column  3/.style={nodes={align=right }, nosep, text width=7.41em},
+    column  4/.style={nodes={align=right }, nosep, text width=7.41em},
+    column  5/.style={nodes={align=center}, nosep, text width=8.24em},
+    column  6/.style={nodes={align=left  }, nosep, text width=23.89em},
+    column  7/.style={text height=0.9em, text depth=0.2em, nosep, text width=0em}   }]
+\matrix (T5OTIZGG6UTFR) [table, ampersand replacement=\&amp;]{
+      \&amp;          \&amp;           \&amp;           \&amp;            \&amp;                               \&amp; \\
+ \grtspacer \&amp; A\grtspacer \&amp; \grtspacer \&amp; B\grtspacer \&amp; \grtspacer \&amp; C\grtspacer                   \&amp; \\
+ years!\grtspacer \&amp; Int\grtspacer \&amp; Float\grtspacer \&amp; Float\grtspacer \&amp; 3\grtspacer \&amp; Longer Text\grtspacer         \&amp; \\
+ 2000 \&amp; -100,000 \&amp;    2.389p \&amp; -1,601.00 \&amp; 2025-03-13 \&amp; once upon a time              \&amp; \\
+ 2001 \&amp;  -91,667 \&amp;   22.217p \&amp; -1,367.62 \&amp; 2025-03-25 \&amp;  risk is hard to define       \&amp; \\
+ 2002 \&amp;  -83,333 \&amp;  206.619p \&amp; -1,134.25 \&amp; 2025-04-06 \&amp;  not in Kansas anymore        \&amp; \\
+ 2003 \&amp;  -75,000 \&amp;    1.922n \&amp;   -900.88 \&amp; 2025-04-18 \&amp;  neutrinos are hard to detect \&amp; \\
+};
+
+\path[draw, thick] (T5OTIZGG6UTFR-1-1.south west)  -- (T5OTIZGG6UTFR-1-7.south east);
+\path[draw, semithick] ([yshift=-0.0625em]T5OTIZGG6UTFR-3-1.south west)  -- ([yshift=-0.0625em]T5OTIZGG6UTFR-3-7.south east);
+\path[draw, thick] ([yshift=-0.3125em]T5OTIZGG6UTFR-7-1.base west)  -- ([yshift=-0.3125em]T5OTIZGG6UTFR-7-7.base east);
+\path[draw, very thin] ([xshift=-0.1875em, yshift=-0.0625em]T5OTIZGG6UTFR-2-2.south west)  -- ([yshift=-0.0625em]T5OTIZGG6UTFR-2-7.south east);
+\path[draw, very thin] ([xshift=-0.1875em]T5OTIZGG6UTFR-1-2.south west)  -- ([yshift=-0.3125em, xshift=-0.1875em]T5OTIZGG6UTFR-7-2.base west);
+\path[draw, ultra thin] ([xshift=0.1875em, yshift=-0.0625em]T5OTIZGG6UTFR-1-3.south east)  -- ([yshift=-0.3125em, xshift=0.1875em]T5OTIZGG6UTFR-7-3.base east);
+\path[draw, ultra thin] ([xshift=0.1875em, yshift=-0.0625em]T5OTIZGG6UTFR-1-5.south east)  -- ([yshift=-0.3125em, xshift=0.1875em]T5OTIZGG6UTFR-7-5.base east);
+
+
+
+\end{tikzpicture}
+</code></pre>
+</div>
+</div>
+</section>
+<section id="a-table-with-tex" class="level1" data-number="3">
+<h1 data-number="3"><span class="header-section-number">3</span> A Table with TeX</h1>
+<div class="cell" data-execution_count="6">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>index <span class="op">=</span> pd.Index([<span class="st">"A"</span>, <span class="st">"B"</span>, <span class="st">"$C_1$"</span>, <span class="st">"C_2 not tex"</span>, <span class="st">'$</span><span class="ch">\\</span><span class="st">cos(A)$'</span>])</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>tex <span class="op">=</span> pd.DataFrame(</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>{<span class="st">'x'</span>: np.arange(<span class="dv">2020</span>, <span class="dv">2025</span>, dtype<span class="op">=</span><span class="bu">int</span>),</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="st">'b'</span>: np.random.random(<span class="dv">5</span>),</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="st">'a1'</span>: [<span class="ss">f'$x^</span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">$'</span> <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">5</span>,<span class="dv">10</span>)],</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="st">'a2'</span>: [<span class="ss">f'$</span><span class="ch">\\</span><span class="ss">sin(</span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">x</span><span class="ch">\\</span><span class="ss">pi/n)$'</span> <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">5</span>,<span class="dv">10</span>)],</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="st">'a3'</span>: [<span class="ss">f'$x^</span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">$'</span> <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">5</span>,<span class="dv">10</span>)],</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="st">'a4'</span>: [<span class="ss">f'</span><span class="ch">\\</span><span class="ss">(x^</span><span class="sc">{</span>i<span class="sc">}</span><span class="ch">\\</span><span class="ss">)'</span> <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">5</span>,<span class="dv">10</span>)],</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>}).set_index(<span class="st">'x'</span>)</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>tex <span class="op">=</span> tex.head()</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>tex.columns <span class="op">=</span> index</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>tex</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div id="tbl-tex" class="cell quarto-float quarto-figure quarto-figure-left anchored" data-execution_count="6">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-tex-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;4: Quarto generated caption: table displayed by default routine.
+</figcaption>
+<div aria-describedby="tbl-tex-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display" data-execution_count="20">
+<div>
+
+<table class="dataframe table table-sm table-striped small">
+  <thead>
+    <tr>
+      <th></th>
+      <th>A</th>
+      <th>B</th>
+      <th>$C_1$</th>
+      <th>C_2 not tex</th>
+      <th>$\cos(A)$</th>
+    </tr>
+    <tr>
+      <th>x</th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>2020</th>
+      <td>0.995457</td>
+      <td>$x^5$</td>
+      <td>$\sin(5x\pi/n)$</td>
+      <td>$x^5$</td>
+      <td>\(x^5\)</td>
+    </tr>
+    <tr>
+      <th>2021</th>
+      <td>0.857346</td>
+      <td>$x^6$</td>
+      <td>$\sin(6x\pi/n)$</td>
+      <td>$x^6$</td>
+      <td>\(x^6\)</td>
+    </tr>
+    <tr>
+      <th>2022</th>
+      <td>0.421736</td>
+      <td>$x^7$</td>
+      <td>$\sin(7x\pi/n)$</td>
+      <td>$x^7$</td>
+      <td>\(x^7\)</td>
+    </tr>
+    <tr>
+      <th>2023</th>
+      <td>0.157557</td>
+      <td>$x^8$</td>
+      <td>$\sin(8x\pi/n)$</td>
+      <td>$x^8$</td>
+      <td>\(x^8\)</td>
+    </tr>
+    <tr>
+      <th>2024</th>
+      <td>0.663769</td>
+      <td>$x^9$</td>
+      <td>$\sin(9x\pi/n)$</td>
+      <td>$x^9$</td>
+      <td>\(x^9\)</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+</div>
+</div>
+</figure>
+</div>
+</div>
+<div class="cell" data-execution_count="7">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>sGT(tex, <span class="st">'GT Caption'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div id="tbl-tex-2" class="cell quarto-float quarto-figure quarto-figure-left anchored" data-execution_count="7">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-tex-2-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;5: Quarto generated caption
+</figcaption>
+<div aria-describedby="tbl-tex-2-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display" data-execution_count="21">
+<div class="greater-table">
+<style>#THQU3YNABUCTB { border-collapse: collapse; font-family: "Roboto", "Open Sans Condensed", "Arial", 'Segoe UI', sans-serif; font-size: 0.9em; width: auto; border: none; overflow: auto; } #THQU3YNABUCTB caption { padding: 8px 10px 4px 10px; font-size: 0.99em; text-align: center; font-weight: normal; caption-side: top; } #THQU3YNABUCTB thead { border-top: 1px solid #000; border-bottom: 1px solid #000; font-size: 0.99em; } #THQU3YNABUCTB tbody { border-bottom: 1px solid #000; } #THQU3YNABUCTB th { vertical-align: bottom; padding: 8px 10px 8px 10px; } #THQU3YNABUCTB td { padding: 4px 10px 4px 10px; vertical-align: top; } #THQU3YNABUCTB .grt-hrule-0 { border-top: 0px solid #000; } #THQU3YNABUCTB .grt-hrule-1 { border-top: 0px solid #000; } #THQU3YNABUCTB .grt-hrule-2 { border-top: 0px solid #000; } #THQU3YNABUCTB .grt-bhrule-0 { border-bottom: 0px solid #000; } #THQU3YNABUCTB .grt-bhrule-1 { border-bottom: 0px solid #000; } #THQU3YNABUCTB .grt-vrule-index { border-left: 1px solid #000; } #THQU3YNABUCTB .grt-vrule-0 { border-left: 0px solid #000; } #THQU3YNABUCTB .grt-vrule-1 { border-left: 0px solid #000; } #THQU3YNABUCTB .grt-vrule-2 { border-left: 0px solid #000; } #THQU3YNABUCTB .grt-left { text-align: left; } #THQU3YNABUCTB .grt-center { text-align: center; } #THQU3YNABUCTB .grt-right { text-align: right; font-variant-numeric: tabular-nums; } #THQU3YNABUCTB .grt-head { font-family: "Times New Roman", 'Courier New'; font-size: 0.99em; } #THQU3YNABUCTB .grt-bold { font-weight: bold; }</style>
+<table id="THQU3YNABUCTB">
+<caption>GT Caption</caption>
+<thead>
+<tr>
+<th class="grt-left">x</th>
+<th class="grt-center grt-vrule-index" colspan="1">A</th>
+<th class="grt-center grt-vrule-0" colspan="1">B</th>
+<th class="grt-center grt-vrule-0" colspan="1">\(C_1\)</th>
+<th class="grt-center grt-vrule-0" colspan="1">C_2 not tex</th>
+<th class="grt-center grt-vrule-0" colspan="1">\(\cos(A)\)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="grt-left">2020</td>
+<td class="grt-right grt-vrule-index">0.99546</td>
+<td class="grt-left grt-vrule-0">\(x^5\)</td>
+<td class="grt-left grt-vrule-0">\(\sin(5x\pi/n)\)</td>
+<td class="grt-left grt-vrule-0">\(x^5\)</td>
+<td class="grt-left grt-vrule-0">\(x^5\)</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2021</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index">0.85735</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0">\(x^6\)</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0">\(\sin(6x\pi/n)\)</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0">\(x^6\)</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0">\(x^6\)</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2022</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index">0.42174</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0">\(x^7\)</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0">\(\sin(7x\pi/n)\)</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0">\(x^7\)</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0">\(x^7\)</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2023</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index">0.15756</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0">\(x^8\)</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0">\(\sin(8x\pi/n)\)</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0">\(x^8\)</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0">\(x^8\)</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2024</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index">0.66377</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0">\(x^9\)</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0">\(\sin(9x\pi/n)\)</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0">\(x^9\)</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0">\(x^9\)</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+</div>
+</figure>
+</div>
+</div>
+<p>Ratio columns.</p>
+<div class="cell" data-execution_count="8">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>tex.columns <span class="op">=</span> [<span class="st">"A (%)"</span>, <span class="st">"B"</span>, <span class="st">"$C_1$"</span>, <span class="st">"C_2 not tex"</span>, <span class="st">'$</span><span class="ch">\\</span><span class="st">cos(A)$'</span>]</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>sGT(tex, <span class="st">'Ratio columns in A'</span>, ratio_cols<span class="op">=</span><span class="st">'A (%)'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div id="tbl-tex-3" class="cell quarto-float quarto-figure quarto-figure-left anchored" data-execution_count="8">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-tex-3-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;6: greater table output
+</figcaption>
+<div aria-describedby="tbl-tex-3-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display" data-execution_count="22">
+<div class="greater-table">
+<style>#TCGLH2YVOEUDY { border-collapse: collapse; font-family: "Roboto", "Open Sans Condensed", "Arial", 'Segoe UI', sans-serif; font-size: 0.9em; width: auto; border: none; overflow: auto; } #TCGLH2YVOEUDY caption { padding: 8px 10px 4px 10px; font-size: 0.99em; text-align: center; font-weight: normal; caption-side: top; } #TCGLH2YVOEUDY thead { border-top: 1px solid #000; border-bottom: 1px solid #000; font-size: 0.99em; } #TCGLH2YVOEUDY tbody { border-bottom: 1px solid #000; } #TCGLH2YVOEUDY th { vertical-align: bottom; padding: 8px 10px 8px 10px; } #TCGLH2YVOEUDY td { padding: 4px 10px 4px 10px; vertical-align: top; } #TCGLH2YVOEUDY .grt-hrule-0 { border-top: 0px solid #000; } #TCGLH2YVOEUDY .grt-hrule-1 { border-top: 0px solid #000; } #TCGLH2YVOEUDY .grt-hrule-2 { border-top: 0px solid #000; } #TCGLH2YVOEUDY .grt-bhrule-0 { border-bottom: 0px solid #000; } #TCGLH2YVOEUDY .grt-bhrule-1 { border-bottom: 0px solid #000; } #TCGLH2YVOEUDY .grt-vrule-index { border-left: 1px solid #000; } #TCGLH2YVOEUDY .grt-vrule-0 { border-left: 0px solid #000; } #TCGLH2YVOEUDY .grt-vrule-1 { border-left: 0px solid #000; } #TCGLH2YVOEUDY .grt-vrule-2 { border-left: 0px solid #000; } #TCGLH2YVOEUDY .grt-left { text-align: left; } #TCGLH2YVOEUDY .grt-center { text-align: center; } #TCGLH2YVOEUDY .grt-right { text-align: right; font-variant-numeric: tabular-nums; } #TCGLH2YVOEUDY .grt-head { font-family: "Times New Roman", 'Courier New'; font-size: 0.99em; } #TCGLH2YVOEUDY .grt-bold { font-weight: bold; }</style>
+<table id="TCGLH2YVOEUDY">
+<caption>Ratio columns in A</caption>
+<thead>
+<tr>
+<th class="grt-left">x</th>
+<th class="grt-center grt-vrule-index" colspan="1">A (%)</th>
+<th class="grt-center grt-vrule-0" colspan="1">B</th>
+<th class="grt-center grt-vrule-0" colspan="1">\(C_1\)</th>
+<th class="grt-center grt-vrule-0" colspan="1">C_2 not tex</th>
+<th class="grt-center grt-vrule-0" colspan="1">\(\cos(A)\)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="grt-left">2020</td>
+<td class="grt-right grt-vrule-index">99.5%</td>
+<td class="grt-left grt-vrule-0">\(x^5\)</td>
+<td class="grt-left grt-vrule-0">\(\sin(5x\pi/n)\)</td>
+<td class="grt-left grt-vrule-0">\(x^5\)</td>
+<td class="grt-left grt-vrule-0">\(x^5\)</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2021</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index">85.7%</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0">\(x^6\)</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0">\(\sin(6x\pi/n)\)</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0">\(x^6\)</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0">\(x^6\)</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2022</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index">42.2%</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0">\(x^7\)</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0">\(\sin(7x\pi/n)\)</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0">\(x^7\)</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0">\(x^7\)</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2023</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index">15.8%</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0">\(x^8\)</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0">\(\sin(8x\pi/n)\)</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0">\(x^8\)</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0">\(x^8\)</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2024</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index">66.4%</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0">\(x^9\)</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0">\(\sin(9x\pi/n)\)</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0">\(x^9\)</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0">\(x^9\)</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+</div>
+</figure>
+</div>
+</div>
+</section>
+<section id="greater_tables-test-suite" class="level1" data-number="4">
+<h1 data-number="4"><span class="header-section-number">4</span> Greater_tables Test Suite</h1>
+<div id="greater-tables-test" class="cell" data-execution_count="9">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>test_gen <span class="op">=</span> gtu.TestDFGenerator(<span class="dv">0</span>, <span class="dv">0</span>)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>ans <span class="op">=</span> test_gen.test_suite()    </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<section id="test-table-basic" class="level2" data-number="4.1">
+<h2 data-number="4.1" class="anchored" data-anchor-id="test-table-basic"><span class="header-section-number">4.1</span> Test Table: basic</h2>
+<div class="cell" data-execution_count="10">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>hrw <span class="op">=</span> (<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>)</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>sGT(ans[<span class="st">'basic'</span>], <span class="st">"Basic"</span>, ratio_cols<span class="op">=</span><span class="st">'z'</span>, aligners<span class="op">=</span>{<span class="st">'w'</span>: <span class="st">'l'</span>},</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>        hrule_widths<span class="op">=</span>hrw)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div id="tbl-greater-tables-test-0" class="cell quarto-float quarto-figure quarto-figure-left anchored" data-execution_count="10">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-greater-tables-test-0-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;7: Output for test table basic
+</figcaption>
+<div aria-describedby="tbl-greater-tables-test-0-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display" data-execution_count="24">
+<div class="greater-table">
+<style>#TZUUF6WWSVSP4 { border-collapse: collapse; font-family: "Roboto", "Open Sans Condensed", "Arial", 'Segoe UI', sans-serif; font-size: 0.9em; width: auto; border: none; overflow: auto; } #TZUUF6WWSVSP4 caption { padding: 8px 10px 4px 10px; font-size: 0.99em; text-align: center; font-weight: normal; caption-side: top; } #TZUUF6WWSVSP4 thead { border-top: 1px solid #000; border-bottom: 1px solid #000; font-size: 0.99em; } #TZUUF6WWSVSP4 tbody { border-bottom: 1px solid #000; } #TZUUF6WWSVSP4 th { vertical-align: bottom; padding: 8px 10px 8px 10px; } #TZUUF6WWSVSP4 td { padding: 4px 10px 4px 10px; vertical-align: top; } #TZUUF6WWSVSP4 .grt-hrule-0 { border-top: 0px solid #000; } #TZUUF6WWSVSP4 .grt-hrule-1 { border-top: 0px solid #000; } #TZUUF6WWSVSP4 .grt-hrule-2 { border-top: 0px solid #000; } #TZUUF6WWSVSP4 .grt-bhrule-0 { border-bottom: 0px solid #000; } #TZUUF6WWSVSP4 .grt-bhrule-1 { border-bottom: 0px solid #000; } #TZUUF6WWSVSP4 .grt-vrule-index { border-left: 1px solid #000; } #TZUUF6WWSVSP4 .grt-vrule-0 { border-left: 0px solid #000; } #TZUUF6WWSVSP4 .grt-vrule-1 { border-left: 0px solid #000; } #TZUUF6WWSVSP4 .grt-vrule-2 { border-left: 0px solid #000; } #TZUUF6WWSVSP4 .grt-left { text-align: left; } #TZUUF6WWSVSP4 .grt-center { text-align: center; } #TZUUF6WWSVSP4 .grt-right { text-align: right; font-variant-numeric: tabular-nums; } #TZUUF6WWSVSP4 .grt-head { font-family: "Times New Roman", 'Courier New'; font-size: 0.99em; } #TZUUF6WWSVSP4 .grt-bold { font-weight: bold; }</style>
+<table id="TZUUF6WWSVSP4">
+<caption>Basic</caption>
+<thead>
+<tr>
+<th class="grt-left">evaporates</th>
+<th class="grt-center grt-vrule-index" colspan="1">ceramic str</th>
+<th class="grt-center grt-vrule-0" colspan="1">fiftieth float</th>
+<th class="grt-center grt-vrule-0" colspan="1">implies float</th>
+<th class="grt-center grt-vrule-0" colspan="1">olympia float</th>
+<th class="grt-center grt-vrule-0" colspan="1">pantheon int</th>
+<th class="grt-center grt-vrule-0" colspan="1">rats float</th>
+<th class="grt-center grt-vrule-0" colspan="1">scaffold int</th>
+<th class="grt-center grt-vrule-0" colspan="1">toddler float</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="grt-left">10,409</td>
+<td class="grt-left grt-vrule-index">societies</td>
+<td class="grt-right grt-vrule-0">0.02865</td>
+<td class="grt-right grt-vrule-0">0.00145</td>
+<td class="grt-right grt-vrule-0">-0.000y</td>
+<td class="grt-right grt-vrule-0">526,677,827</td>
+<td class="grt-right grt-vrule-0"> 103.967</td>
+<td class="grt-right grt-vrule-0">685,501,337</td>
+<td class="grt-right grt-vrule-0">6.814</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">11,474</td>
+<td class="grt-left grt-hrule-0 grt-vrule-index">sizable</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">0.18563</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">0.00112</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">-39374173793.449Y</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">179,726,540</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0"> 1.077</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">206,756,860</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">0.000</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">15,227</td>
+<td class="grt-left grt-hrule-0 grt-vrule-index">rebutted</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">1.48621</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">0.00000</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0"> 0.016y</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">4,947,776</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0"> 1.664k</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">732,146,626</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">0.000</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">40,821</td>
+<td class="grt-left grt-hrule-0 grt-vrule-index">olympics</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">0.00013</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">0.05809</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0"> 9.971Y</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">503,498,901</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0"> 3.657</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">606,679,824</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">0.000</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">54,855</td>
+<td class="grt-left grt-hrule-0 grt-vrule-index">privates</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">0.00001</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">0.00001</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">-45.091k</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">543,946,419</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0"> 995.521k</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">461,624,371</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">0.000</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">57,213</td>
+<td class="grt-left grt-hrule-0 grt-vrule-index">tabulation</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">0.00000</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">0.00000</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0"> 3.848f</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">669,326,426</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0"> 9.816k</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">961,890,639</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">0.000</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">68,535</td>
+<td class="grt-left grt-hrule-0 grt-vrule-index">moaned</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">0.00000</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">0.00055</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0"> 290.243f</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">125,810,115</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0"> 101.479m</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">732,897,423</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">0.000</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">76,492</td>
+<td class="grt-left grt-hrule-0 grt-vrule-index">files</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">0.00000</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">0.00000</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0"> 553.051p</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">702,688,276</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0"> 83.909k</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">572,343,944</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">0.370</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">85,224</td>
+<td class="grt-left grt-hrule-0 grt-vrule-index">prosecutions</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">0.00199</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">1.69601</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">-0.000y</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">798,624,265</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0"> 329.542m</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">513,642,001</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">0.000</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">90,600</td>
+<td class="grt-left grt-hrule-0 grt-vrule-index">euphoria</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">0.00830</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">0.00005</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">-0.000y</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">935,309,131</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0"> 343.642M</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">424,932,480</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">7.075</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+</div>
+</figure>
+</div>
+</div>
+<p>Comments go here.</p>
+</section>
+<section id="test-table-timeseries" class="level2" data-number="4.2">
+<h2 data-number="4.2" class="anchored" data-anchor-id="test-table-timeseries"><span class="header-section-number">4.2</span> Test Table: timeseries</h2>
+<div class="cell" data-execution_count="11">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>hrw <span class="op">=</span> (<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>)</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>sGT(ans[<span class="st">'timeseries'</span>], <span class="st">"Timeseries"</span>, ratio_cols<span class="op">=</span><span class="st">'z'</span>, aligners<span class="op">=</span>{<span class="st">'w'</span>: <span class="st">'l'</span>},</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>        hrule_widths<span class="op">=</span>hrw)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div id="tbl-greater-tables-test-1" class="cell quarto-float quarto-figure quarto-figure-left anchored" data-execution_count="11">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-greater-tables-test-1-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;8: Output for test table timeseries
+</figcaption>
+<div aria-describedby="tbl-greater-tables-test-1-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display" data-execution_count="25">
+<div class="greater-table">
+<style>#TMAEZSTDMJFAZ { border-collapse: collapse; font-family: "Roboto", "Open Sans Condensed", "Arial", 'Segoe UI', sans-serif; font-size: 0.9em; width: auto; border: none; overflow: auto; } #TMAEZSTDMJFAZ caption { padding: 4px 10px 2px 10px; font-size: 0.99em; text-align: center; font-weight: normal; caption-side: top; } #TMAEZSTDMJFAZ thead { border-top: 1px solid #000; border-bottom: 1px solid #000; font-size: 0.99em; } #TMAEZSTDMJFAZ tbody { border-bottom: 1px solid #000; } #TMAEZSTDMJFAZ th { vertical-align: bottom; padding: 4px 10px 4px 10px; } #TMAEZSTDMJFAZ td { padding: 2px 10px 2px 10px; vertical-align: top; } #TMAEZSTDMJFAZ .grt-hrule-0 { border-top: 0px solid #000; } #TMAEZSTDMJFAZ .grt-hrule-1 { border-top: 0px solid #000; } #TMAEZSTDMJFAZ .grt-hrule-2 { border-top: 0px solid #000; } #TMAEZSTDMJFAZ .grt-bhrule-0 { border-bottom: 0px solid #000; } #TMAEZSTDMJFAZ .grt-bhrule-1 { border-bottom: 0px solid #000; } #TMAEZSTDMJFAZ .grt-vrule-index { border-left: 1px solid #000; } #TMAEZSTDMJFAZ .grt-vrule-0 { border-left: 0px solid #000; } #TMAEZSTDMJFAZ .grt-vrule-1 { border-left: 0px solid #000; } #TMAEZSTDMJFAZ .grt-vrule-2 { border-left: 0px solid #000; } #TMAEZSTDMJFAZ .grt-left { text-align: left; } #TMAEZSTDMJFAZ .grt-center { text-align: center; } #TMAEZSTDMJFAZ .grt-right { text-align: right; font-variant-numeric: tabular-nums; } #TMAEZSTDMJFAZ .grt-head { font-family: "Times New Roman", 'Courier New'; font-size: 0.99em; } #TMAEZSTDMJFAZ .grt-bold { font-weight: bold; }</style>
+<table id="TMAEZSTDMJFAZ">
+<caption>Timeseries</caption>
+<thead>
+<tr>
+<th class="grt-left">adults</th>
+<th class="grt-center grt-vrule-index" colspan="1">Disjointed Additional Demilitarized float</th>
+<th class="grt-center grt-vrule-0" colspan="1">Impending Wired Elderly float</th>
+<th class="grt-center grt-vrule-0" colspan="1">Soften Richardson Biggest year</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="grt-left">2009-04-13</td>
+<td class="grt-right grt-vrule-index"> 107.969M</td>
+<td class="grt-right grt-vrule-0"> 935.028m</td>
+<td class="grt-right grt-vrule-0">1996</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2009-05-26</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index"> 817.898m</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0"> 8.691G</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">2021</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2009-07-05</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index"> 2.128k</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0"> 24.905k</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">2000</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2010-01-24</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index"> 268.457m</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0"> 7.100k</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">2021</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2010-03-31</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index"> 141.709m</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0"> 10.495</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">2003</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2010-11-14</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index"> 45.264</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0"> 10.550</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">2011</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2011-05-09</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index"> 1.089M</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0"> 2.937</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">2022</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2012-05-08</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index"> 1.772k</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0"> 34.705M</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">2002</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2013-08-06</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index"> 517.389m</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0"> 2.647G</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">2028</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2013-12-08</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index"> 967.957</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0"> 170.925M</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">2014</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2015-06-10</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index"> 71.580k</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0"> 83.367M</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">2028</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2017-09-01</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index"> 19.038</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0"> 2.302k</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">2014</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2023-05-27</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index"> 45.203k</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0"> 25.982k</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">2001</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2023-12-02</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index"> 404.669</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0"> 2.725</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">2021</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2025-01-12</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index"> 422.991</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0"> 326.360</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">2007</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2025-09-05</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index"> 6.442G</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0"> 6.803M</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">2000</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2026-02-27</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index"> 354.139</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0"> 42.374k</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">1995</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2027-11-24</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index"> 39.643</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0"> 10.480M</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">2010</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2029-03-31</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index"> 88.799</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0"> 4.459G</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">2024</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">2033-01-19</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index"> 1.207M</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0"> 137.121m</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">2005</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+</div>
+</figure>
+</div>
+</div>
+<p>Comments go here.</p>
+</section>
+<section id="test-table-multiindex" class="level2" data-number="4.3">
+<h2 data-number="4.3" class="anchored" data-anchor-id="test-table-multiindex"><span class="header-section-number">4.3</span> Test Table: multiindex</h2>
+<div class="cell" data-execution_count="12">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>hrw <span class="op">=</span> (<span class="fl">1.5</span>, <span class="fl">1.0</span>, <span class="fl">0.5</span>)</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>sGT(ans[<span class="st">'multiindex'</span>], <span class="st">"Multiindex"</span>, ratio_cols<span class="op">=</span><span class="st">'z'</span>, aligners<span class="op">=</span>{<span class="st">'w'</span>: <span class="st">'l'</span>},</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>        hrule_widths<span class="op">=</span>hrw)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div id="tbl-greater-tables-test-2" class="cell quarto-float quarto-figure quarto-figure-left anchored" data-execution_count="12">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-greater-tables-test-2-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;9: Output for test table multiindex
+</figcaption>
+<div aria-describedby="tbl-greater-tables-test-2-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display" data-execution_count="26">
+<div class="greater-table">
+<style>#TXAL452NFKPQS { border-collapse: collapse; font-family: "Roboto", "Open Sans Condensed", "Arial", 'Segoe UI', sans-serif; font-size: 0.9em; width: auto; border: none; overflow: auto; } #TXAL452NFKPQS caption { padding: 8px 10px 4px 10px; font-size: 0.99em; text-align: center; font-weight: normal; caption-side: top; } #TXAL452NFKPQS thead { border-top: 2px solid #000; border-bottom: 2px solid #000; font-size: 0.99em; } #TXAL452NFKPQS tbody { border-bottom: 2px solid #000; } #TXAL452NFKPQS th { vertical-align: bottom; padding: 8px 10px 8px 10px; } #TXAL452NFKPQS td { padding: 4px 10px 4px 10px; vertical-align: top; } #TXAL452NFKPQS .grt-hrule-0 { border-top: 1.5px solid #000; } #TXAL452NFKPQS .grt-hrule-1 { border-top: 1.0px solid #000; } #TXAL452NFKPQS .grt-hrule-2 { border-top: 0.5px solid #000; } #TXAL452NFKPQS .grt-bhrule-0 { border-bottom: 0px solid #000; } #TXAL452NFKPQS .grt-bhrule-1 { border-bottom: 0px solid #000; } #TXAL452NFKPQS .grt-vrule-index { border-left: 1px solid #000; } #TXAL452NFKPQS .grt-vrule-0 { border-left: 0px solid #000; } #TXAL452NFKPQS .grt-vrule-1 { border-left: 0px solid #000; } #TXAL452NFKPQS .grt-vrule-2 { border-left: 0px solid #000; } #TXAL452NFKPQS .grt-left { text-align: left; } #TXAL452NFKPQS .grt-center { text-align: center; } #TXAL452NFKPQS .grt-right { text-align: right; font-variant-numeric: tabular-nums; } #TXAL452NFKPQS .grt-head { font-family: "Times New Roman", 'Courier New'; font-size: 0.99em; } #TXAL452NFKPQS .grt-bold { font-weight: bold; }</style>
+<table id="TXAL452NFKPQS">
+<caption>Multiindex</caption>
+<thead>
+<tr>
+<th class="grt-left">detonations</th>
+<th class="grt-left">devalued</th>
+<th class="grt-left">agility</th>
+<th class="grt-center grt-vrule-index" colspan="1">Dysfunctional Doubts Posits float</th>
+<th class="grt-center grt-vrule-0" colspan="1">Leon Combatting Stresses year</th>
+<th class="grt-center grt-vrule-0" colspan="1">Overnight Consumers Rotary int</th>
+<th class="grt-center grt-vrule-0" colspan="1">Payments Mousetrap Individualistic date</th>
+<th class="grt-center grt-vrule-0" colspan="1">Reinforce Autocratic Axiomatic float</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="grt-left">20,574</td>
+<td class="grt-left">indiscriminately</td>
+<td class="grt-left">57,727</td>
+<td class="grt-right grt-vrule-index">0.00000</td>
+<td class="grt-right grt-vrule-0">2022</td>
+<td class="grt-right grt-vrule-0">762,834,901</td>
+<td class="grt-center grt-vrule-0">2017-06-03</td>
+<td class="grt-right grt-vrule-0">0.07216</td>
+</tr>
+<tr>
+<td class="grt-left"></td>
+<td class="grt-left"></td>
+<td class="grt-left grt-hrule-2">61,353</td>
+<td class="grt-right grt-hrule-2 grt-vrule-index">0.00002</td>
+<td class="grt-right grt-hrule-2 grt-vrule-0">2006</td>
+<td class="grt-right grt-hrule-2 grt-vrule-0">298,343,230</td>
+<td class="grt-center grt-hrule-2 grt-vrule-0">2025-08-22</td>
+<td class="grt-right grt-hrule-2 grt-vrule-0">0.59526</td>
+</tr>
+<tr>
+<td class="grt-left"></td>
+<td class="grt-left grt-hrule-1">materialize</td>
+<td class="grt-left grt-hrule-1">10,240</td>
+<td class="grt-right grt-hrule-1 grt-vrule-index">0.60477</td>
+<td class="grt-right grt-hrule-1 grt-vrule-0">2023</td>
+<td class="grt-right grt-hrule-1 grt-vrule-0">168,555,498</td>
+<td class="grt-center grt-hrule-1 grt-vrule-0">2011-10-23</td>
+<td class="grt-right grt-hrule-1 grt-vrule-0">0.00000</td>
+</tr>
+<tr>
+<td class="grt-left"></td>
+<td class="grt-left"></td>
+<td class="grt-left grt-hrule-2">85,702</td>
+<td class="grt-right grt-hrule-2 grt-vrule-index">0.00002</td>
+<td class="grt-right grt-hrule-2 grt-vrule-0">2002</td>
+<td class="grt-right grt-hrule-2 grt-vrule-0">488,116,656</td>
+<td class="grt-center grt-hrule-2 grt-vrule-0">2017-06-03</td>
+<td class="grt-right grt-hrule-2 grt-vrule-0">0.00000</td>
+</tr>
+<tr>
+<td class="grt-left"></td>
+<td class="grt-left grt-hrule-1">scholarly</td>
+<td class="grt-left grt-hrule-1">23,780</td>
+<td class="grt-right grt-hrule-1 grt-vrule-index">0.00000</td>
+<td class="grt-right grt-hrule-1 grt-vrule-0">1998</td>
+<td class="grt-right grt-hrule-1 grt-vrule-0">219,153,143</td>
+<td class="grt-center grt-hrule-1 grt-vrule-0">2023-01-27</td>
+<td class="grt-right grt-hrule-1 grt-vrule-0">0.17047</td>
+</tr>
+<tr>
+<td class="grt-left"></td>
+<td class="grt-left"></td>
+<td class="grt-left grt-hrule-2">64,048</td>
+<td class="grt-right grt-hrule-2 grt-vrule-index">0.00197</td>
+<td class="grt-right grt-hrule-2 grt-vrule-0">1991</td>
+<td class="grt-right grt-hrule-2 grt-vrule-0">698,426,451</td>
+<td class="grt-center grt-hrule-2 grt-vrule-0">2008-12-05</td>
+<td class="grt-right grt-hrule-2 grt-vrule-0">0.00000</td>
+</tr>
+<tr>
+<td class="grt-left"></td>
+<td class="grt-left"></td>
+<td class="grt-left grt-hrule-2">84,014</td>
+<td class="grt-right grt-hrule-2 grt-vrule-index">0.00000</td>
+<td class="grt-right grt-hrule-2 grt-vrule-0">2016</td>
+<td class="grt-right grt-hrule-2 grt-vrule-0">281,105,803</td>
+<td class="grt-center grt-hrule-2 grt-vrule-0">2029-04-12</td>
+<td class="grt-right grt-hrule-2 grt-vrule-0">0.00000</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">40,259</td>
+<td class="grt-left grt-hrule-0">indiscriminately</td>
+<td class="grt-left grt-hrule-0">5,715</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index">0.11305</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">1993</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">809,111,705</td>
+<td class="grt-center grt-hrule-0 grt-vrule-0">2011-10-23</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">0.00003</td>
+</tr>
+<tr>
+<td class="grt-left"></td>
+<td class="grt-left"></td>
+<td class="grt-left grt-hrule-2">92,591</td>
+<td class="grt-right grt-hrule-2 grt-vrule-index">0.00252</td>
+<td class="grt-right grt-hrule-2 grt-vrule-0">1991</td>
+<td class="grt-right grt-hrule-2 grt-vrule-0">548,720,682</td>
+<td class="grt-center grt-hrule-2 grt-vrule-0">2023-01-27</td>
+<td class="grt-right grt-hrule-2 grt-vrule-0">8.53509</td>
+</tr>
+<tr>
+<td class="grt-left"></td>
+<td class="grt-left grt-hrule-1">scholarly</td>
+<td class="grt-left grt-hrule-1">27,103</td>
+<td class="grt-right grt-hrule-1 grt-vrule-index">0.00000</td>
+<td class="grt-right grt-hrule-1 grt-vrule-0">2002</td>
+<td class="grt-right grt-hrule-1 grt-vrule-0">489,381,416</td>
+<td class="grt-center grt-hrule-1 grt-vrule-0">2008-12-05</td>
+<td class="grt-right grt-hrule-1 grt-vrule-0">0.00000</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+</div>
+</figure>
+</div>
+</div>
+<p>Comments go here.</p>
+</section>
+<section id="test-table-multicolumns" class="level2" data-number="4.4">
+<h2 data-number="4.4" class="anchored" data-anchor-id="test-table-multicolumns"><span class="header-section-number">4.4</span> Test Table: multicolumns</h2>
+<div class="cell" data-execution_count="13">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>hrw <span class="op">=</span> (<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>)</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>sGT(ans[<span class="st">'multicolumns'</span>], <span class="st">"Multicolumns"</span>, ratio_cols<span class="op">=</span><span class="st">'z'</span>, aligners<span class="op">=</span>{<span class="st">'w'</span>: <span class="st">'l'</span>},</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>        hrule_widths<span class="op">=</span>hrw)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div id="tbl-greater-tables-test-3" class="cell quarto-float quarto-figure quarto-figure-left anchored" data-execution_count="13">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-greater-tables-test-3-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;10: Output for test table multicolumns
+</figcaption>
+<div aria-describedby="tbl-greater-tables-test-3-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display" data-execution_count="27">
+<div class="greater-table">
+<style>#TTFZ3RBZT3HZ4 { border-collapse: collapse; font-family: "Roboto", "Open Sans Condensed", "Arial", 'Segoe UI', sans-serif; font-size: 0.9em; width: auto; border: none; overflow: auto; } #TTFZ3RBZT3HZ4 caption { padding: 8px 10px 4px 10px; font-size: 0.99em; text-align: center; font-weight: normal; caption-side: top; } #TTFZ3RBZT3HZ4 thead { border-top: 1px solid #000; border-bottom: 1px solid #000; font-size: 0.99em; } #TTFZ3RBZT3HZ4 tbody { border-bottom: 1px solid #000; } #TTFZ3RBZT3HZ4 th { vertical-align: bottom; padding: 8px 10px 8px 10px; } #TTFZ3RBZT3HZ4 td { padding: 4px 10px 4px 10px; vertical-align: top; } #TTFZ3RBZT3HZ4 .grt-hrule-0 { border-top: 0px solid #000; } #TTFZ3RBZT3HZ4 .grt-hrule-1 { border-top: 0px solid #000; } #TTFZ3RBZT3HZ4 .grt-hrule-2 { border-top: 0px solid #000; } #TTFZ3RBZT3HZ4 .grt-bhrule-0 { border-bottom: 1.5px solid #000; } #TTFZ3RBZT3HZ4 .grt-bhrule-1 { border-bottom: 1px solid #000; } #TTFZ3RBZT3HZ4 .grt-vrule-index { border-left: 2px solid #000; } #TTFZ3RBZT3HZ4 .grt-vrule-0 { border-left: 1.5px solid #000; } #TTFZ3RBZT3HZ4 .grt-vrule-1 { border-left: 1px solid #000; } #TTFZ3RBZT3HZ4 .grt-vrule-2 { border-left: 0.5px solid #000; } #TTFZ3RBZT3HZ4 .grt-left { text-align: left; } #TTFZ3RBZT3HZ4 .grt-center { text-align: center; } #TTFZ3RBZT3HZ4 .grt-right { text-align: right; font-variant-numeric: tabular-nums; } #TTFZ3RBZT3HZ4 .grt-head { font-family: "Times New Roman", 'Courier New'; font-size: 0.99em; } #TTFZ3RBZT3HZ4 .grt-bold { font-weight: bold; }</style>
+<table id="TTFZ3RBZT3HZ4">
+<caption>Multicolumns</caption>
+<thead>
+<tr>
+<th class="grt-left"></th>
+<th class="grt-center grt-bhrule-0 grt-vrule-index" colspan="3">bosom</th>
+<th class="grt-center grt-bhrule-0 grt-vrule-0" colspan="2">commons</th>
+</tr>
+<tr>
+<th class="grt-left"></th>
+<th class="grt-center grt-bhrule-1 grt-vrule-index" colspan="1">ratchet</th>
+<th class="grt-center grt-bhrule-1 grt-vrule-1" colspan="2">sometimes</th>
+<th class="grt-center grt-bhrule-1 grt-vrule-0" colspan="1">arrests</th>
+<th class="grt-center grt-bhrule-1 grt-vrule-1" colspan="1">ratchet</th>
+</tr>
+<tr>
+<th class="grt-left">supplier</th>
+<th class="grt-center grt-vrule-index" colspan="1">cancelling</th>
+<th class="grt-center grt-vrule-1" colspan="1">science</th>
+<th class="grt-center grt-vrule-2" colspan="1">stumbles</th>
+<th class="grt-center grt-vrule-0" colspan="1">subtle</th>
+<th class="grt-center grt-vrule-1" colspan="1">entertained</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="grt-left">327</td>
+<td class="grt-center grt-vrule-index">2032-06-25</td>
+<td class="grt-right grt-vrule-1">273,138,806</td>
+<td class="grt-right grt-vrule-2">0.00052</td>
+<td class="grt-right grt-vrule-0">-1,965</td>
+<td class="grt-center grt-vrule-1">2028-03-01</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">3,520</td>
+<td class="grt-center grt-hrule-0 grt-vrule-index">2025-07-03</td>
+<td class="grt-right grt-hrule-0 grt-vrule-1">122,144,336</td>
+<td class="grt-right grt-hrule-0 grt-vrule-2">0.00000</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">-759</td>
+<td class="grt-center grt-hrule-0 grt-vrule-1">2027-05-03</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">23,699</td>
+<td class="grt-center grt-hrule-0 grt-vrule-index">2013-07-10</td>
+<td class="grt-right grt-hrule-0 grt-vrule-1">393,170,147</td>
+<td class="grt-right grt-hrule-0 grt-vrule-2">0.00008</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">6,786</td>
+<td class="grt-center grt-hrule-0 grt-vrule-1">2017-10-16</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">28,848</td>
+<td class="grt-center grt-hrule-0 grt-vrule-index">2032-06-25</td>
+<td class="grt-right grt-hrule-0 grt-vrule-1">818,799,717</td>
+<td class="grt-right grt-hrule-0 grt-vrule-2">0.00000</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">9,859</td>
+<td class="grt-center grt-hrule-0 grt-vrule-1">2028-03-01</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">36,270</td>
+<td class="grt-center grt-hrule-0 grt-vrule-index">2010-06-25</td>
+<td class="grt-right grt-hrule-0 grt-vrule-1">316,633,702</td>
+<td class="grt-right grt-hrule-0 grt-vrule-2">0.09127</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">-1,874</td>
+<td class="grt-center grt-hrule-0 grt-vrule-1">2016-11-30</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">80,893</td>
+<td class="grt-center grt-hrule-0 grt-vrule-index">2024-02-18</td>
+<td class="grt-right grt-hrule-0 grt-vrule-1">368,321,833</td>
+<td class="grt-right grt-hrule-0 grt-vrule-2">0.00000</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">3,714</td>
+<td class="grt-center grt-hrule-0 grt-vrule-1">2027-05-03</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">85,336</td>
+<td class="grt-center grt-hrule-0 grt-vrule-index">2017-09-04</td>
+<td class="grt-right grt-hrule-0 grt-vrule-1">191,056,028</td>
+<td class="grt-right grt-hrule-0 grt-vrule-2">0.01245</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">5,293</td>
+<td class="grt-center grt-hrule-0 grt-vrule-1">2020-11-29</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">86,984</td>
+<td class="grt-center grt-hrule-0 grt-vrule-index">2013-07-10</td>
+<td class="grt-right grt-hrule-0 grt-vrule-1">838,550,345</td>
+<td class="grt-right grt-hrule-0 grt-vrule-2">0.27572</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">2,516</td>
+<td class="grt-center grt-hrule-0 grt-vrule-1">2009-05-20</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">91,074</td>
+<td class="grt-center grt-hrule-0 grt-vrule-index">2013-07-10</td>
+<td class="grt-right grt-hrule-0 grt-vrule-1">384,738,496</td>
+<td class="grt-right grt-hrule-0 grt-vrule-2">0.10552</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">9,979</td>
+<td class="grt-center grt-hrule-0 grt-vrule-1">2016-11-30</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">92,318</td>
+<td class="grt-center grt-hrule-0 grt-vrule-index">2010-08-24</td>
+<td class="grt-right grt-hrule-0 grt-vrule-1">388,216,948</td>
+<td class="grt-right grt-hrule-0 grt-vrule-2">2.57733</td>
+<td class="grt-right grt-hrule-0 grt-vrule-0">-8,707</td>
+<td class="grt-center grt-hrule-0 grt-vrule-1">2027-05-03</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+</div>
+</figure>
+</div>
+</div>
+<p>Comments go here.</p>
+</section>
+<section id="test-table-complex" class="level2" data-number="4.5">
+<h2 data-number="4.5" class="anchored" data-anchor-id="test-table-complex"><span class="header-section-number">4.5</span> Test Table: complex</h2>
+<div class="cell" data-execution_count="14">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>hrw <span class="op">=</span> (<span class="fl">1.5</span>, <span class="fl">1.0</span>, <span class="fl">0.5</span>)</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>sGT(ans[<span class="st">'complex'</span>], <span class="st">"Complex"</span>, ratio_cols<span class="op">=</span><span class="st">'z'</span>, aligners<span class="op">=</span>{<span class="st">'w'</span>: <span class="st">'l'</span>},</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>        hrule_widths<span class="op">=</span>hrw)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div id="tbl-greater-tables-test-4" class="cell quarto-float quarto-figure quarto-figure-left anchored" data-execution_count="14">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-greater-tables-test-4-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;11: Output for test table complex
+</figcaption>
+<div aria-describedby="tbl-greater-tables-test-4-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display" data-execution_count="28">
+<div class="greater-table">
+<style>#TESLP7POJRKHM { border-collapse: collapse; font-family: "Roboto", "Open Sans Condensed", "Arial", 'Segoe UI', sans-serif; font-size: 0.9em; width: auto; border: none; overflow: auto; } #TESLP7POJRKHM caption { padding: 4px 5px 2px 5px; font-size: 0.99em; text-align: center; font-weight: normal; caption-side: top; } #TESLP7POJRKHM thead { border-top: 2px solid #000; border-bottom: 2px solid #000; font-size: 0.99em; } #TESLP7POJRKHM tbody { border-bottom: 2px solid #000; } #TESLP7POJRKHM th { vertical-align: bottom; padding: 4px 5px 4px 5px; } #TESLP7POJRKHM td { padding: 2px 5px 2px 5px; vertical-align: top; } #TESLP7POJRKHM .grt-hrule-0 { border-top: 1.5px solid #000; } #TESLP7POJRKHM .grt-hrule-1 { border-top: 1.0px solid #000; } #TESLP7POJRKHM .grt-hrule-2 { border-top: 0.5px solid #000; } #TESLP7POJRKHM .grt-bhrule-0 { border-bottom: 1.5px solid #000; } #TESLP7POJRKHM .grt-bhrule-1 { border-bottom: 1px solid #000; } #TESLP7POJRKHM .grt-vrule-index { border-left: 2px solid #000; } #TESLP7POJRKHM .grt-vrule-0 { border-left: 1.5px solid #000; } #TESLP7POJRKHM .grt-vrule-1 { border-left: 1px solid #000; } #TESLP7POJRKHM .grt-vrule-2 { border-left: 0.5px solid #000; } #TESLP7POJRKHM .grt-left { text-align: left; } #TESLP7POJRKHM .grt-center { text-align: center; } #TESLP7POJRKHM .grt-right { text-align: right; font-variant-numeric: tabular-nums; } #TESLP7POJRKHM .grt-head { font-family: "Times New Roman", 'Courier New'; font-size: 0.99em; } #TESLP7POJRKHM .grt-bold { font-weight: bold; }</style>
+<table id="TESLP7POJRKHM">
+<caption>Complex</caption>
+<thead>
+<tr>
+<th class="grt-left"></th>
+<th class="grt-left"></th>
+<th class="grt-left"></th>
+<th class="grt-center grt-bhrule-0 grt-vrule-index" colspan="7">fleece</th>
+<th class="grt-center grt-bhrule-0 grt-vrule-0" colspan="3">tools</th>
+</tr>
+<tr>
+<th class="grt-left"></th>
+<th class="grt-left"></th>
+<th class="grt-left"></th>
+<th class="grt-center grt-bhrule-1 grt-vrule-index" colspan="3">baking</th>
+<th class="grt-center grt-bhrule-1 grt-vrule-1" colspan="4">hide</th>
+<th class="grt-center grt-bhrule-1 grt-vrule-0" colspan="2">baking</th>
+<th class="grt-center grt-bhrule-1 grt-vrule-1" colspan="1">titanium</th>
+</tr>
+<tr>
+<th class="grt-left">liking</th>
+<th class="grt-left">groaned</th>
+<th class="grt-left">canals</th>
+<th class="grt-center grt-vrule-index" colspan="1">existent</th>
+<th class="grt-center grt-vrule-2" colspan="1">fluffy</th>
+<th class="grt-center grt-vrule-2" colspan="1">spelling</th>
+<th class="grt-center grt-vrule-1" colspan="1">ending</th>
+<th class="grt-center grt-vrule-2" colspan="1">incompetent</th>
+<th class="grt-center grt-vrule-2" colspan="1">maximal</th>
+<th class="grt-center grt-vrule-2" colspan="1">spec</th>
+<th class="grt-center grt-vrule-0" colspan="1">inadequate</th>
+<th class="grt-center grt-vrule-2" colspan="1">redefines</th>
+<th class="grt-center grt-vrule-1" colspan="1">mention</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="grt-left">53,194</td>
+<td class="grt-left">bogota</td>
+<td class="grt-left">13,026</td>
+<td class="grt-right grt-vrule-index">-552323.738Y</td>
+<td class="grt-right grt-vrule-2"> 54.240k</td>
+<td class="grt-right grt-vrule-2">-115.648G</td>
+<td class="grt-right grt-vrule-1"> 1.928G</td>
+<td class="grt-right grt-vrule-2">2010</td>
+<td class="grt-right grt-vrule-2">138,408,307</td>
+<td class="grt-right grt-vrule-2">657,932,466</td>
+<td class="grt-left grt-vrule-0">hearsay</td>
+<td class="grt-right grt-vrule-2">1,028</td>
+<td class="grt-center grt-vrule-1">2027-05-06</td>
+</tr>
+<tr>
+<td class="grt-left"></td>
+<td class="grt-left"></td>
+<td class="grt-left grt-hrule-2">18,208</td>
+<td class="grt-right grt-hrule-2 grt-vrule-index"> 0.000y</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2"> 1.165M</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2"> 1.479</td>
+<td class="grt-right grt-hrule-2 grt-vrule-1"> 27.888k</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">2006</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">818,352,467</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">893,101,570</td>
+<td class="grt-left grt-hrule-2 grt-vrule-0">imposing</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">3,877</td>
+<td class="grt-center grt-hrule-2 grt-vrule-1">2028-01-08</td>
+</tr>
+<tr>
+<td class="grt-left"></td>
+<td class="grt-left"></td>
+<td class="grt-left grt-hrule-2">96,246</td>
+<td class="grt-right grt-hrule-2 grt-vrule-index">-1.535Y</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2"> 9.641M</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2"> 110.678p</td>
+<td class="grt-right grt-hrule-2 grt-vrule-1"> 18.207M</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">2007</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">132,838,183</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">879,878,186</td>
+<td class="grt-left grt-hrule-2 grt-vrule-0">easing</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">-1,708</td>
+<td class="grt-center grt-hrule-2 grt-vrule-1">2020-10-12</td>
+</tr>
+<tr>
+<td class="grt-left"></td>
+<td class="grt-left grt-hrule-1">luxurious</td>
+<td class="grt-left grt-hrule-1">11,021</td>
+<td class="grt-right grt-hrule-1 grt-vrule-index"> 0.344y</td>
+<td class="grt-right grt-hrule-1 grt-vrule-2"> 756.089M</td>
+<td class="grt-right grt-hrule-1 grt-vrule-2">-0.000y</td>
+<td class="grt-right grt-hrule-1 grt-vrule-1"> 4.327M</td>
+<td class="grt-right grt-hrule-1 grt-vrule-2">2004</td>
+<td class="grt-right grt-hrule-1 grt-vrule-2">976,447,973</td>
+<td class="grt-right grt-hrule-1 grt-vrule-2">120,413,519</td>
+<td class="grt-left grt-hrule-1 grt-vrule-0">stalls</td>
+<td class="grt-right grt-hrule-1 grt-vrule-2">5,110</td>
+<td class="grt-center grt-hrule-1 grt-vrule-1">2016-12-08</td>
+</tr>
+<tr>
+<td class="grt-left"></td>
+<td class="grt-left"></td>
+<td class="grt-left grt-hrule-2">13,873</td>
+<td class="grt-right grt-hrule-2 grt-vrule-index"> 0.210y</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2"> 35.454k</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2"> 4.090Z</td>
+<td class="grt-right grt-hrule-2 grt-vrule-1"> 33.572M</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">2008</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">211,552,636</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">411,139,821</td>
+<td class="grt-left grt-hrule-2 grt-vrule-0">repetition</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">7,475</td>
+<td class="grt-center grt-hrule-2 grt-vrule-1">2014-12-30</td>
+</tr>
+<tr>
+<td class="grt-left"></td>
+<td class="grt-left"></td>
+<td class="grt-left grt-hrule-2">78,735</td>
+<td class="grt-right grt-hrule-2 grt-vrule-index"> 0.000y</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2"> 7.696M</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2"> 0.000y</td>
+<td class="grt-right grt-hrule-2 grt-vrule-1"> 11.170M</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">2019</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">654,128,157</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">200,316,409</td>
+<td class="grt-left grt-hrule-2 grt-vrule-0">shorten</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">5,625</td>
+<td class="grt-center grt-hrule-2 grt-vrule-1">2017-05-29</td>
+</tr>
+<tr>
+<td class="grt-left"></td>
+<td class="grt-left grt-hrule-1">quit</td>
+<td class="grt-left grt-hrule-1">11,093</td>
+<td class="grt-right grt-hrule-1 grt-vrule-index">-427.685n</td>
+<td class="grt-right grt-hrule-1 grt-vrule-2"> 1.299</td>
+<td class="grt-right grt-hrule-1 grt-vrule-2"> 1.614f</td>
+<td class="grt-right grt-hrule-1 grt-vrule-1"> 1.276G</td>
+<td class="grt-right grt-hrule-1 grt-vrule-2">2023</td>
+<td class="grt-right grt-hrule-1 grt-vrule-2">397,964,703</td>
+<td class="grt-right grt-hrule-1 grt-vrule-2">847,379,181</td>
+<td class="grt-left grt-hrule-1 grt-vrule-0">advocacy</td>
+<td class="grt-right grt-hrule-1 grt-vrule-2">-2,709</td>
+<td class="grt-center grt-hrule-1 grt-vrule-1">2027-07-29</td>
+</tr>
+<tr>
+<td class="grt-left"></td>
+<td class="grt-left"></td>
+<td class="grt-left grt-hrule-2">36,840</td>
+<td class="grt-right grt-hrule-2 grt-vrule-index"> 11.759m</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2"> 2.653</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2"> 12.495k</td>
+<td class="grt-right grt-hrule-2 grt-vrule-1"> 86.576M</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">2010</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">948,990,396</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">948,743,442</td>
+<td class="grt-left grt-hrule-2 grt-vrule-0">peak</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">-6,220</td>
+<td class="grt-center grt-hrule-2 grt-vrule-1">2025-04-14</td>
+</tr>
+<tr>
+<td class="grt-left"></td>
+<td class="grt-left"></td>
+<td class="grt-left grt-hrule-2">60,365</td>
+<td class="grt-right grt-hrule-2 grt-vrule-index">-9.861f</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2"> 96.508M</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">-201.180m</td>
+<td class="grt-right grt-hrule-2 grt-vrule-1"> 4.112k</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">2026</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">539,901,423</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">483,316,969</td>
+<td class="grt-left grt-hrule-2 grt-vrule-0">vengeful</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">-9,880</td>
+<td class="grt-center grt-hrule-2 grt-vrule-1">2019-10-24</td>
+</tr>
+<tr>
+<td class="grt-left"></td>
+<td class="grt-left"></td>
+<td class="grt-left grt-hrule-2">68,306</td>
+<td class="grt-right grt-hrule-2 grt-vrule-index">-4.628p</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2"> 134.142</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">-84.906y</td>
+<td class="grt-right grt-hrule-2 grt-vrule-1"> 8.595</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">2001</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">935,137,648</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">125,143,083</td>
+<td class="grt-left grt-hrule-2 grt-vrule-0">receivables</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">-2,434</td>
+<td class="grt-center grt-hrule-2 grt-vrule-1">2027-07-18</td>
+</tr>
+<tr>
+<td class="grt-left"></td>
+<td class="grt-left"></td>
+<td class="grt-left grt-hrule-2">77,116</td>
+<td class="grt-right grt-hrule-2 grt-vrule-index"> 20402.147Y</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2"> 2.011k</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">-828.922k</td>
+<td class="grt-right grt-hrule-2 grt-vrule-1"> 24.656M</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">2017</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">708,599,965</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">484,013,044</td>
+<td class="grt-left grt-hrule-2 grt-vrule-0">here</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">7,936</td>
+<td class="grt-center grt-hrule-2 grt-vrule-1">2024-08-29</td>
+</tr>
+<tr>
+<td class="grt-left"></td>
+<td class="grt-left"></td>
+<td class="grt-left grt-hrule-2">86,939</td>
+<td class="grt-right grt-hrule-2 grt-vrule-index"> 158.054G</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2"> 904.457M</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">-3.544n</td>
+<td class="grt-right grt-hrule-2 grt-vrule-1"> 115.096M</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">2018</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">665,797,723</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">30,395,621</td>
+<td class="grt-left grt-hrule-2 grt-vrule-0">elements</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">4,540</td>
+<td class="grt-center grt-hrule-2 grt-vrule-1">2028-01-08</td>
+</tr>
+<tr>
+<td class="grt-left"></td>
+<td class="grt-left"></td>
+<td class="grt-left grt-hrule-2">98,924</td>
+<td class="grt-right grt-hrule-2 grt-vrule-index"> 1.509G</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2"> 68.016M</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">-2.479E</td>
+<td class="grt-right grt-hrule-2 grt-vrule-1"> 336.929k</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">2005</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">871,796,728</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">260,043,857</td>
+<td class="grt-left grt-hrule-2 grt-vrule-0">happiness</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">4,081</td>
+<td class="grt-center grt-hrule-2 grt-vrule-1">2030-09-24</td>
+</tr>
+<tr>
+<td class="grt-left grt-hrule-0">86,171</td>
+<td class="grt-left grt-hrule-0">bogota</td>
+<td class="grt-left grt-hrule-0">64,882</td>
+<td class="grt-right grt-hrule-0 grt-vrule-index">-4.761a</td>
+<td class="grt-right grt-hrule-0 grt-vrule-2"> 846.545k</td>
+<td class="grt-right grt-hrule-0 grt-vrule-2">-72.589M</td>
+<td class="grt-right grt-hrule-0 grt-vrule-1"> 314.796m</td>
+<td class="grt-right grt-hrule-0 grt-vrule-2">2014</td>
+<td class="grt-right grt-hrule-0 grt-vrule-2">97,349,537</td>
+<td class="grt-right grt-hrule-0 grt-vrule-2">212,102,442</td>
+<td class="grt-left grt-hrule-0 grt-vrule-0">kodak</td>
+<td class="grt-right grt-hrule-0 grt-vrule-2">-2,724</td>
+<td class="grt-center grt-hrule-0 grt-vrule-1">2032-07-09</td>
+</tr>
+<tr>
+<td class="grt-left"></td>
+<td class="grt-left"></td>
+<td class="grt-left grt-hrule-2">86,768</td>
+<td class="grt-right grt-hrule-2 grt-vrule-index">-0.000y</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2"> 88.058M</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2"> 2.231Y</td>
+<td class="grt-right grt-hrule-2 grt-vrule-1"> 24.964k</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">2016</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">956,702,194</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">231,092,874</td>
+<td class="grt-left grt-hrule-2 grt-vrule-0">easterners</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">5,356</td>
+<td class="grt-center grt-hrule-2 grt-vrule-1">2019-10-24</td>
+</tr>
+<tr>
+<td class="grt-left"></td>
+<td class="grt-left grt-hrule-1">luxurious</td>
+<td class="grt-left grt-hrule-1">5,886</td>
+<td class="grt-right grt-hrule-1 grt-vrule-index">-0.059y</td>
+<td class="grt-right grt-hrule-1 grt-vrule-2"> 902.766m</td>
+<td class="grt-right grt-hrule-1 grt-vrule-2"> 2.270E</td>
+<td class="grt-right grt-hrule-1 grt-vrule-1"> 22.877k</td>
+<td class="grt-right grt-hrule-1 grt-vrule-2">2025</td>
+<td class="grt-right grt-hrule-1 grt-vrule-2">308,697,830</td>
+<td class="grt-right grt-hrule-1 grt-vrule-2">292,947,906</td>
+<td class="grt-left grt-hrule-1 grt-vrule-0">metering</td>
+<td class="grt-right grt-hrule-1 grt-vrule-2">8,732</td>
+<td class="grt-center grt-hrule-1 grt-vrule-1">2019-10-14</td>
+</tr>
+<tr>
+<td class="grt-left"></td>
+<td class="grt-left"></td>
+<td class="grt-left grt-hrule-2">8,188</td>
+<td class="grt-right grt-hrule-2 grt-vrule-index">-0.057y</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2"> 72.636k</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">-44.895Y</td>
+<td class="grt-right grt-hrule-2 grt-vrule-1"> 5.708k</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">2021</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">449,167,802</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">848,030,179</td>
+<td class="grt-left grt-hrule-2 grt-vrule-0">anticipates</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">-2,530</td>
+<td class="grt-center grt-hrule-2 grt-vrule-1">2027-05-06</td>
+</tr>
+<tr>
+<td class="grt-left"></td>
+<td class="grt-left"></td>
+<td class="grt-left grt-hrule-2">9,361</td>
+<td class="grt-right grt-hrule-2 grt-vrule-index"> 2.155M</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2"> 115.463</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">-160.225f</td>
+<td class="grt-right grt-hrule-2 grt-vrule-1"> 85.764M</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">2009</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">171,478,556</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">379,897,546</td>
+<td class="grt-left grt-hrule-2 grt-vrule-0">aquatic</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">7,751</td>
+<td class="grt-center grt-hrule-2 grt-vrule-1">2019-10-24</td>
+</tr>
+<tr>
+<td class="grt-left"></td>
+<td class="grt-left"></td>
+<td class="grt-left grt-hrule-2">33,024</td>
+<td class="grt-right grt-hrule-2 grt-vrule-index">-11.597T</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2"> 536.113M</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2"> 1.736a</td>
+<td class="grt-right grt-hrule-2 grt-vrule-1"> 2.473</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">2007</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">638,693,189</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">636,844,921</td>
+<td class="grt-left grt-hrule-2 grt-vrule-0">gems</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">3,623</td>
+<td class="grt-center grt-hrule-2 grt-vrule-1">2032-07-09</td>
+</tr>
+<tr>
+<td class="grt-left"></td>
+<td class="grt-left"></td>
+<td class="grt-left grt-hrule-2">73,383</td>
+<td class="grt-right grt-hrule-2 grt-vrule-index">-1.720T</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2"> 562.514m</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2"> 3.238n</td>
+<td class="grt-right grt-hrule-2 grt-vrule-1"> 46.144</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">2017</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">616,529,727</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">102,742,732</td>
+<td class="grt-left grt-hrule-2 grt-vrule-0">progressing</td>
+<td class="grt-right grt-hrule-2 grt-vrule-2">6,402</td>
+<td class="grt-center grt-hrule-2 grt-vrule-1">2019-10-24</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+</div>
+</figure>
+</div>
+</div>
+<p>Comments go here.</p>
+
+</section>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+          // target, if specified
+          link.setAttribute("target", "_blank");
+          if (link.getAttribute("rel") === null) {
+            link.setAttribute("rel", "noopener");
+          }
+          // default icon
+          link.classList.add("external");
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+<script src="tables_files/libs/quarto-html/zenscroll-min.js"></script>
+</body></html>

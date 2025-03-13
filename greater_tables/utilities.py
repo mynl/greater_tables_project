@@ -18,14 +18,14 @@ if logger.hasHandlers():
     # Clear existing handlers
     logger.handlers.clear()
 # SET DEGBUUGER LEVEL
-LEVEL = logging.INFO    # DEBUG or INFO, WARNING, ERROR, CRITICAL
+LEVEL = logging.WARNING    # DEBUG or INFO, WARNING, ERROR, CRITICAL
 logger.setLevel(LEVEL)
 handler = logging.StreamHandler(sys.stderr)
 handler.setLevel(LEVEL)
 formatter = logging.Formatter('%(asctime)s | %(levelname)s |  %(funcName)-15s | %(message)s')
 handler.setFormatter(formatter)
 logger.addHandler(handler)
-logger.info('Logger Setup; module recompiled.')
+logger.info(f'Logger Setup; {__name__} module recompiled.')
 
 
 def write_all_tables(out_path='\\s\\telos\\pmir_studynote\\quarto_scratch\\tables.qmd'):
@@ -105,16 +105,16 @@ class TestDFGenerator:
     """Make excellent test DataFrames."""
     # Load a list of words
     _word_list_path = 'C:\\s\\Websites\\new_mynl\\word_lists\\match 12.md'
+    _word_list_url = 'https://www.mynl.com/static/words.csv'
     _word_list = None
 
     def __init__(self, nan_proportion=0.05, missing_proportion=0,
-                title=False, sep='_', file_path=None):
+                title=False, sep='_', file_path='local'):
         """Initialise the generator."""
         self.nan_proportion = nan_proportion
         self.missing_proportion = missing_proportion
         self.title = title  # whether to apply title to col names
         self.sep = sep      # separator for column names
-        file_path = file_path or TestDFGenerator._word_list_path
         if TestDFGenerator._word_list is None:
             TestDFGenerator._word_list = TestDFGenerator.load_words(file_path)
         # control datatypes
@@ -131,11 +131,16 @@ class TestDFGenerator:
         return f"TestDFGenerator({len(self.words):,d} words)"
 
     @staticmethod
-    def load_words(file_path):
+    def load_words(file_path=''):
         """Load a list of words from a file."""
-        p = Path(file_path)
-        txt = p.read_text(encoding='utf-8')
-        wl = txt.split('\n')
+        if file_path == 'local':
+            file_path = TestDFGenerator._word_list_path
+        if file_path != '':
+            p = Path(file_path)
+            txt = p.read_text(encoding='utf-8')
+            wl = txt.split('\n')
+        else:
+            wl = pd.read_csv(TestDFGenerator._word_list_url, header=None)[0].values
         logger.info(f"Loaded wordlist.")  # Debug print
         return wl
 

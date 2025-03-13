@@ -51,9 +51,9 @@ hard.columns = multi_index
 sGT(hard, 'A hard table.')
 ```
 
-![HTML output.](img/hard-html.png){width=66%}
+![HTML output.](img/hard-html.png)
 
-![TeX output.](img/hard-tex.png){width=66%}
+![TeX output.](img/hard-tex.png)
 
 The output illustrates:
 

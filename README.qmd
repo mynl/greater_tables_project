@@ -1,4 +1,9 @@
 ---
+format:
+  pdf:
+    include-in-header: prefobnicate.tex
+  html:
+    table-processing: false
 jupyter:
   keep-ipynb: true
   jupytext:
@@ -18,9 +23,11 @@ jupyter:
 
 Creating presentation quality tables from pandas dataframes is frustrating. It is hard to left-align text and right-align numbers using pandas `display` or `df.to_html`. The  `great_tables` package does a really nice job with pandas and polars dataframes but does not support indexes or TeX output. 
 
-This package provides consistent HTML and TeX table output with flexible type-based formatting, and table rules. Its main class `GT` can be subclassed to set appropriate defaults for your project. It is designed for use in Jupyter Lab notebooks Quarto documents.  
+This package provides consistent HTML and TeX table output with flexible type-based formatting, and table rules. Neither output relies on the pandas `to_html` or `to_latex` functions. TeX output uses Tikz tables for very tight control over layout and grid lines. The package is designed for use in Jupyter Lab notebooks Quarto documents.
 
-The project is currently in **beta** status. 
+Usage: the main class `GT` should be subclassed to set appropriate defaults for your project. `sGT` provides an example.
+
+The project is currently in **beta** status. HTML output is better developed than TeX. 
 
 ## The Name
 

@@ -1,0 +1,310 @@
+---
+title: All Tables Test - New TestDFGenerator test_suite
+author:
+  - name: Stephen J. Mildenhall
+    orcid: 0000-0001-6956-0098
+    corresponding: true
+    email: mynl@me.com
+date: last-modified
+colorlinks: true
+link-citations: true
+link-bibliography: true
+tbl-align: left
+number-sections: true
+number-offset: 0
+number-depth: 3
+
+code-line-numbers: false
+code-copy: true
+code-overflow: wrap
+code-fold: true             # code there but in folded up mode
+
+fig-format: svg
+fig-align: left
+
+format:
+  html:
+    html-table-processing: none
+    theme: litera # cosmo
+    fontsize: 0.9em
+    css: styles.css
+    include-in-header: pmir-header.html
+    smooth-scroll: true
+    toc-title: 'In this chapter:'
+    citations-hover: true
+    # code-tools: true
+    crossrefs-hover: false
+    fig-responsive: true
+    footnotes-hover: true
+    lightbox: true
+    link-external-icon: true        # arrow in a box for external links
+    link-external-newwindow: true   # open in separate window
+    page-layout: article            # optimized body region;  full expands contents if nothing in margins
+    page-navigation: true
+    reference-section-title: ' '  # title for references section, passed to pandoc
+    page-footer:
+      left: "Stephen J. Mildenhall. License: [CC BY-SA 2.0](https://creativecommons.org/licenses/by-sa/2.0/)."
+    twitter-card: true
+    open-graph: true
+    toc: true
+    toc-depth: 3
+    math: mathjax
+#    math:
+#      engine: mathjax
+#      url: https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+
+  pdf:
+   include-in-header: prefobnicate.tex
+   documentclass:  scrartcl # report scrreprt artcile scrreprt
+   papersize: a4
+   fontsize: 12pt
+   keep-tex: true # keep the tex file
+   geometry: margin=0.8in
+   pdf-engine: lualatex
+   pdf-engine-opts:
+     - '-interaction=nonstopmode'
+   toc: false
+execute:
+  eval: true
+  echo: true
+  cache: true               # this will reexecute all cells if any cell changes
+  cache-type: jupyter       # project is notebook/python heavy
+  freeze: false             # freezer locks the whole file, md and code; rarely what you want
+  kernel: python3
+  engine: jupyter # use IPython kernel
+  daemon: 1200
+
+jupyter:
+  jupytext:
+    formats: ipynb,qmd
+    text_representation:
+      extension: .qmd
+      format_name: quarto
+      format_version: '1.0'
+      jupytext_version: 1.16.4
+  kernelspec:
+    display_name: Python 3 (ipykernel)
+    language: python
+    name: python3
+---
+
+# Python set-up
+
+```{python}
+#| echo: true 
+#| label: setup
+from IPython.display import HTML, display
+import matplotlib as mpl
+import matplotlib.dates as mdates
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+
+import greater_tables as gter
+import greater_tables.utilities as gtu
+from greater_tables import GT, sGT
+gter.logger.setLevel(gter.logging.WARNING)
+```
+
+...code build completed. 
+
+# A Hard-Rules table
+
+Second level index has mixed types. Range of magnitudes. Picking out years.
+
+
+```{python}
+#| label: tbl-hard-rules
+#| tbl-cap: Quarto generated caption
+level_1 = ["A", "A", "B", "B", 'C']
+level_2 = ['Int', 'Float', 'Float', 3, 'Longer Text']
+
+multi_index = pd.MultiIndex.from_arrays([level_1, level_2],
+        names=["Level 1", "Level 2"])
+start = pd.Timestamp.today().normalize()  # Today's date, normalized to midnight
+end = pd.Timestamp(f"{start.year}-12-31")  # End of the year
+
+hard = pd.DataFrame(
+{'years!': np.arange(2000, 2025, dtype=int),
+'a': np.array(np.round(np.linspace(-100000, 100000, 25), 0), dtype=int),
+'b': 9.3 ** np.linspace(-12, 12, 25),
+'c': np.linspace(-1601, 4000, 25),
+'d': pd.date_range(start=start, end=end, periods=25),
+'e': ('once upon a time, risk is hard to define, not in Kansas anymore, '
+        'neutrinos are hard to detect,  '
+        'Adam Smith is the father of economics'.split(',') * 5)
+}).set_index('years!')
+# hard = hard.head()
+hard.columns = multi_index
+hard
+```
+
+`sGT` format
+
+```{python}
+#| label: tbl-hard-rules-2
+#| tbl-cap: Quarto generated caption
+sGT(hard, 'A table with varied columns.')
+```
+
+Illustrate some alternatives.
+
+```{python}
+#| echo: fenced
+#| label: tbl-hard-rules-3
+#| tbl-cap: Quarto generated caption
+
+display(sGT(hard.sample(5).sort_index(), 'No v rules, but h rules',
+        vrule_widths=(0,0,0),
+        hrule_widths=(1,0,0)))
+
+display(sGT(hard.sample(5).sort_index(),
+        'Change default date and integer formats',
+        default_date_str='%m-%d', default_integer_str='[{x:d}]'))
+
+display(sGT(hard.sample(5).sort_index(),
+        'Change padding, debug mode lines',
+        default_date_str='%m-%d', default_integer_str='[{x:d}]',
+        padding_trbl=(10, 10, 20, 20), debug=True))
+
+```
+
+Here is the raw output.
+
+\footnotesize
+
+```{python}
+#| label: raw-output
+
+f = sGT(hard.head(4), debug=True)
+print('HTML output\n')
+print(f._repr_html_())
+
+print('\n\n\nTeX output\n')
+print(f._repr_latex_())
+```
+
+\normalsize
+
+
+# A Table with TeX
+
+```{python}
+#| label: tbl-tex
+#| tbl-cap: "Quarto generated caption: table displayed by default routine."
+index = pd.Index(["A", "B", "$C_1$", "C_2 not tex", '$\\cos(A)$'])
+tex = pd.DataFrame(
+{'x': np.arange(2020, 2025, dtype=int),
+'b': np.random.random(5),
+'a1': [f'$x^{i}$' for i in range(5,10)],
+'a2': [f'$\\sin({i}x\\pi/n)$' for i in range(5,10)],
+'a3': [f'$x^{i}$' for i in range(5,10)],
+'a4': [f'\\(x^{i}\\)' for i in range(5,10)],
+}).set_index('x')
+tex = tex.head()
+tex.columns = index
+tex
+```
+
+```{python}
+#| label: tbl-tex-2
+#| tbl-cap: Quarto generated caption
+sGT(tex, 'GT Caption')
+```
+
+Ratio columns.
+
+```{python}
+#| label: tbl-tex-3
+#| tbl-cap: greater table output
+tex.columns = ["A (%)", "B", "$C_1$", "C_2 not tex", '$\\cos(A)$']
+sGT(tex, 'Ratio columns in A', ratio_cols='A (%)')
+```
+
+
+# Greater_tables Test Suite
+
+```{python}
+#| echo: true 
+#| label: greater-tables-test
+test_gen = gtu.TestDFGenerator(0, 0)
+ans = test_gen.test_suite()    
+```
+    
+
+## Test Table: basic
+    
+```{python}
+#| echo: fold
+#| label: tbl-greater-tables-test-0
+#| tbl-cap: Output for test table basic
+hrw = (0, 0, 0)
+sGT(ans['basic'], "Basic", ratio_cols='z', aligners={'w': 'l'},
+        hrule_widths=hrw)
+```
+
+Comments go here. 
+
+
+
+## Test Table: timeseries
+    
+```{python}
+#| echo: fold
+#| label: tbl-greater-tables-test-1
+#| tbl-cap: Output for test table timeseries
+hrw = (0, 0, 0)
+sGT(ans['timeseries'], "Timeseries", ratio_cols='z', aligners={'w': 'l'},
+        hrule_widths=hrw)
+```
+
+Comments go here. 
+
+
+
+
+## Test Table: multiindex
+    
+```{python}
+#| echo: fold
+#| label: tbl-greater-tables-test-2
+#| tbl-cap: Output for test table multiindex
+hrw = (1.5, 1.0, 0.5)
+sGT(ans['multiindex'], "Multiindex", ratio_cols='z', aligners={'w': 'l'},
+        hrule_widths=hrw)
+```
+
+Comments go here. 
+
+
+
+
+## Test Table: multicolumns
+    
+```{python}
+#| echo: fold
+#| label: tbl-greater-tables-test-3
+#| tbl-cap: Output for test table multicolumns
+hrw = (0, 0, 0)
+sGT(ans['multicolumns'], "Multicolumns", ratio_cols='z', aligners={'w': 'l'},
+        hrule_widths=hrw)
+```
+
+Comments go here. 
+
+
+
+
+## Test Table: complex
+    
+```{python}
+#| echo: fold
+#| label: tbl-greater-tables-test-4
+#| tbl-cap: Output for test table complex
+hrw = (1.5, 1.0, 0.5)
+sGT(ans['complex'], "Complex", ratio_cols='z', aligners={'w': 'l'},
+        hrule_widths=hrw)
+```
+
+Comments go here. 
+
