@@ -23,7 +23,7 @@ classifiers = [
 packages = ["greater_tables"]
 
 [tool.setuptools.packages.find]
-exclude = ["img"]
+exclude = ["img", "tests", "docs"]
 
 [tool.setuptools.dynamic]
 version  = { attr = "greater_tables.__version__" }
