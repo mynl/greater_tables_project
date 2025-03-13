@@ -19,10 +19,8 @@ classifiers = [
     "Topic :: Office/Business",
 ]
 
-[tool.setuptools]
-packages = ["greater_tables"]
-
 [tool.setuptools.packages.find]
+include = ["greater_tables"]
 exclude = ["img", "tests", "docs"]
 
 [tool.setuptools.dynamic]
