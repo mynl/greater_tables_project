@@ -19,6 +19,12 @@ classifiers = [
     "Topic :: Office/Business",
 ]
 
+[tool.setuptools]
+packages = ["greater_tables"]
+
+[tool.setuptools.packages.find]
+exclude = ["img"]
+
 [tool.setuptools.dynamic]
 version  = { attr = "greater_tables.__version__" }
 

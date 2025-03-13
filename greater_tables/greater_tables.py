@@ -466,6 +466,8 @@ class GT(object):
     width: auto;
     border: none;
     overflow: auto;
+    margin-left: auto;
+    margin-right: auto;
     }}
     /* tag formats */
     #{self.df_id} caption {{
@@ -842,6 +844,7 @@ class GT(object):
 # \\begin{{{figure}}}{latex}
 # \\centering
 # {extra_defs}
+        # centering handled by quarto
         header = """
 \\begin{{tikzpicture}}[
     auto,
@@ -852,7 +855,7 @@ class GT(object):
         row sep={row_sep}em,
         column sep={column_sep}em,
         nodes in empty cells,
-        nodes={{rectangle, scale={scale}, text badly ragged}},
+        nodes={{rectangle, scale={scale}, text badly ragged {debug}}},
 """
         # put draw=blue!10 or so in nodes to see the node
 
@@ -867,7 +870,7 @@ class GT(object):
         # always a good idea to do this...need to deal with underscores, %
         # and it handles index types that are not strings
         df = GT.clean_index(df)
-        # make sure percents are escaped f
+        # make sure percents are escaped, but not if already escaped
         df = df.replace(r"(?<!\\)%", r"\%", regex=True)
 
         # we are always showing the index...may regret that???
@@ -929,8 +932,12 @@ class GT(object):
             latex = ''
         else:
             latex = f'[{latex}]'
+        debug = ''
+        if self.debug:
+            # color all boxes
+            debug = ', draw=blue!10'
         sio.write(header.format(figure=figure, extra_defs=extra_defs, scale=scale, column_sep=column_sep,
-                                row_sep=row_sep, latex=latex))
+                                row_sep=row_sep, latex=latex, debug=debug))
 
         # table header
         # title rows, start with the empty spacer row
