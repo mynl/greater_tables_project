@@ -13,70 +13,61 @@ tbl-align: left
 number-sections: true
 number-offset: 0
 number-depth: 3
-
 code-line-numbers: false
 code-copy: true
 code-overflow: wrap
-code-fold: true             # code there but in folded up mode
-
+code-fold: true
 fig-format: svg
 fig-align: left
-
 format:
   html:
     html-table-processing: none
-    theme: litera # cosmo
+    theme: litera
     fontsize: 0.9em
     css: styles.css
     include-in-header: pmir-header.html
     smooth-scroll: true
     toc-title: 'In this chapter:'
     citations-hover: true
-    # code-tools: true
     crossrefs-hover: false
     fig-responsive: true
     footnotes-hover: true
     lightbox: true
-    link-external-icon: true        # arrow in a box for external links
-    link-external-newwindow: true   # open in separate window
-    page-layout: article            # optimized body region;  full expands contents if nothing in margins
+    link-external-icon: true
+    link-external-newwindow: true
+    page-layout: article
     page-navigation: true
-    reference-section-title: ' '  # title for references section, passed to pandoc
+    reference-section-title: ' '
     page-footer:
-      left: "Stephen J. Mildenhall. License: [CC BY-SA 2.0](https://creativecommons.org/licenses/by-sa/2.0/)."
+      left: 'Stephen J. Mildenhall. License: [CC BY-SA 2.0](https://creativecommons.org/licenses/by-sa/2.0/).'
     twitter-card: true
     open-graph: true
     toc: true
     toc-depth: 3
     math: mathjax
-#    math:
-#      engine: mathjax
-#      url: https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
-
   pdf:
-   include-in-header: prefobnicate.tex
-   documentclass:  scrartcl # report scrreprt artcile scrreprt
-   papersize: a4
-   fontsize: 12pt
-   keep-tex: true # keep the tex file
-   geometry: margin=0.8in
-   pdf-engine: lualatex
-   pdf-engine-opts:
-     - '-interaction=nonstopmode'
-   toc: false
+    include-in-header: prefobnicate.tex
+    documentclass: scrartcl
+    papersize: a4
+    fontsize: 11pt
+    keep-tex: true
+    geometry: margin=0.8in
+    pdf-engine: lualatex
+    pdf-engine-opts:
+      - '-interaction=nonstopmode'
+    toc: false
 execute:
   eval: true
   echo: true
-  cache: true               # this will reexecute all cells if any cell changes
-  cache-type: jupyter       # project is notebook/python heavy
-  freeze: false             # freezer locks the whole file, md and code; rarely what you want
+  cache: true
+  cache-type: jupyter
+  freeze: false
   kernel: python3
-  engine: jupyter # use IPython kernel
+  engine: jupyter
   daemon: 1200
-
 jupyter:
   jupytext:
-    formats: ipynb,qmd
+    formats: ipynb,qmd:quarto
     text_representation:
       extension: .qmd
       format_name: quarto
@@ -88,10 +79,8 @@ jupyter:
     name: python3
 ---
 
-# Python set-up
-
 ```{python}
-#| echo: true 
+#| echo: true
 #| label: setup
 from IPython.display import HTML, display
 import matplotlib as mpl
@@ -112,10 +101,12 @@ gter.logger.setLevel(gter.logging.WARNING)
 
 Second level index has mixed types. Range of magnitudes. Picking out years.
 
+\footnotesize
+
 
 ```{python}
 #| label: tbl-hard-rules
-#| tbl-cap: Quarto generated caption
+#| tbl-cap: Default display output (Quarto generated caption)
 level_1 = ["A", "A", "B", "B", 'C']
 level_2 = ['Int', 'Float', 'Float', 3, 'Longer Text']
 
@@ -139,43 +130,56 @@ hard.columns = multi_index
 hard
 ```
 
-`sGT` format
+\normalsize
+
+@tbl-hard-rules shows the default output and @tbl-hard-rules-2 the `sGT` format output.
 
 ```{python}
 #| label: tbl-hard-rules-2
-#| tbl-cap: Quarto generated caption
+#| tbl-cap: Greater Tables output (Quarto generated caption)
 sGT(hard, 'A table with varied columns.')
 ```
 
-Illustrate some alternatives.
+Here are some alternatives:
+
+* @tbl-hard-rules-3a hrules no vrules
+* @tbl-hard-rules-3b change date and integer formats and
+* @tbl-hard-rules-3c change padding and debug mode.
 
 ```{python}
 #| echo: fenced
-#| label: tbl-hard-rules-3
-#| tbl-cap: Quarto generated caption
-
-display(sGT(hard.sample(5).sort_index(), 'No v rules, but h rules',
+#| label: tbl-hard-rules-3a
+#| tbl-cap: No V rules but hrules (Quarto generated caption)
+display(sGT(hard.sample(5).sort_index(),
+        caption='GT caption No v rules, but h rules',
         vrule_widths=(0,0,0),
         hrule_widths=(1,0,0)))
-
-display(sGT(hard.sample(5).sort_index(),
-        'Change default date and integer formats',
-        default_date_str='%m-%d', default_integer_str='[{x:d}]'))
-
-display(sGT(hard.sample(5).sort_index(),
-        'Change padding, debug mode lines',
-        default_date_str='%m-%d', default_integer_str='[{x:d}]',
-        padding_trbl=(10, 10, 20, 20), debug=True))
-
 ```
 
-Here is the raw output.
+```{python}
+#| echo: fenced
+#| label: tbl-hard-rules-3b
+#| tbl-cap: Change date and integer formats  (Quarto generated caption)
+display(sGT(hard.sample(5).sort_index(),
+        caption='Change default date and integer formats',
+        default_date_str='%m-%d', default_integer_str='[{x:d}]'))
+```
+
+```{python}
+#| echo: fenced
+#| label: tbl-hard-rules-3c
+#| tbl-cap: Change padding and debug mode, boxes (Quarto generated caption)
+display(sGT(hard.sample(5).sort_index(),
+        caption='Change padding, debug mode lines',
+        padding_trbl=(10, 10, 20, 20), debug=True))
+```
+
+Here is the raw HTML and LaTeX output.
 
 \footnotesize
 
 ```{python}
 #| label: raw-output
-
 f = sGT(hard.head(4), debug=True)
 print('HTML output\n')
 print(f._repr_html_())
@@ -187,11 +191,11 @@ print(f._repr_latex_())
 \normalsize
 
 
-# A Table with TeX
+# A Table with TeX Content
 
 ```{python}
 #| label: tbl-tex
-#| tbl-cap: "Quarto generated caption: table displayed by default routine."
+#| tbl-cap: '(Quarto generated caption): table displayed by default routine.'
 index = pd.Index(["A", "B", "$C_1$", "C_2 not tex", '$\\cos(A)$'])
 tex = pd.DataFrame(
 {'x': np.arange(2020, 2025, dtype=int),
@@ -208,7 +212,7 @@ tex
 
 ```{python}
 #| label: tbl-tex-2
-#| tbl-cap: Quarto generated caption
+#| tbl-cap: GT output (Quarto generated caption)
 sGT(tex, 'GT Caption')
 ```
 
@@ -221,23 +225,21 @@ tex.columns = ["A (%)", "B", "$C_1$", "C_2 not tex", '$\\cos(A)$']
 sGT(tex, 'Ratio columns in A', ratio_cols='A (%)')
 ```
 
-
 # Greater_tables Test Suite
 
 ```{python}
-#| echo: true 
+#| echo: true
 #| label: greater-tables-test
 test_gen = gtu.TestDFGenerator(0, 0)
 ans = test_gen.test_suite()    
 ```
-    
 
 ## Test Table: basic
-    
+
 ```{python}
-#| echo: fold
+#| echo: true
 #| label: tbl-greater-tables-test-0
-#| tbl-cap: Output for test table basic
+#| tbl-cap: GT output for test table basic
 hrw = (0, 0, 0)
 sGT(ans['basic'], "Basic", ratio_cols='z', aligners={'w': 'l'},
         hrule_widths=hrw)
@@ -248,11 +250,11 @@ Comments go here.
 
 
 ## Test Table: timeseries
-    
+
 ```{python}
-#| echo: fold
+#| echo: true
 #| label: tbl-greater-tables-test-1
-#| tbl-cap: Output for test table timeseries
+#| tbl-cap: GT output for test table timeseries
 hrw = (0, 0, 0)
 sGT(ans['timeseries'], "Timeseries", ratio_cols='z', aligners={'w': 'l'},
         hrule_widths=hrw)
@@ -264,11 +266,11 @@ Comments go here.
 
 
 ## Test Table: multiindex
-    
+
 ```{python}
-#| echo: fold
+#| echo: true
 #| label: tbl-greater-tables-test-2
-#| tbl-cap: Output for test table multiindex
+#| tbl-cap: GT output for test table multiindex
 hrw = (1.5, 1.0, 0.5)
 sGT(ans['multiindex'], "Multiindex", ratio_cols='z', aligners={'w': 'l'},
         hrule_widths=hrw)
@@ -280,11 +282,11 @@ Comments go here.
 
 
 ## Test Table: multicolumns
-    
+
 ```{python}
-#| echo: fold
+#| echo: true
 #| label: tbl-greater-tables-test-3
-#| tbl-cap: Output for test table multicolumns
+#| tbl-cap: GT output for test table multicolumns
 hrw = (0, 0, 0)
 sGT(ans['multicolumns'], "Multicolumns", ratio_cols='z', aligners={'w': 'l'},
         hrule_widths=hrw)
@@ -296,15 +298,115 @@ Comments go here.
 
 
 ## Test Table: complex
-    
+
 ```{python}
-#| echo: fold
+#| echo: true
 #| label: tbl-greater-tables-test-4
-#| tbl-cap: Output for test table complex
+#| tbl-cap: GT output for test table complex
 hrw = (1.5, 1.0, 0.5)
 sGT(ans['complex'], "Complex", ratio_cols='z', aligners={'w': 'l'},
         hrule_widths=hrw)
 ```
 
 Comments go here. 
+
+# Other input formats
+
+## Markown
+
+| **Insured group or insurance product**                      | **Sat** | **RP** | **RF** |
+|:------------------------------------------------------------|:-------:|:------:|:------:|
+| Non-standard auto                                           |    x    |        |        |
+| General liability for judgment proof corporation            |    x    |        |        |
+| Term life insurance                                         |         |   x    |        |
+| Catastrophe Reinsurance, outside rating agency bounds       |         |   x    |        |
+| High limit property per risk reinsurance                    |         |   x    |        |
+| Personal lines for affluent individuals                     |    x    |   x    |        |
+| Small commercial lines                                      |    x    |   x    |        |
+| Catastrophe reinsurance, within rating agency bounds        |    x    |   x    |        |
+| Large account captive reinsurance                           |         |        |   x    |
+| Structured quota share, requiring a risk transfer test      |    x    |        |   x    |
+| Working layer casualty excess of loss                       |         |   x    |   x    |
+| Surplus relief quota share on cat exposed line              |    x    |   x    |   x    |
+| Middle market commercial lines work comp or commercial auto |    x    |   x    |   x    |
+
+```{python}
+#| echo: true
+#| label: tbl-greater-tables-test-5
+#| tbl-cap: GT from markdown table input
+txt = '''
+
+| **Insured group or insurance product**                      | **Sat** | **RP** | **RF** |
+|:------------------------------------------------------------|:-------:|:------:|:------:|
+| Non-standard auto                                           |    x    |        |        |
+| General liability for judgment proof corporation            |    x    |        |        |
+| Term life insurance                                         |         |   x    |        |
+| Catastrophe Reinsurance, outside rating agency bounds       |         |   x    |        |
+| High limit property per risk reinsurance                    |         |   x    |        |
+| Personal lines for affluent individuals                     |    x    |   x    |        |
+| Small commercial lines                                      |    x    |   x    |        |
+| Catastrophe reinsurance, within rating agency bounds        |    x    |   x    |        |
+| Large account captive reinsurance                           |         |        |   x    |
+| Structured quota share, requiring a risk transfer test      |    x    |        |   x    |
+| Working layer casualty excess of loss                       |         |   x    |   x    |
+| Surplus relief quota share on cat exposed line              |    x    |   x    |   x    |
+| Middle market commercial lines work comp or commercial auto |    x    |   x    |   x    |
+
+
+'''
+
+GT(txt)
+```
+
+## List of lists
+
+```{python}
+x = None
+if x:
+    print(123)
+```
+
+```{python}
+#| echo: true
+#| label: tbl-greater-tables-test-6
+#| tbl-cap: GT output for list of lists input
+lol = [['a', 'b', 'c', 'd'], ['west', 10, 20, 30], ['east', 10, 200, 30], ['north', 10, 20, 300], ['south', 100, 20, 30]]
+GT(lol)
+```
+
+```{python}
+f = GT(lol)
+f
+```
+
+```{python}
+tbl = '''
+
+Var | Amount 
+:---|------:
+A | 100.0
+B | 0.123
+C | A string
+
+'''
+
+def ff(x):
+    if abs(x) < 1:
+        return f'{x:.1%}'
+    else:
+        return f'{x:,.2f}'
+
+sGT(tbl, table_float_format=ff)
+```
+
+```{python}
+P = 1000 * 1.075**-10 + 120
+L = 1000
+ry = .1
+v = 1/(1+ry)
+T = 10 
+pv = P - v**T * L
+fv = pv / v**T
+pv, fv
+```
 

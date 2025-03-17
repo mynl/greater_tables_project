@@ -7,6 +7,8 @@ __pycache__/
 *.so
 .idea/*
 tests/tables_files/*
+tests/quarto_doc/*
+tests/*.quarto_ipynb
 tests/.*
 # Distribution / packaging
 .Python
