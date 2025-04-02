@@ -47,6 +47,7 @@ class GT(object):
                  df,
                  caption='',
                  aligners=None,
+                 formatters=None,
                  ratio_cols=None,
                  year_cols=None,
                  show_index=True,
@@ -74,6 +75,8 @@ class GT(object):
                  header_row=True,
                  tabs=None,
                  equal=False,
+                 caption_align='center',
+                 large_ok=False,
                  debug=False):
         """
         Create a greater_tables formatting object.
@@ -87,6 +90,7 @@ class GT(object):
         :param df: target DataFrame or list of lists or markdown table string
         :param caption: table caption, optional
         :param aligners: None or dict (type or colname) -> left | center | right
+        :param formatters: None or dict (type or colname) -> format function for the column; formatters trump ratio_cols
         :param ratio_cols: None, or "all" or list of column names treated as ratios. Set defaults in derived class suitable to application.
         :param year_cols: None, or "all" or list of column names treated as years (no commas, no decimals). Set defaults in derived class suitable to application.
         :param show_index: if True, show the index columns, default True
@@ -114,6 +118,7 @@ class GT(object):
         :param header_row: True: use first row as headers; False no headings. Default True
         :param tabs: None or list of column widths in characters or a common int or float width. (It is converted into em; one character is about 0.5em on average; digits are exactly 0.5em.) If None, will be calculated. Default None.
         :param equal: if True, set all column widths equal. Default False.
+        :param caption_align: for the caption
         :param debug: if True, add id to caption and use colored lines in table, default False.
         """
         # deal with alternative input modes
@@ -136,6 +141,9 @@ class GT(object):
             show_index = False
         else:
             raise ValueError('df must be a DataFrame, a list of lists, or a markdown table string')
+
+        if len(df) > 50 and not large_ok:
+            raise ValueError('Large dataframe (>50 rows) and large_ok not set to true...do you know what you are doing?')
 
         if not df.columns.is_unique:
             raise ValueError('df column names are not unique')
@@ -264,6 +272,21 @@ class GT(object):
 
         self.df_idx_aligners = self.df_aligners[:self.nindex]
 
+        if formatters is None:
+            self.default_formatters = {}
+        else:
+            self.default_formatters = {}
+            for k, v in formatters.items():
+                if callable(v):
+                    self.default_formatters[k] = v
+                elif type(v) == str:
+                    self.default_formatters[k] = lambda x: v.format(x=x)
+                elif type(v) == int:
+                    fmt = f'{{x:.{v}f}}'
+                    self.default_formatters[k] = lambda x: fmt.format(x=x)
+                else:
+                    raise ValueError('formatters must be dict of callables or ints or format strings {x:...}')
+
         # store defaults
         self.default_integer_str = default_integer_str
         self.default_float_str = default_float_str    # VERY rarely used; for floats in cols that are not floats
@@ -283,6 +306,7 @@ class GT(object):
         self.font_head = font_head
         self.font_caption = font_caption
         self.font_bold_index = font_bold_index
+        self.caption_align = caption_align
         self.sparsify_columns = sparsify_columns
         if tabs is None:
             self.tabs = None
@@ -322,9 +346,10 @@ class GT(object):
         self.df = self.apply_formatters(self.df)
         # sparsify
         if sparsify and self.nindex > 1:
-            for c in self.df.columns[:self.nindex]:
-                # spartify returns some other stuff...
-                self.df[c], _ = GT.sparsify(self.df[c])
+            self.df = GT.sparsify(self.df, self.df.columns[:self.nindex])
+            # for c in self.df.columns[:self.nindex]:
+            #     # sparsify returns some other stuff...
+            #     self.df[c], _ = GT.sparsify(self.df[c])
 
     # define the default and easy formatters ===================================================
     def default_ratio_formatter(self, x):
@@ -379,7 +404,7 @@ class GT(object):
     def pef(self, x):
         """Pandas engineering format."""
         if self._pef is None:
-            self._pef = pd.io.formats.format.EngFormatter(accuracy=self.pef_precision, use_eng_prefix=True)
+            self._pef = pd.io.formats.format.EngFormatter(accuracy=self.pef_precision, use_eng_prefix=True)   # noqa
         return self._pef(x)
 
     def make_float_formatter(self, ser):
@@ -475,7 +500,9 @@ class GT(object):
             for i, c in enumerate(self.df.columns):
                 # set a default, note here can have
                 # non-unique index so work with position i
-                if c in self.ratio_cols:
+                if c in self.default_formatters:
+                    self._df_formatters.append(self.default_formatters[c])
+                elif c in self.ratio_cols:
                     # print(f'{i} ratio')
                     self._df_formatters.append(self.default_ratio_formatter)
                 elif c in self.year_cols:
@@ -556,7 +583,7 @@ class GT(object):
     #{self.df_id} caption {{
         padding: {2 * padt}px {padr}px {padb}px {padl}px;
         font-size: {self.font_caption}em;
-        text-align: center;
+        text-align: {self.caption_align};
         font-weight: normal;
         caption-side: top;
     }}
@@ -951,20 +978,13 @@ class GT(object):
         Previous version see great.pres_maker
         Original version see: C:\\S\\TELOS\\CAS\\AR_Min_Bias\\cvs_to_md.py
 
-        :param df:
-        :param fn_out:
-        :param float_format:
-        :param show_index:
         :param scale:
         :param column_sep:
         :param row_sep:
         :param figure:
-        :param color:
         :param extra_defs:
-        :param lines:
         :param post_process:
         :param label:
-        :param caption:
         :return:
         """
         # local variable - with all formatters already applied
@@ -1017,7 +1037,8 @@ class GT(object):
                 if hrule is None:
                     hrule = set()
             for i in range(sparsify):
-                df.iloc[:, i], rules = GT.sparsify(df.iloc[:, i])
+                # TODO update to new sparsify!! 
+                df.iloc[:, i], rules = GT.sparsify_old(df.iloc[:, i])
                 # don't want lines everywhere
                 if len(rules) < len(df) - 1:
                     hrule = set(hrule).union(rules)
@@ -1041,7 +1062,7 @@ class GT(object):
         # number of index columns
         # have also converted everything to formatted strings
         # estimate... originally called guess_column_widths, with more parameters
-        colw, tabs = GT.estimate_column_widths(df, nc_index=nc_index, scale=scale, equal=self.equal)
+        colw, tabs = GT.estimate_column_widths(df, nc_index=nc_index, scale=scale, equal=self.equal)  # noqa
         if self.debug:
             print(f'Input {self.tabs=}\nComputed {tabs=}')
         if self.tabs is not None:
@@ -1266,8 +1287,6 @@ class GT(object):
 
         :param df:
         :param nc_index: number of columns in the index...these are not counted as "data columns"
-        :param float_format:
-        :param tabs:
         :param equal:  if True, try to make all data columns the same width (hint can be rejected)
         :return:
             colw   affects how the tex is printed to ensure it "looks neat" (actual width of data elements)
@@ -1366,10 +1385,19 @@ class GT(object):
         return colw, tabs
 
     @staticmethod
-    def sparsify(col):
+    def sparsify(df, cs):
+        out = df.copy()
+        for i, c in enumerate(cs):
+            mask = df[cs[:i+1]].ne(df[cs[:i+1]].shift()).any(axis=1)
+            out.loc[~mask, c] = ''
+        return out
+
+    @staticmethod
+    def sparsify_old(col):
         """
         sparsify col values, col a pd.Series or dict, with items and accessor
         column results from a reset_index so has index 0,1,2... this is relied upon.
+        TODO: this doesn't work if there is a change in a higher level but not this level
         """
         last = col[0]
         new_col = col.copy()
@@ -1473,7 +1501,7 @@ class GT(object):
         :param x:
         :return:
         """
-        ef = pd.io.formats.format.EngFormatter(neng, True)
+        ef = pd.io.formats.format.EngFormatter(neng, True)  # noqa
         try:
             if x == 0:
                 ans = '0'
@@ -1505,7 +1533,7 @@ class GT(object):
         p.parent.mkdir(parents=True, exist_ok=True)
         p = p.with_suffix('.html')
         soup = BeautifulSoup(self.html, 'html.parser')
-        p.write_text(soup.prettify(), encodign='utf-8')
+        p.write_text(soup.prettify(), encoding='utf-8')
         logger.info(f'Saved to {p}')
 
     @staticmethod
