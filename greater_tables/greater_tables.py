@@ -77,6 +77,7 @@ class GT(object):
                  equal=False,
                  caption_align='center',
                  large_ok=False,
+                 max_str_length=-1,
                  debug=False):
         """
         Create a greater_tables formatting object.
@@ -99,7 +100,6 @@ class GT(object):
         :param default_date_str: format f-string for dates, default '%Y-%m-%d'. NOTE: no braces or x!
         :param default_ratio_str: format f-string for ratios, default '{x:.1%}'
         :param table_float_format: None or format string for floats in the table format function, applied to entire table, default None
-        :param cast_to_floats: if True, try to cast all non-integer, non-date columns to floats
         :param table_hrule_width: width of the table top, botton and header hrule, default 1
         :param table_vrule_width: width of the table vrule, separating the index from the body, default 1
         :param hrule_widths: None or tuple of three ints for hrule widths (for use with multiindexes)
@@ -115,10 +115,13 @@ class GT(object):
         :param pef_precision: precision (digits after period) for pandas engineering format, default 3.
         :param pef_lower: apply engineering format to floats with absolute value < 10**pef_lower; default -3.
         :param pef_upper: apply engineering format to floats with absolute value > 10**pef_upper; default 6.
+        :param cast_to_floats: if True, try to cast all non-integer, non-date columns to floats
         :param header_row: True: use first row as headers; False no headings. Default True
         :param tabs: None or list of column widths in characters or a common int or float width. (It is converted into em; one character is about 0.5em on average; digits are exactly 0.5em.) If None, will be calculated. Default None.
         :param equal: if True, set all column widths equal. Default False.
         :param caption_align: for the caption
+        :param large_ok: signal that you are intentionally applying to a large dataframe. Subclasses may restrict or apply .head() to df.
+        :param max_str_length: maximum displayed length of object types, that are cast to strings. Eg if you have nested DataFrames!
         :param debug: if True, add id to caption and use colored lines in table, default False.
         """
         # deal with alternative input modes
@@ -155,7 +158,7 @@ class GT(object):
         self.df_id = df_short_hash(self.df)
         self.debug = debug
         self.caption = caption + (' (id: ' + self.df_id + ')' if self.debug else '')
-
+        self.max_str_length = max_str_length
         # before messing
         self.show_index = show_index
         self.nindex = self.df.index.nlevels if self.show_index else 0
@@ -399,7 +402,10 @@ class GT(object):
                 # TODO BEEF UP?
                 return self.default_float_str.format(x=f)
         except (TypeError, ValueError):
-            return str(x)
+            if self.max_str_length < 0:
+                return str(x)
+            else:
+                return str(x)[:self.max_str_length]
 
     def pef(self, x):
         """Pandas engineering format."""
@@ -1328,7 +1334,7 @@ class GT(object):
             # now figure the width of the elements in the column
             # mxmn is used to determine whether to center the column (if all the same size)
             if df.dtypes.iloc[i] == object:
-                # wierdness here were some objects actually contain floats, str evaluates to NaN
+                # weirdness here were some objects actually contain floats, str evaluates to NaN
                 # and picks up width zero
                 try:
                     lens = df.iloc[:, i].map(lambda x: len(str(x)))
@@ -1375,7 +1381,7 @@ class GT(object):
         data_width = sum(tabs[nl:])
         index_width = sum(tabs[:nl])
         target_width = 150 * scale - index_width
-        if data_width / target_width < 0.9:
+        if data_width and data_width / target_width < 0.9:
             # don't rescale above 1:1 - don't want too large
             rescale = min(1 / scale, target_width / data_width)
             tabs = [w if i < nl else w * rescale for i, w in enumerate(tabs)]
