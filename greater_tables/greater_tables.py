@@ -6,7 +6,7 @@ from itertools import groupby
 import logging
 import numpy as np
 import pandas as pd
-from pandas.api.types import is_datetime64_any_dtype, is_integer_dtype,\
+from pandas.api.types import is_datetime64_any_dtype, is_integer_dtype, \
     is_float_dtype   # , is_numeric_dtype
 from pathlib import Path
 import re
@@ -34,7 +34,8 @@ LEVEL = logging.WARNING    # DEBUG or INFO, WARNING, ERROR, CRITICAL
 logger.setLevel(LEVEL)
 handler = logging.StreamHandler(sys.stderr)
 handler.setLevel(LEVEL)
-formatter = logging.Formatter('%(asctime)s | %(levelname)s |  %(funcName)-15s | %(message)s')
+formatter = logging.Formatter(
+    '%(asctime)s | %(levelname)s |  %(funcName)-15s | %(message)s')
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 logger.info(f'Logger Setup; {__name__} module recompiled.')
@@ -143,10 +144,12 @@ class GT(object):
             df, aligners = GT.md_to_df(df)
             show_index = False
         else:
-            raise ValueError('df must be a DataFrame, a list of lists, or a markdown table string')
+            raise ValueError(
+                'df must be a DataFrame, a list of lists, or a markdown table string')
 
         if len(df) > 50 and not large_ok:
-            raise ValueError('Large dataframe (>50 rows) and large_ok not set to true...do you know what you are doing?')
+            raise ValueError(
+                'Large dataframe (>50 rows) and large_ok not set to true...do you know what you are doing?')
 
         if not df.columns.is_unique:
             raise ValueError('df column names are not unique')
@@ -157,7 +160,8 @@ class GT(object):
         # self.df.columns.names = [None] * self.df.columns.nlevels
         self.df_id = df_short_hash(self.df)
         self.debug = debug
-        self.caption = caption + (' (id: ' + self.df_id + ')' if self.debug else '')
+        self.caption = caption + \
+            (' (id: ' + self.df_id + ')' if self.debug else '')
         self.max_str_length = max_str_length
         # before messing
         self.show_index = show_index
@@ -168,20 +172,25 @@ class GT(object):
 
         with warnings.catch_warnings():
             if self.show_index:
-                warnings.simplefilter("ignore", category=pd.errors.PerformanceWarning)
-                self.df = self.df.reset_index(drop=False, col_level=self.df.columns.nlevels - 1)
+                warnings.simplefilter(
+                    "ignore", category=pd.errors.PerformanceWarning)
+                self.df = self.df.reset_index(
+                    drop=False, col_level=self.df.columns.nlevels - 1)
             # want the new index to be ints - that is not default if old was multiindex
             self.df.index = np.arange(self.df.shape[0], dtype=int)
-        self.index_change_level = GT.changed_column(self.df.iloc[:, :self.nindex])
+        self.index_change_level = GT.changed_column(
+            self.df.iloc[:, :self.nindex])
         if self.ncolumns > 1:
             # will be empty rows above the index headers
-            self.index_change_level = pd.Series([i[-1] for i in self.index_change_level])
+            self.index_change_level = pd.Series(
+                [i[-1] for i in self.index_change_level])
 
         self.column_change_level = GT.changed_level(self.raw_df.columns)
 
         # determine ratio columns
         if ratio_cols is not None and np.any(self.df.columns.duplicated()):
-            logger.warning('Ratio cols specified with non-unique column names: ignoring request.')
+            logger.warning(
+                'Ratio cols specified with non-unique column names: ignoring request.')
             self.ratio_cols = []
         else:
             if ratio_cols is None:
@@ -195,7 +204,8 @@ class GT(object):
 
         # determine year columns
         if year_cols is not None and np.any(self.df.columns.duplicated()):
-            logger.warning('Year cols specified with non-unique column names: ignoring request.')
+            logger.warning(
+                'Year cols specified with non-unique column names: ignoring request.')
             self.year_cols = []
         else:
             if year_cols is None:
@@ -206,17 +216,21 @@ class GT(object):
                 self.year_cols = year_cols
 
         with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=pd.errors.PerformanceWarning)
+            warnings.simplefilter(
+                "ignore", category=pd.errors.PerformanceWarning)
             if cast_to_floats:
                 for i, c in enumerate(self.df.columns):
                     old_type = self.df.dtypes[c]
                     if not np.any((is_integer_dtype(self.df.iloc[:, i]),
                                    is_datetime64_any_dtype(self.df.iloc[:, i]))):
                         try:
-                            self.df.iloc[:, i] = self.df.iloc[:, i].astype(float)
-                            logger.debug(f'coerce {i}={c} from {old_type} to float')
+                            self.df.iloc[:, i] = self.df.iloc[:,
+                                                              i].astype(float)
+                            logger.debug(
+                                f'coerce {i}={c} from {old_type} to float')
                         except (ValueError, TypeError):
-                            logger.debug(f'coercing {i}={c} from {old_type} to float FAILED')
+                            logger.debug(
+                                f'coercing {i}={c} from {old_type} to float FAILED')
 
         # now can determine types
         self.float_col_indices = []
@@ -242,7 +256,8 @@ class GT(object):
 
         # figure out column and index alignment
         if aligners is not None and np.any(self.df.columns.duplicated()):
-            logger.warning('aligners specified with non-unique column names: ignoring request.')
+            logger.warning(
+                'aligners specified with non-unique column names: ignoring request.')
             aligners = None
         if aligners is None:
             # not using
@@ -288,12 +303,15 @@ class GT(object):
                     fmt = f'{{x:.{v}f}}'
                     self.default_formatters[k] = lambda x: fmt.format(x=x)
                 else:
-                    raise ValueError('formatters must be dict of callables or ints or format strings {x:...}')
+                    raise ValueError(
+                        'formatters must be dict of callables or ints or format strings {x:...}')
 
         # store defaults
         self.default_integer_str = default_integer_str
-        self.default_float_str = default_float_str    # VERY rarely used; for floats in cols that are not floats
-        self.default_date_str = default_date_str.replace('{x:', '').replace('}', '')
+        # VERY rarely used; for floats in cols that are not floats
+        self.default_float_str = default_float_str
+        self.default_date_str = default_date_str.replace(
+            '{x:', '').replace('}', '')
         self.default_ratio_str = default_ratio_str
         self.pef_precision = pef_precision
         self.pef_lower = pef_lower
@@ -329,11 +347,13 @@ class GT(object):
             elif spacing == 'wide':
                 padding_trbl = (4, 15, 4, 15)
             else:
-                raise ValueError('spacing must be tight, medium, or wide or tuple of four ints.')
+                raise ValueError(
+                    'spacing must be tight, medium, or wide or tuple of four ints.')
         try:
             self.padt, self.padr, self.padb, self.padl = padding_trbl
         except ValueError:
-            logger.error(f'padding_trbl {padding_trbl=}, must be four ints, defaultign to medium')
+            logger.error(
+                f'padding_trbl {padding_trbl=}, must be four ints, defaultign to medium')
             self.padt, self.padr, self.padb, self.padl = 2, 10, 2, 10
 
         # because of the problem of non-unique indexes use a list and
@@ -386,26 +406,50 @@ class GT(object):
         except ValueError:
             return str(x)
 
+    # def default_formatter(self, x):
+    #     """Universal formatter for other types."""
+    #     try:
+    #         # werid wrinkle here: float('infinity') -> np.inf!!
+    #         f = float(x)
+    #         if self.default_float_formatter:
+    #             return self.default_float_formatter(f)
+    #         try:
+    #             i = int(x)
+    #         except ValueError:
+    #             try:
+    #                 i = int(f)
+    #             except OverflowError:
+    #                 # this came up! Passed the work "Infinity"
+    #                 return str(x)
+    #         if i == f:
+    #             return self.default_integer_str.format(x=i)
+    #         else:
+    #             # TODO BEEF UP?
+    #             return self.default_float_str.format(x=f)
+    #     except (TypeError, ValueError):
+    #         if self.max_str_length < 0:
+    #             return str(x)
+    #         else:
+    #             return str(x)[:self.max_str_length]
+
     def default_formatter(self, x):
-        """Universal formatter for other types."""
+        """Universal formatter for other types (GTP re-write of above cluster."""
         try:
             f = float(x)
-            if self.default_float_formatter:
-                return self.default_float_formatter(f)
-            try:
-                i = int(x)
-            except ValueError:
-                i = int(f)
-            if i == f:
-                return self.default_integer_str.format(x=i)
-            else:
-                # TODO BEEF UP?
-                return self.default_float_str.format(x=f)
         except (TypeError, ValueError):
-            if self.max_str_length < 0:
-                return str(x)
-            else:
-                return str(x)[:self.max_str_length]
+            s = str(x)
+            return s if self.max_str_length < 0 else s[:self.max_str_length]
+
+        if self.default_float_formatter:
+            return self.default_float_formatter(f)
+
+        if np.isinf(f) or np.isnan(f):  # clearer handling of weird float cases
+            return str(x)
+
+        if f.is_integer():
+            return self.default_integer_str.format(x=int(f))
+        else:
+            return self.default_float_str.format(x=f)
 
     def pef(self, x):
         """Pandas engineering format."""
@@ -488,8 +532,10 @@ class GT(object):
                 self.default_float_formatter = ff
             else:
                 if type(self.table_float_format) != str:
-                    raise ValueError('table_float_format must be a string or a function')
+                    raise ValueError(
+                        'table_float_format must be a string or a function')
                 fmt = self.table_float_format
+
                 def ff(x):
                     try:
                         return fmt.format(x=x)
@@ -520,13 +566,15 @@ class GT(object):
                     self._df_formatters.append(self.default_integer_formatter)
                 elif i in self.float_col_indices:
                     # trickier approach...
-                    self._df_formatters.append(self.default_float_formatter or self.make_float_formatter(self.df.iloc[:, i]))
+                    self._df_formatters.append(
+                        self.default_float_formatter or self.make_float_formatter(self.df.iloc[:, i]))
                 else:
                     # print(f'{i} default')
                     self._df_formatters.append(self.default_formatter)
             # self._df_formatters is now a list of length equal to cols in df
             if len(self._df_formatters) != self.df.shape[1]:
-                raise ValueError(f'Something wrong: {len(self._df_formatters)=} != {self.df.shape=}')
+                raise ValueError(
+                    f'Something wrong: {len(self._df_formatters)=} != {self.df.shape=}')
         return self._df_formatters
 
     def __repr__(self):
@@ -577,9 +625,9 @@ class GT(object):
     font-family: "Roboto", "Open Sans Condensed", "Arial", 'Segoe UI', sans-serif;
     font-size: {self.font_body}em;
     width: auto;
-    /* tb and lr 
+    /* tb and lr
     width: fit-content; */
-    margin: 10px auto; 
+    margin: 10px auto;
     border: none;
     overflow: auto;
     margin-left: auto;
@@ -668,7 +716,8 @@ class GT(object):
 
     def make_html(self):
         """Convert a pandas DataFrame to an HTML table."""
-        index_name_to_level = dict(zip(self.raw_df.index.names, range(self.nindex)))
+        index_name_to_level = dict(
+            zip(self.raw_df.index.names, range(self.nindex)))
         index_change_level = self.index_change_level.map(index_name_to_level)
         # this is easier and computed in the init
         column_change_level = self.column_change_level
@@ -683,7 +732,8 @@ class GT(object):
         idx_header = bit.iloc[:self.nindex, :self.ncolumns]
         columns = bit.iloc[self.nindex:, :self.ncolumns]
 
-        colw, tabs = GT.estimate_column_widths(self.df, nc_index=self.nindex, scale=1, equal=self.equal)
+        colw, tabs = GT.estimate_column_widths(
+            self.df, nc_index=self.nindex, scale=1, equal=self.equal)
         if self.debug:
             print(f'Input {self.tabs=}\nComputed {tabs=}')
         if self.tabs is not None:
@@ -692,7 +742,8 @@ class GT(object):
             elif len(self.tabs) == 1:
                 tabs = self.tabs * len(tabs)
             else:
-                logger.error(f'{self.tabs=} must be None, a single number, or a list of numbers of the correct length. Ignoring.')
+                logger.error(
+                    f'{self.tabs=} must be None, a single number, or a list of numbers of the correct length. Ignoring.')
         # print('HTML ' + ', '.join([f'{c:,.2f}' for c in tabs]))
 
         # set column widths; tabs returns lengths of strings in each column
@@ -703,7 +754,8 @@ class GT(object):
         # add the padding
         # TODO FONT SIZE
         # /4 works well for the tests (handles dates) but seems a bit illogical...
-        tabs = np.array(tabs)  + (self.padl + self.padr) / 12  # guessing font size...
+        # guessing font size...
+        tabs = np.array(tabs) + (self.padl + self.padr) / 12
         # em_per_char = 0.5; true exactly for tabular-nums
         em_per_char = 0.6
         tabs = tabs * em_per_char
@@ -740,7 +792,7 @@ class GT(object):
                 # need :i+1 to get down to the ith level
                 cum_col = 0  # keep track of where we are up to
                 for j, (nm, g) in enumerate(groupby(columns.iloc[:, :i+1].
-                        apply(lambda x: ':::'.join(str(i) for i in x), axis=1))):
+                                                    apply(lambda x: ':::'.join(str(i) for i in x), axis=1))):
                     # ::: needs to be something that does not appear in the col names
                     # need to combine for groupby but be able to split off the last level
                     # picks off the name of the bottom level
@@ -756,9 +808,11 @@ class GT(object):
                         vrule = ''
                     if j == 0 and not self.show_index:
                         # first column, no index, left align label
-                        html.append(f'<th colspan="{colspan}" class="grt-left {hrule} {vrule}">{nm}</th>')
+                        html.append(
+                            f'<th colspan="{colspan}" class="grt-left {hrule} {vrule}">{nm}</th>')
                     else:
-                        html.append(f'<th colspan="{colspan}" class="grt-center {hrule} {vrule}">{nm}</th>')
+                        html.append(
+                            f'<th colspan="{colspan}" class="grt-center {hrule} {vrule}">{nm}</th>')
                     cum_col += colspan
                 html.append("</tr>")
             html.append("</thead>")
@@ -783,7 +837,8 @@ class GT(object):
                         vrule = f'grt-vrule-index'
                     else:
                         vrule = ''
-                    html.append(f'<th class="grt-center {hrule} {vrule}">{r}</th>')
+                    html.append(
+                        f'<th class="grt-center {hrule} {vrule}">{r}</th>')
                 html.append("</tr>")
             html.append("</thead>")
 
@@ -802,7 +857,8 @@ class GT(object):
                         hrule = f'grt-hrule-{j}'
                     # html.append(f'<td class="grt-dx-r-{i} grt-dx-c-{j} {self.df_aligners[j]} {hrule}">{c}</td>')
                     col_id = f'grt-c-{j}'
-                    html.append(f'<td class="{col_id} {bold_idx} {self.df_aligners[j]} {hrule}">{c}</td>')
+                    html.append(
+                        f'<td class="{col_id} {bold_idx} {self.df_aligners[j]} {hrule}">{c}</td>')
             for j, c in enumerate(r.iloc[self.nindex:]):
                 # first col left handled by index/body divider
                 if 0 < j < self.ncols:
@@ -814,7 +870,8 @@ class GT(object):
                     vrule = ''
                 # html.append(f'<td class="grt-data-r-{i} grt-data-c-{j} {self.df_aligners[j+self.nindex]} {hrule} {vrule}">{c}</td>')
                 col_id = f'grt-c-{j+self.nindex}'
-                html.append(f'<td class="{col_id} {self.df_aligners[j+self.nindex]} {hrule} {vrule}">{c}</td>')
+                html.append(
+                    f'<td class="{col_id} {self.df_aligners[j+self.nindex]} {hrule} {vrule}">{c}</td>')
             html.append("</tr>")
         html.append("</tbody>")
         text = '\n'.join(html)
@@ -830,7 +887,8 @@ class GT(object):
             for style_tag in soup.find_all("style"):
                 if style_tag.string:
                     # Remove CSS comments
-                    cleaned_css = re.sub(r'/\*.*?\*/', '', style_tag.string, flags=re.DOTALL)
+                    cleaned_css = re.sub(
+                        r'/\*.*?\*/', '', style_tag.string, flags=re.DOTALL)
                     # Minify whitespace
                     # cleaned_css = re.sub(r'\s+', ' ', cleaned_css).strip()
                     style_tag.string.replace_with(cleaned_css)
@@ -848,7 +906,7 @@ class GT(object):
                     "</div>"]
             soup = BeautifulSoup('\n'.join(code), 'html.parser')
             soup = self.clean_style(soup)
-            self._clean_html = str(soup) # .prettify() -> too many newlines
+            self._clean_html = str(soup)  # .prettify() -> too many newlines
         return self._clean_html
 
     def _repr_latex_(self):
@@ -877,7 +935,8 @@ class GT(object):
         idx = idx.copy()
         idx.names = [i for i in range(idx.nlevels)]
         # Determine at which level the index changes
-        index_df = idx.to_frame(index=False)  # Convert MultiIndex to a DataFrame
+        # Convert MultiIndex to a DataFrame
+        index_df = idx.to_frame(index=False)
         # true / false match last row
         tf = index_df.ne(index_df.shift())
         # changes need at least one true
@@ -914,7 +973,8 @@ class GT(object):
                 return new_body
             # else have to handle the index
             index_formatters = self.df_formatters[:self.nindex]
-            df_index = df.reset_index(drop=False, col_level=self.df.columns.nlevels - 1).iloc[:, :self.nindex]
+            df_index = df.reset_index(
+                drop=False, col_level=self.df.columns.nlevels - 1).iloc[:, :self.nindex]
             new_index = GT.apply_formatters_work(df_index, index_formatters)
             # put them back together
             new_df = pd.concat([new_index, new_body], axis=1)
@@ -1028,7 +1088,7 @@ class GT(object):
         # always a good idea to do this...need to deal with underscores, %
         # and it handles index types that are not strings
         df = GT.clean_index(df)
-        if not np.all([i=='object' for i in df.dtypes]):
+        if not np.all([i == 'object' for i in df.dtypes]):
             print('cols of df not all objects: ', df.dtypes, sep='\n')
         # make sure percents are escaped, but not if already escaped
         df = df.replace(r"(?<!\\)%", r"\%", regex=True)
@@ -1037,13 +1097,15 @@ class GT(object):
         if self.show_index:
             nc_index = df.index.nlevels
             with warnings.catch_warnings():
-                warnings.simplefilter("ignore", category=pd.errors.PerformanceWarning)
-                df = df.reset_index(drop=False, col_level=df.columns.nlevels - 1)
+                warnings.simplefilter(
+                    "ignore", category=pd.errors.PerformanceWarning)
+                df = df.reset_index(
+                    drop=False, col_level=df.columns.nlevels - 1)
             if sparsify:
                 if hrule is None:
                     hrule = set()
             for i in range(sparsify):
-                # TODO update to new sparsify!! 
+                # TODO update to new sparsify!!
                 df.iloc[:, i], rules = GT.sparsify_old(df.iloc[:, i])
                 # don't want lines everywhere
                 if len(rules) < len(df) - 1:
@@ -1059,7 +1121,8 @@ class GT(object):
         vrule.add(nc_index + 1)
 
         nr_columns = df.columns.nlevels
-        logger.info(f'rows in columns {nr_columns}, columns in index {nc_index}')
+        logger.info(
+            f'rows in columns {nr_columns}, columns in index {nc_index}')
 
         # internal TeX code (same as HTML code)
         matrix_name = self.df_id
@@ -1077,7 +1140,8 @@ class GT(object):
             elif len(self.tabs) == 1:
                 tabs = self.tabs * len(tabs)
             else:
-                logger.error(f'{self.tabs=} must be None, a single number, or a list of numbers of the correct length. Ignoring.')
+                logger.error(
+                    f'{self.tabs=} must be None, a single number, or a list of numbers of the correct length. Ignoring.')
         # print('TIKZ ' + ', '.join([f'{c:,.2f}' for c in tabs]))
         # print(f'TIKZ {colw=}, {tabs=}')
         logger.info(f'tabs: {tabs}')
@@ -1114,9 +1178,11 @@ class GT(object):
         # table header
         # title rows, start with the empty spacer row
         i = 1
-        sio.write(f'\trow {i}/.style={{nodes={{text=black, anchor=north, inner ysep=0, text height=0, text depth=0}}}},\n')
+        sio.write(
+            f'\trow {i}/.style={{nodes={{text=black, anchor=north, inner ysep=0, text height=0, text depth=0}}}},\n')
         for i in range(2, nr_columns + 2):
-            sio.write(f'\trow {i}/.style={{nodes={{text=black, anchor=south, inner ysep=.2em, minimum height=1.3em, font=\\bfseries}}}},\n')
+            sio.write(
+                f'\trow {i}/.style={{nodes={{text=black, anchor=south, inner ysep=.2em, minimum height=1.3em, font=\\bfseries}}}},\n')
 
         # write column spec
         for i, w, al in zip(range(1, len(align) + 1), tabs, align):
@@ -1132,10 +1198,12 @@ class GT(object):
                 sio.write(f'\tcolumn {i:>2d}/.style={{'
                           f'nodes={{align={ad[al]:<6s}}}, nosep, text width={max(2, 0.6 * w):.2f}em}},\n')
         # extra col to right which enforces row height
-        sio.write(f'\tcolumn {i+1:>2d}/.style={{text height=0.9em, text depth=0.2em, nosep, text width=0em}}')
+        sio.write(
+            f'\tcolumn {i+1:>2d}/.style={{text height=0.9em, text depth=0.2em, nosep, text width=0em}}')
         sio.write('\t}]\n')
 
-        sio.write("\\matrix ({matrix_name}) [table, ampersand replacement=\\&]{{\n".format(matrix_name=matrix_name))
+        sio.write("\\matrix ({matrix_name}) [table, ampersand replacement=\\&]{{\n".format(
+            matrix_name=matrix_name))
 
         # body of table, starting with the column headers
         # spacer row
@@ -1192,7 +1260,8 @@ class GT(object):
         # function to convert row numbers to TeX table format (edge case on last row -1 is nr and is caught, -2
         # is below second to last row = above last row)
         # shift down extra 1 for the spacer row at the top
-        def python_2_tex(x): return x + nr_columns + 2 if x >= 0 else nr + x + 3
+        def python_2_tex(x): return x + nr_columns + \
+            2 if x >= 0 else nr + x + 3
         tb_rules = [nr_columns + 1, python_2_tex(-1)]
         if hrule:
             hrule = set(map(python_2_tex, hrule)).union(tb_rules)
@@ -1208,10 +1277,12 @@ class GT(object):
         # top rule is special
         ls = 'thick'
         ln = 1
-        sio.write(f'\\path[draw, {ls}] ({matrix_name}-{ln}-1.south west)  -- ({matrix_name}-{ln}-{nc+1}.south east);\n')
+        sio.write(
+            f'\\path[draw, {ls}] ({matrix_name}-{ln}-1.south west)  -- ({matrix_name}-{ln}-{nc+1}.south east);\n')
 
         for ln in hrule:
-            ls = 'thick' if ln == nr + nr_columns + 1 else ('semithick' if ln == 1 + nr_columns else 'very thin')
+            ls = 'thick' if ln == nr + nr_columns + \
+                1 else ('semithick' if ln == 1 + nr_columns else 'very thin')
             if ln < nr:
                 # line above TeX row ln+1 that exists
                 sio.write(f'\\path[draw, {ls}] ([yshift={-yshift}em]{matrix_name}-{ln}-1.south west)  -- '
@@ -1243,7 +1314,8 @@ class GT(object):
                     written.add(cn - 1)
 
         if len(mi_vrules) > 0:
-            logger.debug(f'Generated vlines {mi_vrules}; already written {written}')
+            logger.debug(
+                f'Generated vlines {mi_vrules}; already written {written}')
             # vertical rules for the multi index
             # these go to the RIGHT of the relevant column and reflect the index columns already
             # mi_vrules = {level of index: [list of vrule columns]
@@ -1274,11 +1346,13 @@ class GT(object):
             label = f'\\label{{tab:{label}}}'
         if caption == '':
             if lt != '':
-                logger.info(f'You have a label but no caption; the label {label} will be ignored.')
+                logger.info(
+                    f'You have a label but no caption; the label {label} will be ignored.')
             caption = '% caption placeholder'
         else:
             caption = f'\\caption{{{self.caption} {label}}}'
-        sio.write(footer.format(figure=figure, post_process=post_process, caption=caption))
+        sio.write(footer.format(figure=figure,
+                  post_process=post_process, caption=caption))
 
         self.tex = sio.getvalue()
         return self.tex
@@ -1341,7 +1415,8 @@ class GT(object):
                     colw[c] = lens.max()
                     mxmn[c] = (lens.max(), lens.min())
                 except Exception as e:
-                    logger.error(f'{c} error {e} DO SOMETHING ABOUT THIS...if it never occurs dont need the if')
+                    logger.error(
+                        f'{c} error {e} DO SOMETHING ABOUT THIS...if it never occurs dont need the if')
                     colw[c] = df[c].str.len().max()
                     mxmn[c] = (df[c].str.len().max(), df[c].str.len().min())
             else:
@@ -1565,7 +1640,7 @@ class GT(object):
             aligners = None
         else:
             aligners = ''.join(aligners)
-        txt = [[j.strip()  for j in i.split('|')]  for i in txt]
+        txt = [[j.strip() for j in i.split('|')] for i in txt]
         df = pd.DataFrame(txt).T
         df = df.set_index(0)
         df = df.T
@@ -1579,6 +1654,7 @@ class sGT(GT):
     Each application can create its own defaults by subclassing GT
     in this way.
     """
+
     def __init__(self, df, caption="", guess_years=True, ratio_regex='lr|roe|coc', **kwargs):
         """Create Steve House-Style Formatter. Does not handle list of lists input."""
         if isinstance(df, str):
@@ -1607,7 +1683,8 @@ class sGT(GT):
         vrule_widths = (1.5, 1, 0.5) if ncolumns > 1 else None
 
         table_hrule_width = 1 if nindex == 1 else 2
-        table_vrule_width = 1 if ncolumns == 1 else (1.5 if ncolumns == 2 else 2)
+        table_vrule_width = 1 if ncolumns == 1 else (
+            1.5 if ncolumns == 2 else 2)
 
         # padding
         nr, nc = df.shape
