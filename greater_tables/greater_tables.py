@@ -1088,8 +1088,8 @@ class GT(object):
         # always a good idea to do this...need to deal with underscores, %
         # and it handles index types that are not strings
         df = GT.clean_index(df)
-        if not np.all([i == 'object' for i in df.dtypes]):
-            print('cols of df not all objects: ', df.dtypes, sep='\n')
+        if not np.all([i == 'object' for i in df.dtypes]) and not df.empty:
+            logger.warning('cols of df not all objects (expect all obs at this point): ', df.dtypes, sep='\n')
         # make sure percents are escaped, but not if already escaped
         df = df.replace(r"(?<!\\)%", r"\%", regex=True)
 
@@ -1379,6 +1379,8 @@ class GT(object):
         headw = dict.fromkeys(df.columns, 0)
         tabs = []
         mxmn = {}
+        if df.empty:
+            return colw, tabs
         nl = nc_index
         for i, c in enumerate(df.columns):
             # figure width of the column labels; if index c= str, if MI then c = tuple
@@ -1480,9 +1482,12 @@ class GT(object):
         column results from a reset_index so has index 0,1,2... this is relied upon.
         TODO: this doesn't work if there is a change in a higher level but not this level
         """
-        last = col[0]
+        # fix error with empty dfs
         new_col = col.copy()
         rules = []
+        if col.empty:
+            return new_col, rules
+        last = col[0]
         for k, v in col[1:].items():
             if v == last:
                 new_col[k] = ''
