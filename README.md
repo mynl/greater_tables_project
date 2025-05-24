@@ -79,3 +79,10 @@ More coming soon.
 
 Available on
 [readthedocs](https://greater-tables-project.readthedocs.io/en/latest).
+
+## Versions
+
+### 1.1.1
+* Added logo, updated docs.
+
+### 1.1.0
