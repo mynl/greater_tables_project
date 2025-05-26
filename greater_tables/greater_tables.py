@@ -51,11 +51,13 @@ class GT(object):
                  formatters=None,
                  ratio_cols=None,
                  year_cols=None,
+                 raw_cols=None,
                  show_index=True,
                  default_integer_str='{x:,d}',
                  default_float_str='{x:,.3f}',
                  default_date_str='%Y-%m-%d',
                  default_ratio_str='{x:.1%}',
+                 default_formatter=None,
                  table_float_format=None,
                  table_hrule_width=1,
                  table_vrule_width=1,
@@ -79,6 +81,8 @@ class GT(object):
                  caption_align='center',
                  large_ok=False,
                  max_str_length=-1,
+                 str_table_fmt='mixed_grid',
+                 str_max_width=200,
                  debug=False):
         """
         Create a greater_tables formatting object.
@@ -86,8 +90,43 @@ class GT(object):
         Provides html and latex output in quarto/Jupyter accessible manner.
         Wraps AND COPIES the dataframe df. WILL NOT REFLECT CHANGES TO DF.
 
-        Recommended usage is to derive from GT and set defaults suitable to your particular application.
-        In that way you can maintain a "house-style"
+        Recommended usage is to subclass GT (or use functools.partial) and set defaults suitable to your particular
+        application. In that way you can maintain a "house-style"
+
+        Process
+        --------
+
+        **Input transformation**
+
+        * ``pd.Series`` converted to ``DataFrame``
+        * ``list`` converted to  ``DataFrame``, optionally using row 0 as  ``header_row``
+        * A string is  assumed to be a pipe-separated markdown table which is converted to a ``DataFrame`` setting aligners per the alignment row
+        * All other input types are an error
+
+        The input ``df`` must have unique column names. It is then copied into ``self.df`` which will be changed and ``self.raw_df`` for reference. The copy is hashed for the table name.
+
+        **Mangling**
+
+        * The index is reset and kept, so that all columns are on an equal footing
+        * The index change levels are computed to determine LaTeX hrules
+        * ratio year, and raw columns converted to a list (can be input as a single string name)
+        * Columns, except raw columns, are cast to floats
+        * Column types by index determined
+        * default formatter function set (wrapping input, if any)
+        * Aligner column input decoded into aligner values (``grt-left,grt-right,grt-center``); index aligners separated
+        * Formatters decoded, strings mapped to lambda functions as f-string formatters, integers as number of decimals
+        * Tab values expanded into an iterable
+        * Dataframe at this point (index reset, cast) saved to ``df_pre_applying_formatters``
+        * Determine formatters (``df_formatters`` property, a list of column index formatting functions:
+            * Make the default float formatter if entered (callable, string, number; wrapped in try/except)
+            * Determine each column's format type and add function
+        * Run ``apply_formatters`` to apply all format choices to ``df``. This function handles index columns slightly differently, but results in the formatters being applied to each column.
+        *  Sparsify if requested and if multiindex
+        *  Result is a dataframe with all object column types and values that reflect the formatting choices.
+
+
+        Parameters
+        -----------
 
         :param df: target DataFrame or list of lists or markdown table string
         :param caption: table caption, optional
@@ -95,6 +134,7 @@ class GT(object):
         :param formatters: None or dict (type or colname) -> format function for the column; formatters trump ratio_cols
         :param ratio_cols: None, or "all" or list of column names treated as ratios. Set defaults in derived class suitable to application.
         :param year_cols: None, or "all" or list of column names treated as years (no commas, no decimals). Set defaults in derived class suitable to application.
+        :param raw_cols: None, or "all" or list of column names that are NOT cast to floats. Set defaults in derived class suitable to application.
         :param show_index: if True, show the index columns, default True
         :param default_integer_str: format f-string for integers, default '{x:,d}'
         :param default_float_str: format f-string for floats, default '{x:,.3f}'
@@ -123,6 +163,8 @@ class GT(object):
         :param caption_align: for the caption
         :param large_ok: signal that you are intentionally applying to a large dataframe. Subclasses may restrict or apply .head() to df.
         :param max_str_length: maximum displayed length of object types, that are cast to strings. Eg if you have nested DataFrames!
+        :param str_table_fmt: table format used for string output (markdown), default mixed_grid
+        :param str_max_width: max table width used for markdown string output, default 200
         :param debug: if True, add id to caption and use colored lines in table, default False.
         """
         # deal with alternative input modes
@@ -159,6 +201,8 @@ class GT(object):
         # get rid of column names
         # self.df.columns.names = [None] * self.df.columns.nlevels
         self.df_id = df_short_hash(self.df)
+        self.str_table_fmt = str_table_fmt
+        self.str_max_width = str_max_width
         self.debug = debug
         self.caption = caption + \
             (' (id: ' + self.df_id + ')' if self.debug else '')
@@ -188,7 +232,7 @@ class GT(object):
         self.column_change_level = GT.changed_level(self.raw_df.columns)
 
         # determine ratio columns
-        if ratio_cols is not None and np.any(self.df.columns.duplicated()):
+        if ratio_cols is not None and not self.df.columns.is_unique:
             logger.warning(
                 'Ratio cols specified with non-unique column names: ignoring request.')
             self.ratio_cols = []
@@ -203,7 +247,7 @@ class GT(object):
                 self.ratio_cols = ratio_cols
 
         # determine year columns
-        if year_cols is not None and np.any(self.df.columns.duplicated()):
+        if year_cols is not None and not self.df.columns.is_unique:
             logger.warning(
                 'Year cols specified with non-unique column names: ignoring request.')
             self.year_cols = []
@@ -215,11 +259,38 @@ class GT(object):
             else:
                 self.year_cols = year_cols
 
+        # determine columns NOT to cast to floats
+        if raw_cols is not None and not self.df.columns.is_unique:
+            logger.warning(
+                'Year cols specified with non-unique column names: ignoring request.')
+            self.raw_cols = []
+        else:
+            if raw_cols is None:
+                self.raw_cols = []
+            elif raw_cols is not None and not isinstance(raw_cols, (tuple, list)):
+                self.raw_cols = [raw_cols]
+            else:
+                self.raw_cols = raw_cols
+
+        # figure the default formatter (used in conjunction with raw columns)
+        if default_formatter is None:
+            self.default_formatter = self._default_formatter
+        else:
+            assert callable(default_formatter), 'default_formatter must be callable'
+            def wrapped_default_formatter(x):
+                try:
+                    return default_formatter(x)
+                except ValueError:
+                    return str(x)
+            self.default_formatter = wrapped_default_formatter
+
         with warnings.catch_warnings():
             warnings.simplefilter(
                 "ignore", category=pd.errors.PerformanceWarning)
             if cast_to_floats:
                 for i, c in enumerate(self.df.columns):
+                    if c in self.raw_cols:
+                        continue
                     old_type = self.df.dtypes[c]
                     if not np.any((is_integer_dtype(self.df.iloc[:, i]),
                                    is_datetime64_any_dtype(self.df.iloc[:, i]))):
@@ -236,7 +307,7 @@ class GT(object):
         self.float_col_indices = []
         self.integer_col_indices = []
         self.date_col_indices = []
-        self.object_col_indices = []
+        self.object_col_indices = []  # not accually used, but for neatness
         # manage non-unique col names here
         logger.debug('FIGURING TYPES')
         for i in range(self.df.shape[1]):
@@ -276,14 +347,17 @@ class GT(object):
             elif i < self.nindex:
                 # index -> left
                 self.df_aligners.append('grt-left')
-            elif c in self.ratio_cols or i in self.float_col_indices or i in self.integer_col_indices:
-                # number -> right
-                self.df_aligners.append('grt-right')
             elif c in self.year_cols:
                 self.df_aligners.append('grt-center')
+            elif c in self.raw_cols:
+                # these are strings
+                self.df_aligners.append('grt-left')
             elif i in self.date_col_indices:
                 # center dates, why not!
                 self.df_aligners.append('grt-center')
+            elif c in self.ratio_cols or i in self.float_col_indices or i in self.integer_col_indices:
+                # number -> right
+                self.df_aligners.append('grt-right')
             else:
                 # all else, left
                 self.df_aligners.append('grt-left')
@@ -406,6 +480,10 @@ class GT(object):
         except ValueError:
             return str(x)
 
+    def default_raw_formatter(self, x):
+        """Formatter for columns flagged as raw."""
+        return str(x)
+
     # def default_formatter(self, x):
     #     """Universal formatter for other types."""
     #     try:
@@ -432,8 +510,8 @@ class GT(object):
     #         else:
     #             return str(x)[:self.max_str_length]
 
-    def default_formatter(self, x):
-        """Universal formatter for other types (GTP re-write of above cluster."""
+    def _default_formatter(self, x):
+        """Default universal formatter for other types (GTP re-write of above cluster."""
         try:
             f = float(x)
         except (TypeError, ValueError):
@@ -518,36 +596,36 @@ class GT(object):
         for float cols the formatter is created custom to the details of
         each column.
         """
-        # because of non-unique indexes, index by position not name
-        if self.table_float_format is not None:
-            if callable(self.table_float_format):
-                # wrap in error protections
-                def ff(x):
-                    try:
-                        return self.table_float_format(x=x)
-                    except ValueError:
-                        return str(x)
-                    except Exception as e:
-                        logger.error(f'Custom float function raised {e=}')
-                self.default_float_formatter = ff
-            else:
-                if type(self.table_float_format) != str:
-                    raise ValueError(
-                        'table_float_format must be a string or a function')
-                fmt = self.table_float_format
-
-                def ff(x):
-                    try:
-                        return fmt.format(x=x)
-                    except ValueError:
-                        return str(x)
-                    except Exception as e:
-                        logger.error(f'Custom float format string raised {e=}')
-                self.default_float_formatter = ff
-        else:
-            self.default_float_formatter = False
-
         if self._df_formatters is None:
+            # because of non-unique indexes, index by position not name
+            if self.table_float_format is not None:
+                if callable(self.table_float_format):
+                    # wrap in error protections
+                    def ff(x):
+                        try:
+                            return self.table_float_format(x=x)
+                        except ValueError:
+                            return str(x)
+                        except Exception as e:
+                            logger.error(f'Custom float function raised {e=}')
+                    self.default_float_formatter = ff
+                else:
+                    if type(self.table_float_format) != str:
+                        raise ValueError(
+                            'table_float_format must be a string or a function')
+                    fmt = self.table_float_format
+
+                    def ff(x):
+                        try:
+                            return fmt.format(x=x)
+                        except ValueError:
+                            return str(x)
+                        except Exception as e:
+                            logger.error(f'Custom float format string raised {e=}')
+                    self.default_float_formatter = ff
+            else:
+                self.default_float_formatter = False
+
             self._df_formatters = []
             for i, c in enumerate(self.df.columns):
                 # set a default, note here can have
@@ -559,6 +637,8 @@ class GT(object):
                     self._df_formatters.append(self.default_ratio_formatter)
                 elif c in self.year_cols:
                     self._df_formatters.append(self.default_year_formatter)
+                elif c in self.raw_cols:
+                    self._df_formatters.append(self.default_raw_formatter)
                 elif i in self.date_col_indices:
                     self._df_formatters.append(self.default_date_formatter)
                 elif i in self.integer_col_indices:
@@ -580,6 +660,35 @@ class GT(object):
     def __repr__(self):
         """Basic representation."""
         return f"GreaterTable(df_id={self.df_id})"
+
+    def __str__(self):
+        """String representation, for print()."""
+        df = self.df
+        # strip off grt-
+        dfa = [i[4:] for i in self.df_aligners]
+        colw = {c: 1 for c in df.columns}
+        for c in df:
+            lens = df[c].astype(str).str.len()
+            lens = lens[lens > 0]
+            if len(lens):
+                m = lens.mean()
+                s = lens.std()
+            else:
+                m, s = 1, 0
+            cw = min(m + s, lens.max(), np.percentile(lens, 75))
+            colw[c] = np.round(cw, 0)
+        total_width = sum(colw.values())
+        if total_width > self.str_max_width:
+            scale = self.str_max_width / total_width
+            for k, v in colw.items():
+                colw[k] = max(1, np.round(colw[k] * scale, 0))
+        print(sum(colw.values()), colw)
+        return df.to_markdown(
+            index=self.show_index,
+            colalign=dfa,
+            tablefmt=self.str_table_fmt,
+            maxcolwidths=[colw.get(i) for i in df.columns],
+            )
 
     def _repr_html_(self):
         """
