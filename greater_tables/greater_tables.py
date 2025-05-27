@@ -129,7 +129,7 @@ class GT(object):
         -----------
 
         :param df: target DataFrame or list of lists or markdown table string
-        :param caption: table caption, optional
+        :param caption: table caption, optional (GT will look for gt_caption attribute of df and use that)
         :param aligners: None or dict (type or colname) -> left | center | right
         :param formatters: None or dict (type or colname) -> format function for the column; formatters trump ratio_cols
         :param ratio_cols: None, or "all" or list of column names treated as ratios. Set defaults in derived class suitable to application.
@@ -195,6 +195,14 @@ class GT(object):
 
         if not df.columns.is_unique:
             raise ValueError('df column names are not unique')
+
+        # extract value BEFORE copying, copying does not carry these attributes over
+        if caption != '':
+            self.caption = caption
+        else:
+            # used by querex etc.
+            self.caption = getattr(df, 'gt_caption', '')
+
         self.df = df.copy(deep=True)   # the object being formatted
         self.raw_df = df.copy(deep=True)
         # if not column_names:
@@ -204,8 +212,8 @@ class GT(object):
         self.str_table_fmt = str_table_fmt
         self.str_max_width = str_max_width
         self.debug = debug
-        self.caption = caption + \
-            (' (id: ' + self.df_id + ')' if self.debug else '')
+        if self.caption != '' and self.debug:
+            self.caption += f' (id: {self.df_id})'
         self.max_str_length = max_str_length
         # before messing
         self.show_index = show_index
