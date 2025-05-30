@@ -82,7 +82,7 @@ class GT(object):
                  large_ok=False,
                  max_str_length=-1,
                  str_table_fmt='mixed_grid',
-                 str_max_width=200,
+                 max_table_width=200,
                  debug=False):
         """
         Create a greater_tables formatting object.
@@ -164,10 +164,13 @@ class GT(object):
         :param large_ok: signal that you are intentionally applying to a large dataframe. Subclasses may restrict or apply .head() to df.
         :param max_str_length: maximum displayed length of object types, that are cast to strings. Eg if you have nested DataFrames!
         :param str_table_fmt: table format used for string output (markdown), default mixed_grid
-        :param str_max_width: max table width used for markdown string output, default 200
+        :param max_table_width: max table width used for markdown string output, default 200
         :param debug: if True, add id to caption and use colored lines in table, default False.
         """
         # deal with alternative input modes
+        if df is None:
+            # don't want None to fail
+            df = pd.DataFrame([])
         if isinstance(df, pd.DataFrame):
             # usual use case
             pass
@@ -210,7 +213,7 @@ class GT(object):
         # self.df.columns.names = [None] * self.df.columns.nlevels
         self.df_id = df_short_hash(self.df)
         self.str_table_fmt = str_table_fmt
-        self.str_max_width = str_max_width
+        self.max_table_width = max_table_width
         self.debug = debug
         if self.caption != '' and self.debug:
             self.caption += f' (id: {self.df_id})'
@@ -222,6 +225,7 @@ class GT(object):
         self.ncols = self.df.shape[1]
         self.dt = self.df.dtypes
 
+        # reset index to put all columns on an equal footing, but note number ofindex cols
         with warnings.catch_warnings():
             if self.show_index:
                 warnings.simplefilter(
@@ -292,6 +296,7 @@ class GT(object):
                     return str(x)
             self.default_formatter = wrapped_default_formatter
 
+        # cast as much as possible to floats
         with warnings.catch_warnings():
             warnings.simplefilter(
                 "ignore", category=pd.errors.PerformanceWarning)
@@ -311,11 +316,15 @@ class GT(object):
                             logger.debug(
                                 f'coercing {i}={c} from {old_type} to float FAILED')
 
-        # now can determine types
+        # now can determine types and infer the break penalties (for column sizes)
         self.float_col_indices = []
         self.integer_col_indices = []
         self.date_col_indices = []
-        self.object_col_indices = []  # not accually used, but for neatness
+        self.object_col_indices = []  # not actually used, but for neatness
+        self.break_penalties = []
+        break_never = 10
+        break_maybe = 5
+        break_ok = 1
         # manage non-unique col names here
         logger.debug('FIGURING TYPES')
         for i in range(self.df.shape[1]):
@@ -323,15 +332,23 @@ class GT(object):
             if is_datetime64_any_dtype(ser):
                 logger.debug(f'col {i} = {self.df.columns[i]} is DATE')
                 self.date_col_indices.append(i)
+                self.break_penalties.append(break_maybe)
             elif is_integer_dtype(ser):
                 logger.debug(f'col {i} = {self.df.columns[i]} is INTEGER')
                 self.integer_col_indices.append(i)
+                self.break_penalties.append(break_never)
             elif is_float_dtype(ser):
                 logger.debug(f'col {i} = {self.df.columns[i]} is FLOAT')
                 self.float_col_indices.append(i)
+                self.break_penalties.append(break_never)
             else:
                 logger.debug(f'col {i} = {self.df.columns[i]} is OBJECT')
                 self.object_col_indices.append(i)
+                c = ser.name
+                if c in self.year_cols or c in self.ratio_cols:
+                    self.break_penalties.append(break_never)
+                else:
+                    self.break_penalties.append(break_ok)
 
         # figure out column and index alignment
         if aligners is not None and np.any(self.df.columns.duplicated()):
@@ -449,6 +466,7 @@ class GT(object):
         # this radically alters the df, so keep a copy for now...
         self.df_pre_applying_formatters = self.df.copy()
         self.df = self.apply_formatters(self.df)
+        self._debug_col_widths = None
         # sparsify
         if sparsify and self.nindex > 1:
             self.df = GT.sparsify(self.df, self.df.columns[:self.nindex])
@@ -669,8 +687,201 @@ class GT(object):
         """Basic representation."""
         return f"GreaterTable(df_id={self.df_id})"
 
+    def optimize_column_widths(self, df=None, all_breakable=False):
+        """
+        Optimize column widths for a Pandas DataFrame given an overall width constraint.
+
+        This function is run twice, once with the original df and once with the headings
+        as the only row. In the latter case all columns are breakable.
+
+        Widths are in abstract character units.
+
+        Working variables
+            df <- self.df, the formatted input dataframe
+            breakable_cols derived from self.break_penalties; a dictionary where keys are column names and values are booleans.
+                            True if column content can wrap (text), False otherwise (numbers/fixed).
+            self.max_table_width: The total available width for the table (in abstract units).
+
+        Returns:
+            A dictionary mapping column names to their optimized widths (in abstract units).
+
+        Raises:
+            ValueError: If a column in the DataFrame is not found in the breakable_cols mapping.
+
+        Gemini code
+        """
+        PAD = 0  # left right padding of one (certainly in mixed_grid)
+        # df we will work on: this has had all formatting applied (??string pruning?)
+        df = df if df is not None else self.df
+        # all dtypes should be object
+        assert all([i == object for i in df.dtypes.values])
+
+        col_widths = {}
+        # The absolute minimum width each column can take (e.g., longest word for text)
+        min_possible_widths = {}
+        # The width if content didn't wrap (single line)
+        # Series=dict colname->max width of cells in column
+        ideal_widths = (PAD + df.map(len).max(axis=0)).to_dict()
+        # map break penalties to True (strings) / False (numbers and dates)
+        if all_breakable:
+            breakable_cols = dict(zip(df.columns, [True] * len(df.columns)))
+        else:
+            breakable_cols = dict(zip(df.columns, [True if i < 5 else False for i in self.break_penalties]))
+
+        # 1. Calculate ideal (no wrap) and minimum possible widths for all columns
+        for col_name in df.columns:
+            if col_name not in breakable_cols:
+                raise ValueError(f"Column '{col_name}' not found in breakable_cols mapping. Please provide a boolean for every column.")
+
+            max_len = ideal_widths[col_name]
+
+            if breakable_cols[col_name]:
+                # For breakable text, min width is the longest word, or a small default
+                # Estimate the minimum unbreakable width for a text column.
+                min_possible_widths[col_name] = (
+                    df[col_name].str
+                        .split(pat='[^\w]', regex=True, expand=True)
+                        .fillna('')
+                        .map(len)
+                        .max(axis=1)
+                        .max()
+                        ) + PAD
+            else:
+                # For non-breakable content, min width is its ideal width
+                min_possible_widths[col_name] = max_len
+
+            # Ensure a minimum width of 1 unit for all columns, even if content is empty
+            if min_possible_widths[col_name] == 0:
+                min_possible_widths[col_name] = 1
+
+        total_ideal_width = sum(ideal_widths.values())
+        total_min_possible_width = sum(min_possible_widths.values())
+
+        # 2. Distribute width based on self.max_table_width
+        if total_ideal_width <= self.max_table_width:
+            # We have enough space for ideal widths (no wrapping).
+            # Assign ideal widths and distribute any remaining space proportionally.
+            col_widths = {col: ideal_widths[col] for col in df.columns}
+
+            # DON'T EXPAND
+            # remaining_space = self.max_table_width - total_ideal_width
+
+            # if remaining_space > 0 and total_ideal_width > 0:
+            #     # Distribute remaining space proportionally to current ideal widths
+            #     proportion_factor = remaining_space / total_ideal_width
+            #     for col in df.columns:
+            #         col_widths[col] += col_widths[col] * proportion_factor
+            # elif remaining_space > 0 and total_ideal_width == 0 and len(df.columns) > 0:
+            #     # Handle case where all ideal widths are zero (e.g., empty DataFrame)
+            #     # Distribute space equally
+            #     equal_share = self.max_table_width / len(df.columns)
+            #     for col in df.columns:
+            #         col_widths[col] = equal_share
+
+        else:
+            # We need to shrink. Total ideal width exceeds the constraint.
+            # This is where the heuristic comes in.
+
+            if self.max_table_width < total_min_possible_width:
+                # The constraint is tighter than even the absolute minimums.
+                # In this case, we have to scale down even the minimums. This will
+                # likely lead to content truncation or severe wrapping.
+                if total_min_possible_width > 0:
+                    scale_factor = self.max_table_width / total_min_possible_width
+                    for col in df.columns:
+                        col_widths[col] = min_possible_widths[col] * scale_factor
+                elif len(df.columns) > 0:  # All min widths are zero, distribute equally
+                    equal_share = self.max_table_width / len(df.columns)
+                    for col in df.columns:
+                        col_widths[col] = equal_share
+                else:  # No columns to distribute width to
+                    return {}  # Empty dictionary
+            else:
+                # We can fit the minimums, but not all ideals.
+                # Assign minimum widths first.
+                col_widths = {col: min_possible_widths[col] for col in df.columns}
+                remaining_space = self.max_table_width - total_min_possible_width
+
+                # Identify columns that can expand from their minimums up to their ideal widths.
+                expandable_cols_capacity = {
+                    col: ideal_widths[col] - min_possible_widths[col]
+                    for col in df.columns
+                    if ideal_widths[col] > min_possible_widths[col]
+                }
+                total_expandable_capacity = sum(expandable_cols_capacity.values())
+
+                if remaining_space > 0 and total_expandable_capacity > 0:
+                    # Distribute the `remaining_space` among expandable columns.
+                    # We distribute proportionally based on their *capacity to expand*.
+                    # This ensures columns that *need* more space (to reach ideal) get more of the available extra space.
+                    distribute_factor = min(1.0, remaining_space / total_expandable_capacity)
+
+                    for col in df.columns:
+                        if col in expandable_cols_capacity:
+                            col_widths[col] += expandable_cols_capacity[col] * distribute_factor
+
+        # Round widths to a sensible number of decimal places for practical use
+        for col in col_widths:
+            col_widths[col] = round(col_widths[col], 0)
+
+        _debug = pd.DataFrame({
+            'break_penalties': self.break_penalties,
+            'breakable_cols': breakable_cols.values(),
+            'min_possible_widths': min_possible_widths.values(),
+            'ideal_widths': ideal_widths.values(),
+            'col_widths': col_widths.values(),
+            }, index=df.columns)
+        # _debug.loc['total'] = _debug.sum(axis=0)
+        try:
+            _debug.loc['total', :] = _debug.sum(0)
+        except:
+            _debug.loc['total', :] = np.nan
+        self._debug_col_widths = _debug
+
+        return col_widths
+
     def __str__(self):
         """String representation, for print()."""
+        if self.df.empty:
+            return ""
+        # need to run twice: for df and headers
+
+        df_dummy = self.df.copy()
+        df_dummy = df_dummy.iloc[:1]
+        df_dummy.iloc[0] = df_dummy.columns
+        # TODO assumes all column headers are strings, which is broadly true
+        colw_hd = self.optimize_column_widths(df_dummy, all_breakable=True)
+        temp1 = self._debug_col_widths['col_widths'].values
+        temp2 = self._debug_col_widths['ideal_widths'].values
+        temp3 = self._debug_col_widths['min_possible_widths']
+
+        # print(colw_hd)
+
+        colw_df = self.optimize_column_widths()
+        self._debug_col_widths['headers_cw'] = temp1
+        self._debug_col_widths['headers_ideal'] = temp2
+        self._debug_col_widths['headers_min'] = temp3.values
+
+        # print(colw_df)
+        # strip off leading grt- prefix from aligners
+        dfa = [i[4:] for i in self.df_aligners]
+
+        col_mx = [max(colw_df[i], temp3[i]) for i in self.df.columns]
+
+        return self.df.to_markdown(
+            index=False, # self.show_index,
+            colalign=dfa,
+            tablefmt=self.str_table_fmt,
+            maxcolwidths=col_mx,
+            maxheadercolwidths=col_mx,
+            # maxcolwidths=[colw_df.get(i) for i in self.df.columns],
+            # maxheadercolwidths=[colw_df.get(i) for i in self.df.columns],
+        )
+
+    def __OLDstr__(self):
+        """String representation, for print()."""
+        if self.df.empty:
+            return ""
         df = self.df
         # strip off grt-
         dfa = [i[4:] for i in self.df_aligners]
@@ -681,16 +892,22 @@ class GT(object):
             if len(lens):
                 m = lens.mean()
                 s = lens.std()
+                x = lens.max()
             else:
-                m, s = 1, 0
-            cw = min(m + s, lens.max(), np.percentile(lens, 75))
-            colw[c] = np.round(cw, 0)
+                m, s, x = 1, 0, 100
+            if x <= 20:
+                # don't be silly about trimming relatively short columns
+                colw[c] = x
+            else:
+                cw = min(m + s, lens.max(), np.percentile(lens, 75))
+                colw[c] = np.round(cw, 0)
         total_width = sum(colw.values())
-        if total_width > self.str_max_width:
-            scale = self.str_max_width / total_width
+        scale = 1
+        if total_width > self.max_table_width:
+            scale = self.max_table_width / total_width
             for k, v in colw.items():
                 colw[k] = max(1, np.round(colw[k] * scale, 0))
-        print(sum(colw.values()), colw)
+        print(f'{scale=}, {sum(colw.values())=}', colw)
         return df.to_markdown(
             index=self.show_index,
             colalign=dfa,
@@ -852,7 +1069,7 @@ class GT(object):
         colw, tabs = GT.estimate_column_widths(
             self.df, nc_index=self.nindex, scale=1, equal=self.equal)
         if self.debug:
-            print(f'Input {self.tabs=}\nComputed {tabs=}')
+            print(f'Make html Input {self.tabs=}\nComputed {tabs=}')
         if self.tabs is not None:
             if len(tabs) == len(self.tabs):
                 tabs = self.tabs
@@ -1250,7 +1467,7 @@ class GT(object):
         # estimate... originally called guess_column_widths, with more parameters
         colw, tabs = GT.estimate_column_widths(df, nc_index=nc_index, scale=scale, equal=self.equal)  # noqa
         if self.debug:
-            print(f'Input {self.tabs=}\nComputed {tabs=}')
+            print(f'Make TikZ Input {self.tabs=}\nComputed {tabs=}')
         if self.tabs is not None:
             if len(tabs) == len(self.tabs):
                 tabs = self.tabs
