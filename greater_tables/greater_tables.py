@@ -1,20 +1,32 @@
 # table formatting again
-from bs4 import BeautifulSoup
 from decimal import InvalidOperation
+from enum import IntEnum
 from io import StringIO
 from itertools import groupby
 import logging
+from pathlib import Path
+import re
+import sys
+from textwrap import wrap
+import warnings
+
+from bs4 import BeautifulSoup
 import numpy as np
 import pandas as pd
 from pandas.api.types import is_datetime64_any_dtype, is_integer_dtype, \
     is_float_dtype   # , is_numeric_dtype
-from pathlib import Path
-import re
-import sys
-import warnings
-
 
 from .hasher import df_short_hash
+
+
+class Breakability(IntEnum):
+    """To track if a column should or should not be broken (wrapped)."""
+
+    NEVER = 0
+    DATE = 3
+    MAYBE = 5
+    ACCEPTABLE = 10
+
 
 # turn this fuck-fest off
 pd.set_option('future.no_silent_downcasting', True)
@@ -322,9 +334,6 @@ class GT(object):
         self.date_col_indices = []
         self.object_col_indices = []  # not actually used, but for neatness
         self.break_penalties = []
-        break_never = 10
-        break_maybe = 5
-        break_ok = 1
         # manage non-unique col names here
         logger.debug('FIGURING TYPES')
         for i in range(self.df.shape[1]):
@@ -332,23 +341,23 @@ class GT(object):
             if is_datetime64_any_dtype(ser):
                 logger.debug(f'col {i} = {self.df.columns[i]} is DATE')
                 self.date_col_indices.append(i)
-                self.break_penalties.append(break_maybe)
+                self.break_penalties.append(Breakability.DATE)
             elif is_integer_dtype(ser):
                 logger.debug(f'col {i} = {self.df.columns[i]} is INTEGER')
                 self.integer_col_indices.append(i)
-                self.break_penalties.append(break_never)
+                self.break_penalties.append(Breakability.NEVER)
             elif is_float_dtype(ser):
                 logger.debug(f'col {i} = {self.df.columns[i]} is FLOAT')
                 self.float_col_indices.append(i)
-                self.break_penalties.append(break_never)
+                self.break_penalties.append(Breakability.NEVER)
             else:
                 logger.debug(f'col {i} = {self.df.columns[i]} is OBJECT')
                 self.object_col_indices.append(i)
                 c = ser.name
                 if c in self.year_cols or c in self.ratio_cols:
-                    self.break_penalties.append(break_never)
+                    self.break_penalties.append(Breakability.NEVER)
                 else:
-                    self.break_penalties.append(break_ok)
+                    self.break_penalties.append(Breakability.ACCEPTABLE)
 
         # figure out column and index alignment
         if aligners is not None and np.any(self.df.columns.duplicated()):
@@ -687,6 +696,145 @@ class GT(object):
         """Basic representation."""
         return f"GreaterTable(df_id={self.df_id})"
 
+    def column_width_df(self, allocate_overage=True):
+        """
+        Return dataframe of width information.
+
+        * natural width, all on one line = max len by col
+        * min width = max length given breaks
+        * break type of column
+        * alignment of column
+        * index natural width
+        * index min width
+        """
+        df = self.df
+        n_row, n_col = df.shape
+        PADDING = 2 # per column
+        # target width INCLUDES padding and column marks |
+        target_width = self.max_table_width - PADDING * n_col - (n_col + 1)
+        print(f'{self.max_table_width = } and {target_width = }')
+        # The width if content didn't wrap (single line)
+        # Series=dict colname->max width of cells in column
+        natural_width = df.map(lambda x: len(x.strip())).max(axis=0).to_dict()
+
+
+        # re.split(r'(?<=[\s.,:;!?()\[\]{}\-\\/|])\s*', text)
+        # (?<=...) is a lookbehind to preserve the break character with the left-hand fragment.
+        # [\s.,:;!?()\[\]{}\-\\/|] matches common punctuation and separators:
+        # \s = whitespace
+        # . , : ; ! ? = terminal punctuation
+        # () [] {} = brackets
+        # \- = dash
+        # \\/| = slash, backslash, pipe
+        pat =r'(?<=[.,;:!?)\]}\u2014\u2013])\s+|--+\s+|\s+'
+        iso_date_split = r'(?<=\b\d{4})-(?=\d{2}-\d{2})'
+        pat = f'{pat}|{iso_date_split}'
+
+        # Calculate ideal (no wrap) and minimum possible widths for all columns
+        # The absolute minimum width each column can take (e.g., longest word for text)
+        min_acceptable_width = {}
+        for col_name in df.columns:
+            min_acceptable_width[col_name] = (
+                df[col_name].str
+                    .split(pat=pat, regex=True, expand=True)
+                    .fillna('')
+                    .map(len)
+                    .max(axis=1)
+                    .max()
+                    )
+        #
+        ans = pd.DataFrame({
+            'alignment': [i[4:] for i in self.df_aligners],
+            'break_penalties': self.break_penalties,
+            'breakability' : [x.name for x in self.break_penalties],
+            'natural_width': natural_width.values(),
+            'min_acceptable_width': min_acceptable_width.values(),
+            }, index=df.columns)
+        ans['break_acceptable'] = ans.natural_width
+        ans['break_acceptable'] = np.where(ans.break_penalties==Breakability.ACCEPTABLE, ans.min_acceptable_width, ans.natural_width)
+        # DUH - this is min_acceptable_width
+        # ans['break_dates'] = np.where(ans.break_penalties==Breakability.DATE, ans.min_acceptable_width, ans.break_acceptable)
+
+        natural, acceptable, min_acceptable = ans.iloc[:, 3:].sum()
+        if target_width > natural:
+            # everything gets its natural width
+            ans['recommended'] = ans['natural_width']
+            space = target_width - natural
+        elif target_width > acceptable:
+            # strings wrap
+            ans['recommended'] = ans['break_acceptable']
+            # use up extra on the ACCEPTABLE cols
+            space = target_width - acceptable
+            logger.info('Overage to allocated = %s', space)
+        elif target_width > min_acceptable:
+            # strings and dates wrap
+            ans['recommended'] = ans['min_acceptable_width']
+            # use up extra on dates first, then strings
+            space = target_width - min_acceptable
+            logger.info('Overage to allocated = %s', space)
+        else:
+            # OK severely too small
+            ans['recommended'] = ans['min_acceptable_width']
+            logger.warning('Desired width too small for pleasant formatting, table will be too wide.')
+            shortfall = min_acceptable - target_width
+            return ans
+
+        if not allocate_overage:
+            return ans
+
+        # Allocate the excess ------------------------------
+        if df.columns.nlevels == 1:
+            # Step 1: baseline comes in from code above
+            ans['raw_rec'] = ans.recommended
+
+            # Step 2: how much extra would it take to reduce header line count?
+            def header_wrap_cost(header, width):
+                if not isinstance(header, str):
+                    return 1
+                return len(wrap(header, width))
+
+            header_lengths = {col: len(col) for col in df.columns}
+            current_lines = {col: header_wrap_cost(col, ans.loc[col, 'min_acceptable_width']) for col in df.columns}
+            next_wrap_gain = {}
+
+            for col in df.columns:
+                w = ans.loc[col, 'min_acceptable_width']
+                for extra in range(1, 10):  # cap search
+                    new_w = w + extra
+                    if header_wrap_cost(col, new_w) < current_lines[col]:
+                        next_wrap_gain[col] = extra
+                        break
+                else:
+                    next_wrap_gain[col] = 0
+
+            header_budget = min(space, sum(next_wrap_gain.values()))
+            for col in df.columns:
+                gain = next_wrap_gain[col]
+                if gain > 0:
+                    give = min(gain, header_budget)
+                    ans.loc[col, 'recommended'] += give
+                    header_budget -= give
+                    if header_budget <= 0:
+                        break
+
+        # Step 3: distribute remaining slack proportionally
+        remaining = target_width - ans['recommended'].sum()
+        if remaining > 0:
+            slack = ans['natural_width'] - ans['recommended']
+            total_slack = slack.clip(lower=0).sum()
+            if total_slack > 0:
+                fractions = slack.clip(lower=0) / total_slack
+                ans['recommended'] += np.floor(fractions * remaining).astype(int)
+                ans['recommended'] = np.minimum(ans['recommended'], ans['natural_width'])
+
+        # Ensure final constraint
+        ans['recommended'] = ans['recommended'].astype(int)
+        if ans['recommended'].sum() <= target_width:
+            logger.warning("Over-allocated widths slightly: %s vs %s", ans['recommended'].sum(), target_width)
+
+        return ans
+
+
     def optimize_column_widths(self, df=None, all_breakable=False):
         """
         Optimize column widths for a Pandas DataFrame given an overall width constraint.
@@ -726,7 +874,7 @@ class GT(object):
         if all_breakable:
             breakable_cols = dict(zip(df.columns, [True] * len(df.columns)))
         else:
-            breakable_cols = dict(zip(df.columns, [True if i < 5 else False for i in self.break_penalties]))
+            breakable_cols = dict(zip(df.columns, [True if i >= Breakability.MAYBE else False for i in self.break_penalties]))
 
         # 1. Calculate ideal (no wrap) and minimum possible widths for all columns
         for col_name in df.columns:
