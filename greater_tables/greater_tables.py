@@ -34,7 +34,7 @@ if logger.hasHandlers():
     # Clear existing handlers
     logger.handlers.clear()
 # SET DEGBUGGER LEVEL
-LEVEL = logging.ERROR    # DEBUG or INFO, WARNING, ERROR, CRITICAL
+LEVEL = logging.WARNING    # DEBUG or INFO, WARNING, ERROR, CRITICAL
 logger.setLevel(LEVEL)
 handler = logging.StreamHandler(sys.stderr)
 handler.setLevel(LEVEL)
@@ -86,11 +86,171 @@ GT_Format = TableFormat(
 
 
 class GT(object):
-    """Create greater_tables."""
+    """
+    Create a greater_tables formatting object.
+
+    Provides html and latex output in quarto/Jupyter accessible manner.
+    Wraps AND COPIES the dataframe df. WILL NOT REFLECT CHANGES TO DF.
+
+    Recommended usage is to subclass GT (or use functools.partial) and set
+    defaults suitable to your particular
+    application. In that way you can maintain a "house-style"
+
+    Process
+    --------
+
+    **Input transformation**
+
+    * ``pd.Series`` converted to ``DataFrame``
+    * ``list`` converted to  ``DataFrame``, optionally using row 0 as
+      ``header_row``
+    * A string is  assumed to be a pipe-separated markdown table which is
+      converted to a ``DataFrame`` setting aligners per the alignment row
+    * All other input types are an error
+
+    The input ``df`` must have unique column names. It is then copied into
+    ``self.df`` which will be changed and ``self.raw_df`` for reference.
+    The copy is hashed for the table name.
+
+    **Mangling**
+
+    * If show_index, the index is reset and kept, so that all columns are on an
+      equal footing
+    * The index change levels are computed to determine LaTeX hrules
+    * ratio year, and raw columns converted to a list (can be input as a single
+      string name)
+    * Columns, except raw columns, are cast to floats
+    * Column types by index determined
+    * default formatter function set (wrapping input, if any)
+    * Aligner column input decoded into aligner values
+      (``grt-left,grt-right,grt-center``); index aligners separated
+    * Formatters decoded, strings mapped to lambda functions as f-string
+      formatters, integers as number of decimals
+    * Tab values expanded into an iterable
+    * Dataframe at this point (index reset, cast) saved to
+      ``df_pre_applying_formatters``
+    * Determine formatters (``df_formatters`` property, a list of column index
+      formatting functions:
+        * Make the default float formatter if entered (callable, string, number;
+          wrapped in try/except)
+        * Determine each column's format type and add function
+    * Run ``apply_formatters`` to apply all format choices to ``df``. This
+      function handles index columns slightly differently, but results in the
+      formatters being applied to each column.
+    * Sparsify if requested and if multiindex
+    * Result is a dataframe with all object column types and values that
+      reflect the formatting choices.
+
+
+    Parameters
+    -----------
+
+    :param df: target DataFrame or list of lists or markdown table string
+    :param caption: table caption, optional (GT will look for gt_caption
+      attribute of df and use that)
+    :param label: TeX label (used in \\label{} command). For markdown
+      tables with #tbl:... in the caption it is extracted automatically.
+    :param aligners: None or dict (type or colname) -> left | center |
+      right
+    :param formatters: None or dict (type or colname) -> format function
+      for the column; formatters trump ratio_cols
+    :param ratio_cols: None, or "all" or list of column names treated as
+      ratios. Set defaults in derived class suitable to application.
+    :param year_cols: None, or "all" or list of column names treated as
+      years (no commas, no decimals). Set defaults in derived class suitable
+      to application.
+    :param date_cols: None, or "all" or list of column names treated as
+      dates. Set defaults in derived class suitable to application.
+    :param raw_cols: None, or "all" or list of column names that are NOT
+      cast to floats. Set defaults in derived class suitable to application.
+    :param show_index: if True, show the index columns, default True
+    :param default_integer_str: format f-string for integers, default
+      value '{x:,d}'
+    :param default_float_str: format f-string for floats, default
+      value '{x:,.3f}'
+    :param default_date_str: format f-string for dates, default '%Y-%m-%d'.
+      NOTE: no braces or x!
+    :param default_ratio_str: format f-string for ratios, default '{x:.1%}'
+    :param table_float_format: None or format string for floats in the
+      table format function, applied to entire table, default None
+    :param table_hrule_width: width of the table top, botton and header
+      hrule, default 1
+    :param table_vrule_width: width of the table vrule, separating the
+      index from the body, default 1
+    :param hrule_widths: None or tuple of three ints for hrule widths
+      (for use with multiindexes)
+    :param vrule_widths: None or tuple of three ints for vrule widths
+      (for use when columns have multiindexes)
+    :param sparsify: if True, sparsify the index columns, you almost always
+      want this to be true!
+    :param sparsify_columns: if True, sparsify the columns, default True,
+      generally a better look, headings centered in colspans
+    :param spacing: 'tight', 'medium', 'wide' to quickly set cell padding.
+      Medium is default (2, 10, 2, 10).
+    :param padding_trbl: None or tuple of four ints for padding, in order
+      top, right, bottom, left.
+    :param tikz_scale: scale factor applied to tikz LaTeX tables.
+    :param font_body: font size for body text, default 0.9. Units in em.
+    :param font_head: font size for header text, default 1.0. Units in em.
+    :param font_caption: font size for caption text, default 1.1.
+      Units in em.
+    :param font_bold_index: if True, make the index columns bold,
+      default False.
+    :param pef_precision: precision (digits after period) for pandas
+      engineering format, default 3.
+    :param pef_lower: apply engineering format to floats with absolute
+      value < 10**pef_lower; default -3.
+    :param pef_upper: apply engineering format to floats with absolute
+      value > 10**pef_upper; default 6.
+    :param cast_to_floats: if True, try to cast all non-integer, non-date
+      columns to floats
+    :param header_row: True: use first row as headers; False no headings.
+      Default True
+    :param tabs: None or list of column widths in characters or a common
+      int or float width. (It is converted into em; one character is about
+      0.5em on average; digits are exactly 0.5em.) If None, will be calculated.
+      Default None.
+    :param equal: if True, set all column widths equal. Default False. Maybe
+      ignored, depending on computed ideal column widths.
+    :param caption_align: for the caption
+    :param large_ok: signal that you are intentionally applying to a large
+      dataframe. Sub-classes may restrict or apply .head() to df.
+    :param max_str_length: maximum displayed length of object types, that
+      are cast to strings. Eg if you have nested DataFrames!
+    :param str_table_fmt: table border format used for string output
+      (markdown), default mixed_grid DEPRECATED??
+    :param table_width_mode:
+        'explicit': set using max_table_width
+        'natural': each cell on one line (can be very wide with long strings)
+        'breakable': wrap breakable cells (text strings) at word boundaries
+          to fit longest word
+        'minimum': wrap breakable and ok-to-break (dates) cells
+    :param table_width_header_adjust: additional proportion of table width
+      used to balance header columns.
+    :param table_width_header_relax: extra spaces allowed per column heading
+      to facilitate better column header wrapping.
+    :param max_table_width: max table width used for markdown string output,
+      default 200; width is never less than minimum width. Padding (3 chars
+      per row plus 1) consumed out of max_table_width in string output mode.
+    :param debug: if True, add id to caption and use colored lines in table,
+      default False.
+    """
+
+    # TeX control sequence display widths (heuristic)
+    TEX_SIMPLE_GLYPHS = {
+        'alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta', 'eta', 'theta',
+        'iota', 'kappa', 'lambda', 'mu', 'nu', 'xi', 'omicron', 'pi', 'rho',
+        'sigma', 'tau', 'upsilon', 'phi', 'chi', 'psi', 'omega', 'infty',
+        'sum', 'prod', 'int', 'cup', 'cap', 'vee', 'wedge', 'forall', 'exists',
+        'neg', 'leq', 'geq', 'neq', 'approx', 'to', 'leftarrow', 'rightarrow'
+    }
+    TEX_WIDE = {'frac', 'sqrt', 'sum', 'int', 'prod'}
+    TEX_SPACING = {'quad', 'qquad', ',', ';', ' ', '!'}
 
     def __init__(self,
                  df,
                  caption='',
+                 label='',
                  aligners=None,
                  formatters=None,
                  ratio_cols=None,
@@ -112,6 +272,7 @@ class GT(object):
                  sparsify_columns=True,     # column sparsification with colspans
                  spacing='medium',          # tight, medium, wide
                  padding_trbl=None,         # tuple of four ints for padding
+                 tikz_scale=1.0,
                  font_body=0.9,
                  font_head=1.0,
                  font_caption=1.1,
@@ -132,133 +293,7 @@ class GT(object):
                  table_width_header_relax=10,
                  max_table_width=200,
                  debug=False):
-        """
-        Create a greater_tables formatting object.
 
-        Provides html and latex output in quarto/Jupyter accessible manner.
-        Wraps AND COPIES the dataframe df. WILL NOT REFLECT CHANGES TO DF.
-
-        Recommended usage is to subclass GT (or use functools.partial) and set defaults suitable to your particular
-        application. In that way you can maintain a "house-style"
-
-        Process
-        --------
-
-        **Input transformation**
-
-        * ``pd.Series`` converted to ``DataFrame``
-        * ``list`` converted to  ``DataFrame``, optionally using row 0 as  ``header_row``
-        * A string is  assumed to be a pipe-separated markdown table which is converted to a ``DataFrame`` setting aligners per the alignment row
-        * All other input types are an error
-
-        The input ``df`` must have unique column names. It is then copied into ``self.df`` which will be changed and ``self.raw_df`` for reference. The copy is hashed for the table name.
-
-        **Mangling**
-
-        * The index is reset and kept, so that all columns are on an equal footing
-        * The index change levels are computed to determine LaTeX hrules
-        * ratio year, and raw columns converted to a list (can be input as a single string name)
-        * Columns, except raw columns, are cast to floats
-        * Column types by index determined
-        * default formatter function set (wrapping input, if any)
-        * Aligner column input decoded into aligner values (``grt-left,grt-right,grt-center``); index aligners separated
-        * Formatters decoded, strings mapped to lambda functions as f-string formatters, integers as number of decimals
-        * Tab values expanded into an iterable
-        * Dataframe at this point (index reset, cast) saved to ``df_pre_applying_formatters``
-        * Determine formatters (``df_formatters`` property, a list of column index formatting functions:
-            * Make the default float formatter if entered (callable, string, number; wrapped in try/except)
-            * Determine each column's format type and add function
-        * Run ``apply_formatters`` to apply all format choices to ``df``. This function handles index columns slightly differently, but results in the formatters being applied to each column.
-        *  Sparsify if requested and if multiindex
-        *  Result is a dataframe with all object column types and values that reflect the formatting choices.
-
-
-        Parameters
-        -----------
-
-        :param df: target DataFrame or list of lists or markdown table string
-        :param caption: table caption, optional (GT will look for gt_caption
-          attribute of df and use that)
-        :param aligners: None or dict (type or colname) -> left | center |
-          right
-        :param formatters: None or dict (type or colname) -> format function
-          for the column; formatters trump ratio_cols
-        :param ratio_cols: None, or "all" or list of column names treated as
-          ratios. Set defaults in derived class suitable to application.
-        :param year_cols: None, or "all" or list of column names treated as
-          years (no commas, no decimals). Set defaults in derived class suitable to application.
-        :param date_cols: None, or "all" or list of column names treated as
-          dates. Set defaults in derived class suitable to application.
-        :param raw_cols: None, or "all" or list of column names that are NOT
-          cast to floats. Set defaults in derived class suitable to application.
-        :param show_index: if True, show the index columns, default True
-        :param default_integer_str: format f-string for integers, default
-          value '{x:,d}'
-        :param default_float_str: format f-string for floats, default
-          value '{x:,.3f}'
-        :param default_date_str: format f-string for dates, default '%Y-%m-%d'.
-          NOTE: no braces or x!
-        :param default_ratio_str: format f-string for ratios, default '{x:.1%}'
-        :param table_float_format: None or format string for floats in the
-          table format function, applied to entire table, default None
-        :param table_hrule_width: width of the table top, botton and header
-          hrule, default 1
-        :param table_vrule_width: width of the table vrule, separating the
-          index from the body, default 1
-        :param hrule_widths: None or tuple of three ints for hrule widths
-          (for use with multiindexes)
-        :param vrule_widths: None or tuple of three ints for vrule widths
-          (for use when columns have multiindexes)
-        :param sparsify: if True, sparsify the index columns, you almost always
-          want this to be true!
-        :param sparsify_columns: if True, sparsify the columns, default True,
-          generally a better look, headings centered in colspans
-        :param spacing: 'tight', 'medium', 'wide' to quickly set cell padding.
-          Medium is default (2, 10, 2, 10).
-        :param padding_trbl: None or tuple of four ints for padding, in order
-          top, right, bottom, left.
-        :param font_body: font size for body text, default 0.9. Units in em.
-        :param font_head: font size for header text, default 1.0. Units in em.
-        :param font_caption: font size for caption text, default 1.1.
-          Units in em.
-        :param font_bold_index: if True, make the index columns bold,
-          default False.
-        :param pef_precision: precision (digits after period) for pandas
-          engineering format, default 3.
-        :param pef_lower: apply engineering format to floats with absolute
-          value < 10**pef_lower; default -3.
-        :param pef_upper: apply engineering format to floats with absolute
-          value > 10**pef_upper; default 6.
-        :param cast_to_floats: if True, try to cast all non-integer, non-date
-          columns to floats
-        :param header_row: True: use first row as headers; False no headings.
-          Default True
-        :param tabs: None or list of column widths in characters or a common
-          int or float width. (It is converted into em; one character is about 0.5em on average; digits are exactly 0.5em.) If None, will be calculated. Default None.
-        :param equal: if True, set all column widths equal. Default False.
-        :param caption_align: for the caption
-        :param large_ok: signal that you are intentionally applying to a large
-          dataframe. Sub-classes may restrict or apply .head() to df.
-        :param max_str_length: maximum displayed length of object types, that
-          are cast to strings. Eg if you have nested DataFrames!
-        :param str_table_fmt: table border format used for string output
-          (markdown), default mixed_grid DEPRECATED??
-        :param table_width_mode:
-            'explicit': set using max_table_width
-            'natural': each cell on one line (can be very wide with long strings)
-            'breakable': wrap breakable cells (text strings) at word boundaries
-              to fit longest word
-            'minimum': wrap breakable and ok-to-break (dates) cells
-        :param table_width_header_adjust: additional proportion of table width
-          used to balance header columns.
-        :param table_width_header_relax: extra spaces allowed per column heading
-          to facilitate better column header wrapping.
-        :param max_table_width: max table width used for markdown string output,
-          default 200; width is never less than minimum width. Padding (3 chars
-          per row plus 1) consumed out of max_table_width in string output mode.
-        :param debug: if True, add id to caption and use colored lines in table,
-          default False.
-        """
         # deal with alternative input modes
         if df is None:
             # don't want None to fail
@@ -278,8 +313,12 @@ class GT(object):
                 # Drop first row and reset index
                 df = df[1:].reset_index(drop=True)
         elif isinstance(df, str):
-            df, aligners = GT.md_to_df(df)
-            show_index = False
+            df = df.strip()
+            if df == '':
+                df = pd.DataFrame([])
+            else:
+                df, aligners, caption, label = GT.md_to_df(df)
+                show_index = False
         else:
             raise ValueError(
                 'df must be a DataFrame, a list of lists, or a markdown table string')
@@ -297,7 +336,7 @@ class GT(object):
         else:
             # used by querex etc.
             self.caption = getattr(df, 'gt_caption', '')
-
+        self.label = label
         self.df = df.copy(deep=True)   # the object being formatted
         self.raw_df = df.copy(deep=True)
         # if not column_names:
@@ -540,6 +579,7 @@ class GT(object):
         self.font_body = font_body
         self.font_head = font_head
         self.font_caption = font_caption
+        self.tikz_scale = tikz_scale
         self.font_bold_index = font_bold_index
         self.caption_align = caption_align
         self.sparsify_columns = sparsify_columns
@@ -576,7 +616,7 @@ class GT(object):
         self.df_style = ''
         self.df_html = ''
         self._clean_html = ''
-        self.tex = ''
+        self._clean_tex = ''
         # finally sparsify and then apply formaters
         # this radically alters the df, so keep a copy for now...
         self.df_pre_applying_formatters = self.df.copy()
@@ -605,6 +645,15 @@ class GT(object):
         ratio cols like in constructor
         """
         return self.html
+
+    def _repr_latex_(self):
+        """Generate a LaTeX tabular representation."""
+        # return ''
+        # latex = self.df.to_latex(caption=self.caption, formatters=self._df_formatters)
+        if self._clean_tex == '':
+            self._clean_tex = self.make_tikz()
+            logger.info('CREATED LATEX')
+        return self._clean_tex
 
     def cols_from_regex(self, regex):
         """Return columns of self.df matching regex"""
@@ -832,7 +881,9 @@ class GT(object):
 
     def make_column_width_df(self):
         """
-        Return dataframe of width information. d
+        Return dataframe of width information.
+
+        Returned dataframe has columns for
 
         * natural width, all on one line = max len by col
         * min width = max length given breaks
@@ -924,59 +975,62 @@ class GT(object):
             # OK severely too small
             ans['recommended'] = ans['min_acceptable_width']
             logger.warning('Desired width too small for pleasant formatting, table will be too wide.')
-            shortfall = min_acceptable - target_width
-            return ans
+            space = target_width - min_acceptable
 
-        # Allocate the excess ------------------------------
-        # Fancy col headings currently only for 1-d index
-        # TODO NOTE: use sparsify logic you have for index applied to df.T
-        # to sort the columns!!
         input_df = None
-        if df.columns.nlevels == 1:
-            # Step 1: baseline comes in from code above
-            ans['raw_rec'] = ans['recommended']
+        if space >= 0:
+            # Allocate the excess ------------------------------
+            # Fancy col headings currently only for 1-d index
+            # TODO NOTE: use sparsify logic you have for index applied to df.T
+            # to sort the columns!!
+            if df.columns.nlevels == 1:
+                # Step 1: baseline comes in from code above
+                ans['raw_rec'] = ans['recommended']
 
-            # Step 2: get rid of intra-line breaks
-            if max_extra > 0:
-                adj, input_df = self.header_adjustment(df, ans['recommended'], space, max_extra)
-                # create new col and populate per GPT
-                ans['header_tweak'] = pd.Series(adj)
-            else:
-                ans['header_tweak'] = 0
-            ans['recommended'] = ans['recommended'] + ans['header_tweak']
-            ans['natural_w_header'] = ans['recommended']
+                # Step 2: get rid of intra-line breaks
+                if max_extra > 0:
+                    adj, input_df = self.header_adjustment(df, ans['recommended'], space, max_extra)
+                    # create new col and populate per GPT
+                    ans['header_tweak'] = pd.Series(adj)
+                else:
+                    ans['header_tweak'] = 0
+                ans['recommended'] = ans['recommended'] + ans['header_tweak']
+                ans['natural_w_header'] = ans['recommended']
 
-        # Step 3: distribute remaining slack proportionally
-        remaining = target_width - ans['recommended'].sum()
-        if remaining > 0:
-            slack = ans['natural_width'] - ans['recommended']
-            total_slack = slack.clip(lower=0).sum()
-            if total_slack > 0:
-                fractions = slack.clip(lower=0) / total_slack
-                ans['recommended'] += np.floor(fractions * remaining).astype(int)
-                ans['recommended'] = np.maximum(ans['recommended'], ans['natural_w_header'])
+            # Step 3: distribute remaining slack proportionally
+            remaining = target_width - ans['recommended'].sum()
+            if remaining > 0:
+                slack = ans['natural_width'] - ans['recommended']
+                total_slack = slack.clip(lower=0).sum()
+                if total_slack > 0:
+                    fractions = slack.clip(lower=0) / total_slack
+                    ans['recommended'] += np.floor(fractions * remaining).astype(int)
+                    ans['recommended'] = np.maximum(ans['recommended'], ans['natural_w_header'])
 
-        # Ensure final constraint
-        ans['recommended'] = ans['recommended'].astype(int)
-        logger.warning("Raw rec: %s\tTweaks: %s\tActual: %s\tTarget: %s\tOver/(U): %s",
-            ans['raw_rec'].sum(),
-            ans['header_tweak'].sum(),
-            ans['recommended'].sum(),
-            target_width,
-            ans['recommended'].sum() - target_width
-            )
-        ans = ans[[
-            'alignment',
-            'break_penalties',
-            'breakability',
-            'natural_width',
-            'break_acceptable',
-            'min_acceptable_width',
-            'raw_rec',
-            'header_tweak',
-            'natural_w_header',
-            'recommended',
-            ]]
+            # Ensure final constraint
+            ans['recommended'] = ans['recommended'].astype(int)
+            logger.warning("Raw rec: %s\tTweaks: %s\tActual: %s\tTarget: %s\tOver/(U): %s",
+                ans['raw_rec'].sum(),
+                ans['header_tweak'].sum(),
+                ans['recommended'].sum(),
+                target_width,
+                ans['recommended'].sum() - target_width
+                )
+            ans = ans[[
+                'alignment',
+                'break_penalties',
+                'breakability',
+                'natural_width',
+                'break_acceptable',
+                'min_acceptable_width',
+                'raw_rec',
+                'header_tweak',
+                'natural_w_header',
+                'recommended',
+                ]]
+        # in all cases...
+        # need recommended to be > 0
+        ans['recommended'] = np.maximum(ans['recommended'], 1)
         self.cache_set('column_width_df', ans)
         # info about the header adjustment
         self.cache_set('input_df', input_df)
@@ -1473,6 +1527,9 @@ class GT(object):
 
         # Start table
         html = [f'<table id="{self.df_id}">']
+        if self.label != "":
+            pass
+            # TODO put in achor tag somehow!!
         if self.caption != '':
             html.append(f'<caption>{self.caption}</caption>')
 
@@ -1656,15 +1713,8 @@ class GT(object):
             soup = BeautifulSoup('\n'.join(code), 'html.parser')
             soup = self.clean_style(soup)
             self._clean_html = str(soup)  # .prettify() -> too many newlines
+            logger.info('CREATED HTML')
         return self._clean_html
-
-    def _repr_latex_(self):
-        """Generate a LaTeX tabular representation."""
-        # return ''
-        # latex = self.df.to_latex(caption=self.caption, formatters=self._df_formatters)
-        latex = self.make_tikz()
-        logger.info('CREATED LATEX STYLE')
-        return latex
 
     @staticmethod
     def changed_column(bit):
@@ -1734,10 +1784,9 @@ class GT(object):
             raise ValueError(f'unknown mode {mode}')
 
     def make_tikz(self,
-                  scale=0.635,
                   column_sep=3 / 8,
                   row_sep=1 / 8,
-                  figure='figure',
+                  container_env='table',
                   extra_defs='',
                   hrule=None,
                   vrule=None,
@@ -1764,36 +1813,41 @@ class GT(object):
 
         **Rules**
 
-        * hrule at i means below row i of the table. (1-based) Top, bottom and below index lines
-          are inserted automatically. Top and bottom lines are thicker.
-        * vrule at i means to the left of table column i (1-based); there will never be a rule to the far
-          right...it looks plebby; remember you must include the index columns!
+        * hrule at i means below row i of the table. (1-based) Top, bottom and
+          below index lines are inserted automatically. Top and bottom lines
+          are thicker.
+        * vrule at i means to the left of table column i (1-based); there will
+          never be a rule to the far right...it looks plebby; remember you must
+          include the index columns!
 
         sparsify  number of cols of multi index to sparsify
 
-        Issue: column with floats and spaces or missing causes problems (VaR, TVaR, EPD, mean and CV table)
+        Issue: column with floats and spaces or missing causes problems (VaR,
+        TVaR, EPD, mean and CV table)
 
         From great.pres_maker.df_to_tikz
 
         keyword args:
 
-            scale           scale applied to whole table - default 0.717
+            scale           picks up self.tikz_scale; scale applied to whole
+                            table - default 0.717
             height          row height, rec. 1 (em)
             column_sep      col sep in em
             row_sep         row sep in em
-            figure          table, figure or sidewaysfigure
+            container_env   table, figure or sidewaysfigure
             color           color for text boxes (helps debugging)
-            extra_defs      TeX defintions and commands put at top of table, e.g., \\centering
-            lines           lines below these rows, -1 for next to last row etc.; list of ints
+            extra_defs      TeX defintions and commands put at top of table,
+                            e.g., \\centering
+            lines           lines below these rows, -1 for next to last row
+                            etc.; list of ints
             post_process    e.g., non-line commands put at bottom of table
-            label
+
             latex           arguments after \begin{table}[latex]
             caption         text for caption
 
         Previous version see great.pres_maker
         Original version see: C:\\S\\TELOS\\CAS\\AR_Min_Bias\\cvs_to_md.py
 
-        :param scale:
         :param column_sep:
         :param row_sep:
         :param figure:
@@ -1804,15 +1858,32 @@ class GT(object):
         """
         # local variable - with all formatters already applied
         df = self.apply_formatters(self.raw_df.copy(), mode='raw')
-        caption = ''
+        caption = self.caption
+        label = self.label
+        # prepare label and caption
+        if label == '':
+            lt = ''
+            label = ''
+        else:
+            lt = label
+            label = f'\\label{{{label}}}'
+        if caption == '':
+            if lt != '':
+                logger.info(
+                    f'You have a label but no caption; the label {label} will be ignored.')
+            caption = '% caption placeholder'
+        else:
+            caption = f'\\caption{{{self.caption}}}\n{label}'
+
         if not df.columns.is_unique:
             # possible index/body column interaction
             raise ValueError('tikz routine requires unique column names')
-# \\begin{{{figure}}}{latex}
-# \\centering
 # {extra_defs}
         # centering handled by quarto
         header = """
+\\begin{{{container_env}}}{latex}
+{caption}
+\\centering{{
 \\begin{{tikzpicture}}[
     auto,
     transform shape,
@@ -1830,15 +1901,16 @@ class GT(object):
 {post_process}
 
 \\end{{tikzpicture}}
+}}   % close centering
+\\end{{{container_env}}}
 """
-# {caption}
-# \\end{{{figure}}}
 
         # always a good idea to do this...need to deal with underscores, %
         # and it handles index types that are not strings
         df = GT.clean_index(df)
         if not np.all([i == 'object' for i in df.dtypes]) and not df.empty:
-            logger.warning('cols of df not all objects (expect all obs at this point): ', df.dtypes, sep='\n')
+            logger.warning('cols of df not all objects (expect all obs at this '
+                'point): ', df.dtypes, sep='\n')
         # make sure percents are escaped, but not if already escaped
         df = df.replace(r"(?<!\\)%", r"\%", regex=True)
 
@@ -1880,7 +1952,7 @@ class GT(object):
         # number of index columns
         # have also converted everything to formatted strings
         # estimate... originally called guess_column_widths, with more parameters
-        colw, tabs = GT.estimate_column_widths(df, nc_index=nc_index, scale=scale, equal=self.equal)  # noqa
+        colw, tabs = GT.estimate_column_widths(df, nc_index=nc_index, scale=self.tikz_scale, equal=self.equal)  # noqa
         if self.debug:
             print(f'Make TikZ Input {self.tabs=}\nComputed {tabs=}')
         if self.tabs is not None:
@@ -1921,8 +1993,14 @@ class GT(object):
         if self.debug:
             # color all boxes
             debug = ', draw=blue!10'
-        sio.write(header.format(figure=figure, extra_defs=extra_defs, scale=scale, column_sep=column_sep,
-                                row_sep=row_sep, latex=latex, debug=debug))
+        sio.write(header.format(container_env=container_env,
+                    caption=caption,
+                    extra_defs=extra_defs,
+                    scale=self.tikz_scale,
+                    column_sep=column_sep,
+                    row_sep=row_sep,
+                    latex=latex,
+                    debug=debug))
 
         # table header
         # title rows, start with the empty spacer row
@@ -2087,32 +2165,21 @@ class GT(object):
                             sio.write(f'\\path[draw, {ls}] ([xshift={-xshift}em, yshift={-yshift}em]{matrix_name}-{top}-{cn}.south east)  -- '
                                       f'([yshift={-descender_proportion-yshift}em, xshift={-xshift}em]{matrix_name}-{nr}-{cn}.base east);\n')
 
-        if label == '':
-            lt = ''
-            label = '}  % no label'
-        else:
-            lt = label
-            label = f'\\label{{tab:{label}}}'
-        if caption == '':
-            if lt != '':
-                logger.info(
-                    f'You have a label but no caption; the label {label} will be ignored.')
-            caption = '% caption placeholder'
-        else:
-            caption = f'\\caption{{{self.caption} {label}}}'
-        sio.write(footer.format(figure=figure,
-                  post_process=post_process, caption=caption))
+        sio.write(footer.format(container_env=container_env,
+                  post_process=post_process))
 
-        self.tex = sio.getvalue()
-        return self.tex
+        return sio.getvalue()
 
     @staticmethod
-    def estimate_column_widths(df, nc_index, scale=1, equal=False):
+    def estimate_column_widths(df, nc_index, scale, equal=False):
         """
         Estimate sensible column widths for the dataframe [in what units?]
 
         Internal variables:
             mxmn   affects alignment: are all columns the same width?
+
+        TODO: de-TeX-ification will mess up how the tex table is printed...
+            but one rarely looks at that.
 
         :param df:
         :param nc_index: number of columns in the index...these are not counted as "data columns"
@@ -2136,10 +2203,10 @@ class GT(object):
             # cw is the width of the column header/title
             if type(c) == str:
                 if i < nl:
-                    cw = len(c)
+                    cw = GT.text_display_len(c)
                 else:
                     # for data columns look at words rather than whole phrase
-                    cw = max(map(len, c.split(' ')))
+                    cw = max(map(GT.text_display_len, c.split(' ')))
                     # logger.info(f'leng col = {len(c)}, longest word = {cw}')
             else:
                 # column name could be float etc. or if multi index a tuple
@@ -2147,13 +2214,13 @@ class GT(object):
                     if isinstance(c, tuple):
                         # multiindex: join and split into words and take length of each word
                         words = ' '.join(c).split(' ')
-                        cw = max(map(lambda x: len(str(x)), words))
+                        cw = max(map(lambda x: GT.text_display_len(str(x)), words))
                     else:
-                        cw = max(map(lambda x: len(str(x)), c))
+                        cw = max(map(lambda x: GT.text_display_len(str(x)), c))
                     # print(f'{c}: {cw=} no error')
                 except TypeError:
                     # not a MI, float or something
-                    cw = len(str(c))
+                    cw = GT.text_display_len(str(c))
                     # print(f'{c}: {cw=} WITH error')
             headw[c] = cw
             # now figure the width of the elements in the column
@@ -2162,7 +2229,7 @@ class GT(object):
                 # weirdness here were some objects actually contain floats, str evaluates to NaN
                 # and picks up width zero
                 try:
-                    lens = df.iloc[:, i].map(lambda x: len(str(x)))
+                    lens = df.iloc[:, i].map(lambda x: GT.text_display_len(str(x)))
                     colw[c] = lens.max()
                     mxmn[c] = (lens.max(), lens.min())
                 except Exception as e:
@@ -2171,7 +2238,7 @@ class GT(object):
                     colw[c] = df[c].str.len().max()
                     mxmn[c] = (df[c].str.len().max(), df[c].str.len().min())
             else:
-                lens = df.iloc[:, i].map(lambda x: len(str(x)))
+                lens = df.iloc[:, i].map(lambda x: GT.text_display_len(str(x)))
                 colw[c] = lens.max()
                 mxmn[c] = (lens.max(), lens.min())
             # print(f'{headw[c]=}, {colw[c]=}, {mxmn[c]=}, {c=}')
@@ -2275,7 +2342,7 @@ class GT(object):
 
         Called by Tikz routines.
 
-        :param n:
+        :param n: input name, str
         :return:
         """
         try:
@@ -2301,7 +2368,7 @@ class GT(object):
 
     @staticmethod
     def clean_html_tex(text):
-        """
+        r"""
         Clean TeX entries in HTML: $ -> \( and \) and $$ to \[ \].
 
         Apply after all other HTML rendering steps. HTML rendering only.
@@ -2372,11 +2439,48 @@ class GT(object):
         logger.info(f'Saved to {p}')
 
     @staticmethod
+    def parse_markdown_table_and_caption(txt: str) -> tuple[str, str | None]:
+        """
+        Parses a Markdown table and an optional caption from a given string,
+        handling cases where only the caption is present.
+
+        Args:
+            txt: The input string.
+
+        Returns:
+            A tuple containing the table string (empty if not found) and the caption string (or None if no caption).
+        """
+        table_match = re.search(r"((?:\|.*\|\s*\n)+)", txt, re.DOTALL)
+        caption_match = re.search(r"^(?:table)?:\s*(.+)", txt, re.MULTILINE + re.IGNORECASE)
+
+        table_part = table_match.group(1).strip() if table_match else ""
+        caption_part = caption_match.group(1) if caption_match else ""
+
+        return table_part.strip(), caption_part.strip()
+
+    @staticmethod
     def md_to_df(txt):
         """Convert markdown text string table to DataFrame."""
+        # extract table and optional caption part
+        table, caption = GT.parse_markdown_table_and_caption(txt)
+        m = re.search(r'\{#(tbl[:a-zA-Z0-9_-]+)\}', caption)
+        if m:
+            label = m.group(1)
+            if label != '':
+                # remove from caption
+                caption = caption.replace(f'{{#{label}}}', '').strip()
+        else:
+            label = ''
+        # print(f'{caption = } and {label = }')
+        if table == '':
+            raise ValueError('Bad markdown table')
+
         # remove starting and ending | in each line (optional anyway)
-        txt = re.sub(r'^\||\|$', '', txt, flags=re.MULTILINE)
-        txt = txt.strip().replace('*', '').split('\n')
+        txt = re.sub(r'^\||\|$', '', table, flags=re.MULTILINE)
+        txt = txt.split('\n')
+        # remove starting and ending *'s added by hand - but try to avoid * within headings!
+        txt[0] = '|'.join([re.sub(r'^\*\*?|\*\*?$', '', i.strip()) for i in txt[0].split('|')])
+
         # remove the alignment row
         alignment_row = txt.pop(1)
         aligners = []
@@ -2398,7 +2502,7 @@ class GT(object):
         df = pd.DataFrame(txt).T
         df = df.set_index(0)
         df = df.T
-        return df, aligners
+        return df, aligners, caption, label
 
     @staticmethod
     def to_text_table(
@@ -2559,4 +2663,44 @@ class GT(object):
                 _write_line(_make_horizontal_line(fmt.linebelow, data_col_widths))
 
         return buf.getvalue()
+
+    @staticmethod
+    def _estimate_math_width(tex: str) -> int:
+        tokens = re.findall(r'\\[a-zA-Z]+|[a-zA-Z0-9]|.', tex)
+        width = 0
+        for tok in tokens:
+            if tok.startswith('\\'):
+                name = tok[1:]
+                if name in GT.TEX_SIMPLE_GLYPHS:
+                    width += 1
+                elif name in GT.TEX_WIDE:
+                    width += 3
+                elif name in GT.TEX_SPACING:
+                    width += 1
+                else:
+                    width += 2  # unknown control sequences
+            elif tok in '{}^_':
+                continue  # grouping, sub/superscripts: ignore
+            else:
+                width += 1
+        return width
+
+    @staticmethod
+    def text_display_len(s: str) -> int:
+        """Estimate text display length of a string allowing for TeX constructs."""
+        # note you DO WANT SPACES! So, no strip applied ever.
+        if s.find('$') < 0:
+            return len(s)
+        parts = re.split(r'(\$\$.*?\$\$)|(\$.*?\$)', s)
+        total = 0
+        for part in parts:
+            if part is None:
+                continue
+            if part.startswith('$$') and part.endswith('$$'):
+                total += GT._estimate_math_width(part[2:-2])
+            elif part.startswith('$') and part.endswith('$'):
+                total += GT._estimate_math_width(part[1:-1])
+            else:
+                total += len(part)
+        return total
 
