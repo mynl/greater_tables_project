@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 # table formatting again
 from collections import namedtuple
 from decimal import InvalidOperation
@@ -17,6 +19,8 @@ import numpy as np
 import pandas as pd
 from pandas.api.types import is_datetime64_any_dtype, is_integer_dtype, \
     is_float_dtype   # , is_numeric_dtype
+from rich import box
+from rich.table import Table
 
 from . hasher import df_short_hash
 
@@ -83,6 +87,16 @@ GT_Format = TableFormat(
     with_header_hide=None
 )
 
+# GT_Format = TableFormat(
+#     lineabove=Line('\u250d', '\u2501', '\u252f', '\u2511', '\u2533'),
+#     linebelowheader=Line('\u251d', '\u2501', '\u253f', '\u2525', '\u254b'),
+#     linebetweenrows=Line('\u251c', '\u2500', '\u253c', '\u2524', '\u2502'),
+#     linebelow=Line('\u2515', '\u2501', '\u2537', '\u2519', '\u253b'),
+#     headerrow=DataRow('\u2502', '\u2502', '\u2502', '\u2503'),
+#     datarow=DataRow('\u2502', '\u2502', '\u2502', '\u2503'),
+#     padding=1,
+#     with_header_hide=None
+# )
 
 
 class GT(object):
@@ -348,7 +362,8 @@ class GT(object):
         # TODO: implement
         table_width_mode = table_width_mode.lower()
         if table_width_mode not in ('explicit', 'natural', 'breakable', 'minimum'):
-            raise ValueError(f'Inadmissible options {table_width_mode} for table_width_mode.')
+            raise ValueError(f'Inadmissible options {
+                             table_width_mode} for table_width_mode.')
         self.table_width_mode = table_width_mode
         self.table_width_header_adjust = table_width_header_adjust
         self.table_width_header_relax = table_width_header_relax
@@ -393,7 +408,8 @@ class GT(object):
             elif ratio_cols == 'all':
                 self.ratio_cols = [i for i in self.df.columns]
             elif ratio_cols is not None and not isinstance(ratio_cols, (tuple, list)):
-                self.ratio_cols = self.cols_from_regex(ratio_cols)  # [ratio_cols]
+                self.ratio_cols = self.cols_from_regex(
+                    ratio_cols)  # [ratio_cols]
             else:
                 self.ratio_cols = ratio_cols
 
@@ -440,7 +456,8 @@ class GT(object):
         if default_formatter is None:
             self.default_formatter = self._default_formatter
         else:
-            assert callable(default_formatter), 'default_formatter must be callable'
+            assert callable(
+                default_formatter), 'default_formatter must be callable'
 
             def wrapped_default_formatter(x):
                 try:
@@ -573,7 +590,11 @@ class GT(object):
         self.table_float_format = table_float_format
         self.default_float_formatter = None
         self.hrule_widths = hrule_widths or (0, 0, 0)
+        if not isinstance(self.hrule_widths, (list, tuple)):
+            self.hrule_widths = (self.hrule_widths,)
         self.vrule_widths = vrule_widths or (0, 0, 0)
+        if not isinstance(self.hrule_widths, (list, tuple)):
+            self.hrule_widths = (self.hrule_widths, )
         self.table_hrule_width = table_hrule_width
         self.table_vrule_width = table_vrule_width
         self.font_body = font_body
@@ -617,6 +638,7 @@ class GT(object):
         self.df_html = ''
         self._clean_html = ''
         self._clean_tex = ''
+        self._rich_table = None
         # finally sparsify and then apply formaters
         # this radically alters the df, so keep a copy for now...
         self.df_pre_applying_formatters = self.df.copy()
@@ -843,7 +865,8 @@ class GT(object):
                         except ValueError:
                             return str(x)
                         except Exception as e:
-                            logger.error(f'Custom float format string raised {e=}')
+                            logger.error(
+                                f'Custom float format string raised {e=}')
                     self.default_float_formatter = ff
             else:
                 self.default_float_formatter = False
@@ -931,7 +954,8 @@ class GT(object):
             'natural_width': natural_width.values(),
             'min_acceptable_width': min_acceptable_width.values(),
         }, index=df.columns)
-        ans['break_acceptable'] = np.where(ans.break_penalties == Breakability.ACCEPTABLE, ans.min_acceptable_width, ans.natural_width)
+        ans['break_acceptable'] = np.where(
+            ans.break_penalties == Breakability.ACCEPTABLE, ans.min_acceptable_width, ans.natural_width)
         # DUH - this is min_acceptable_width
         # ans['break_dates'] = np.where(ans.break_penalties==Breakability.DATE, ans.min_acceptable_width, ans.break_acceptable)
 
@@ -940,7 +964,8 @@ class GT(object):
         if self.table_width_mode == 'explicit':
             # target width INCLUDES padding and column marks |
             target_width = self.max_table_width - (PADDING + 1) * n_col - 1
-            logger.warning(f'Col padding effect {self.max_table_width = } ==> {target_width = }')
+            logger.info(f'Col padding effect {
+                        self.max_table_width=} ==> {target_width=}')
         elif self.table_width_mode == 'natural':
             target_width = natural + (PADDING + 1) * n_col + 1
         elif self.table_width_mode == 'breakable':
@@ -958,23 +983,26 @@ class GT(object):
             # everything gets its natural width
             ans['recommended'] = ans['natural_width']
             space = target_width - natural
-            logger.warning('Space for NATURAL! Spare space = %s', space)
+            logger.info('Space for NATURAL! Spare space = %s', space)
         elif target_width > acceptable:
             # strings wrap
             ans['recommended'] = ans['break_acceptable']
             # use up extra on the ACCEPTABLE cols
             space = target_width - acceptable
-            logger.warning('Using breaks acceptable (dates not wrapped), spare space = %s', space)
+            logger.info(
+                'Using breaks acceptable (dates not wrapped), spare space = %s', space)
         elif target_width > min_acceptable:
             # strings and dates wrap
             ans['recommended'] = ans['min_acceptable_width']
             # use up extra on dates first, then strings
             space = target_width - min_acceptable
-            logger.warning('Breaking all breakable (incl dates), spare space = %s', space)
+            logger.info(
+                'Breaking all breakable (incl dates), spare space = %s', space)
         else:
             # OK severely too small
             ans['recommended'] = ans['min_acceptable_width']
-            logger.warning('Desired width too small for pleasant formatting, table will be too wide.')
+            logger.info(
+                'Desired width too small for pleasant formatting, table will be too wide.')
             space = target_width - min_acceptable
 
         input_df = None
@@ -989,14 +1017,19 @@ class GT(object):
 
                 # Step 2: get rid of intra-line breaks
                 if max_extra > 0:
-                    adj, input_df = self.header_adjustment(df, ans['recommended'], space, max_extra)
+                    adj, input_df = self.header_adjustment(
+                        df, ans['recommended'], space, max_extra)
                     # create new col and populate per GPT
                     ans['header_tweak'] = pd.Series(adj)
                 else:
                     ans['header_tweak'] = 0
                 ans['recommended'] = ans['recommended'] + ans['header_tweak']
                 ans['natural_w_header'] = ans['recommended']
-
+            else:
+                # avoid a failure blow
+                ans['raw_rec'] = np.nan
+                ans['header_tweak'] = np.nan
+                ans['natural_w_header'] = np.nan
             # Step 3: distribute remaining slack proportionally
             remaining = target_width - ans['recommended'].sum()
             if remaining > 0:
@@ -1004,18 +1037,20 @@ class GT(object):
                 total_slack = slack.clip(lower=0).sum()
                 if total_slack > 0:
                     fractions = slack.clip(lower=0) / total_slack
-                    ans['recommended'] += np.floor(fractions * remaining).astype(int)
-                    ans['recommended'] = np.maximum(ans['recommended'], ans['natural_w_header'])
+                    ans['recommended'] += np.floor(fractions *
+                                                   remaining).astype(int)
+                    ans['recommended'] = np.maximum(
+                        ans['recommended'], ans['natural_w_header'])
 
             # Ensure final constraint
             ans['recommended'] = ans['recommended'].astype(int)
-            logger.warning("Raw rec: %s\tTweaks: %s\tActual: %s\tTarget: %s\tOver/(U): %s",
-                ans['raw_rec'].sum(),
-                ans['header_tweak'].sum(),
-                ans['recommended'].sum(),
-                target_width,
-                ans['recommended'].sum() - target_width
-                )
+            logger.info("Raw rec: %s\tTweaks: %s\tActual: %s\tTarget: %s\tOver/(U): %s",
+                        ans['raw_rec'].sum(),
+                        ans['header_tweak'].sum(),
+                        ans['recommended'].sum(),
+                        target_width,
+                        ans['recommended'].sum() - target_width
+                        )
             ans = ans[[
                 'alignment',
                 'break_penalties',
@@ -1027,7 +1062,7 @@ class GT(object):
                 'header_tweak',
                 'natural_w_header',
                 'recommended',
-                ]]
+            ]]
         # in all cases...
         # need recommended to be > 0
         ans['recommended'] = np.maximum(ans['recommended'], 1)
@@ -1141,7 +1176,7 @@ class GT(object):
             # can try for a better solution
             sol = GT.optimal_heading(input_df, space)
             adjustments.update(sol[1])
-            logger.warning('best solution: %s', sol)
+            logger.info('best solution: %s', sol)
         # global temp
         # temp = input_df
         return adjustments, input_df
@@ -1300,8 +1335,10 @@ class GT(object):
 
         col_extra_num_lines_options = {}
         for col_name in unique_cols:
-            col_data = input_df[input_df['col'] == col_name].sort_values(by='extra')
-            col_extra_num_lines_options[col_name] = list(zip(col_data['extra'], col_data['num_lines']))
+            col_data = input_df[input_df['col'] ==
+                                col_name].sort_values(by='extra')
+            col_extra_num_lines_options[col_name] = list(
+                zip(col_data['extra'], col_data['num_lines']))
 
         def check(target_max_lines: int) -> bool:
             current_extra_needed = 0
@@ -1539,7 +1576,7 @@ class GT(object):
         columns = bit.iloc[self.nindex:, :self.ncolumns]
 
         colw, tabs = GT.estimate_column_widths(
-            self.df, nc_index=self.nindex, scale=1, equal=self.equal)
+            self.df, self.max_table_width, nc_index=self.nindex, scale=1, equal=self.equal)
         if self.debug:
             print(f'Make html Input {self.tabs=}\nComputed {tabs=}')
         if self.tabs is not None:
@@ -1910,7 +1947,7 @@ class GT(object):
         df = GT.clean_index(df)
         if not np.all([i == 'object' for i in df.dtypes]) and not df.empty:
             logger.warning('cols of df not all objects (expect all obs at this '
-                'point): ', df.dtypes, sep='\n')
+                           'point): ', df.dtypes, sep='\n')
         # make sure percents are escaped, but not if already escaped
         df = df.replace(r"(?<!\\)%", r"\%", regex=True)
 
@@ -1952,7 +1989,7 @@ class GT(object):
         # number of index columns
         # have also converted everything to formatted strings
         # estimate... originally called guess_column_widths, with more parameters
-        colw, tabs = GT.estimate_column_widths(df, nc_index=nc_index, scale=self.tikz_scale, equal=self.equal)  # noqa
+        colw, tabs = GT.estimate_column_widths(df, self.max_table_width, nc_index=nc_index, scale=self.tikz_scale, equal=self.equal)  # noqa
         if self.debug:
             print(f'Make TikZ Input {self.tabs=}\nComputed {tabs=}')
         if self.tabs is not None:
@@ -1994,13 +2031,13 @@ class GT(object):
             # color all boxes
             debug = ', draw=blue!10'
         sio.write(header.format(container_env=container_env,
-                    caption=caption,
-                    extra_defs=extra_defs,
-                    scale=self.tikz_scale,
-                    column_sep=column_sep,
-                    row_sep=row_sep,
-                    latex=latex,
-                    debug=debug))
+                                caption=caption,
+                                extra_defs=extra_defs,
+                                scale=self.tikz_scale,
+                                column_sep=column_sep,
+                                row_sep=row_sep,
+                                latex=latex,
+                                debug=debug))
 
         # table header
         # title rows, start with the empty spacer row
@@ -2018,7 +2055,8 @@ class GT(object):
             if i == 1:
                 # first column sets row height for entire row
                 sio.write(f'\tcolumn {i:>2d}/.style={{'
-                          f'nodes={{align={ad[al]:<6s}}}, text height=0.9em, text depth=0.2em, '
+                          f'nodes={{align={
+                              ad[al]:<6s}}}, text height=0.9em, text depth=0.2em, '
                           f'inner xsep={column_sep}em, inner ysep=0, '
                           f'text width={max(2, 0.6 * w):.2f}em}},\n')
             else:
@@ -2171,7 +2209,7 @@ class GT(object):
         return sio.getvalue()
 
     @staticmethod
-    def estimate_column_widths(df, nc_index, scale, equal=False):
+    def estimate_column_widths(df, target_width, nc_index, scale, equal=False):
         """
         Estimate sensible column widths for the dataframe [in what units?]
 
@@ -2214,7 +2252,8 @@ class GT(object):
                     if isinstance(c, tuple):
                         # multiindex: join and split into words and take length of each word
                         words = ' '.join(c).split(' ')
-                        cw = max(map(lambda x: GT.text_display_len(str(x)), words))
+                        cw = max(
+                            map(lambda x: GT.text_display_len(str(x)), words))
                     else:
                         cw = max(map(lambda x: GT.text_display_len(str(x)), c))
                     # print(f'{c}: {cw=} no error')
@@ -2229,7 +2268,8 @@ class GT(object):
                 # weirdness here were some objects actually contain floats, str evaluates to NaN
                 # and picks up width zero
                 try:
-                    lens = df.iloc[:, i].map(lambda x: GT.text_display_len(str(x)))
+                    lens = df.iloc[:, i].map(
+                        lambda x: GT.text_display_len(str(x)))
                     colw[c] = lens.max()
                     mxmn[c] = (lens.max(), lens.min())
                 except Exception as e:
@@ -2273,7 +2313,7 @@ class GT(object):
         # look to rescale, shoot for width of 150 on 100 scale basis
         data_width = sum(tabs[nl:])
         index_width = sum(tabs[:nl])
-        target_width = 150 * scale - index_width
+        target_width = target_width * scale - index_width
         if data_width and data_width / target_width < 0.9:
             # don't rescale above 1:1 - don't want too large
             rescale = min(1 / scale, target_width / data_width)
@@ -2451,7 +2491,8 @@ class GT(object):
             A tuple containing the table string (empty if not found) and the caption string (or None if no caption).
         """
         table_match = re.search(r"((?:\|.*\|\s*\n)+)", txt, re.DOTALL)
-        caption_match = re.search(r"^(?:table)?:\s*(.+)", txt, re.MULTILINE + re.IGNORECASE)
+        caption_match = re.search(
+            r"^(?:table)?:\s*(.+)", txt, re.MULTILINE + re.IGNORECASE)
 
         table_part = table_match.group(1).strip() if table_match else ""
         caption_part = caption_match.group(1) if caption_match else ""
@@ -2479,7 +2520,8 @@ class GT(object):
         txt = re.sub(r'^\||\|$', '', table, flags=re.MULTILINE)
         txt = txt.split('\n')
         # remove starting and ending *'s added by hand - but try to avoid * within headings!
-        txt[0] = '|'.join([re.sub(r'^\*\*?|\*\*?$', '', i.strip()) for i in txt[0].split('|')])
+        txt[0] = '|'.join([re.sub(r'^\*\*?|\*\*?$', '', i.strip())
+                          for i in txt[0].split('|')])
 
         # remove the alignment row
         alignment_row = txt.pop(1)
@@ -2627,22 +2669,28 @@ class GT(object):
             return [_make_data_row(fmt.headerrow, [col[i] for col in padded_cells]) for i in range(max_height)]
 
         col_levels = df.columns.nlevels
-        col_tuples = df.columns if col_levels > 1 else [(c,) for c in df.columns]
+        col_tuples = df.columns if col_levels > 1 else [
+            (c,) for c in df.columns]
 
         # Step 1: format each level of the column headers (one header line per level)
         # header alignment is left in index and center in body
-        index_col_aligns = ['left' if i < index_levels else 'center' for i in range(len(data_col_aligns))]
+        index_col_aligns = [
+            'left' if i < index_levels else 'center' for i in range(len(data_col_aligns))]
         _write_line(_make_horizontal_line(fmt.lineabove, data_col_widths))
         # collect all wrapped + bottom-aligned rows for each level
         for level in range(col_levels):
-            level_texts = [str(t[level] if level < len(t) else '') for t in col_tuples]
-            wrapped_cells = [_format_cell(txt, w, a) for txt, w, a in zip(level_texts, data_col_widths, index_col_aligns)]
+            level_texts = [str(t[level] if level < len(t) else '')
+                           for t in col_tuples]
+            wrapped_cells = [_format_cell(txt, w, a) for txt, w, a in zip(
+                level_texts, data_col_widths, index_col_aligns)]
             level_rows = _render_header_level(wrapped_cells, data_col_widths)
             for row in level_rows:
                 _write_line(row)
             if level < col_levels - 1:
-                _write_line(_make_horizontal_line(fmt.linebetweenrows, data_col_widths))
-        _write_line(_make_horizontal_line(fmt.linebelowheader, data_col_widths))
+                _write_line(_make_horizontal_line(
+                    fmt.linebetweenrows, data_col_widths))
+        _write_line(_make_horizontal_line(
+            fmt.linebelowheader, data_col_widths))
 
         for row_idx, (_, row) in enumerate(df.iterrows()):
             data_cells = [
@@ -2655,12 +2703,15 @@ class GT(object):
                 for c, w in zip(data_cells, data_col_widths)
             ]
             for i in range(max_height):
-                _write_line(_make_data_row(fmt.datarow, [col[i] for col in padded]))
+                _write_line(_make_data_row(
+                    fmt.datarow, [col[i] for col in padded]))
 
             if row_idx < len(df) - 1:
-                _write_line(_make_horizontal_line(fmt.linebetweenrows, data_col_widths))
+                _write_line(_make_horizontal_line(
+                    fmt.linebetweenrows, data_col_widths))
             else:
-                _write_line(_make_horizontal_line(fmt.linebelow, data_col_widths))
+                _write_line(_make_horizontal_line(
+                    fmt.linebelow, data_col_widths))
 
         return buf.getvalue()
 
@@ -2704,3 +2755,85 @@ class GT(object):
                 total += len(part)
         return total
 
+    @staticmethod
+    def make_rich_table(
+        df,
+        column_widths,
+        column_alignments=None,
+        num_index_columns=0,
+        title=None,
+        show_lines=False,
+        box_style=box.SIMPLE_HEAVY,
+    ):
+        """
+        Render a preformatted DataFrame as a Rich table.
+
+        Parameters:
+            df (pd.DataFrame): DataFrame with all string values.
+            column_widths (dict or list): Widths by column name or position.
+            column_alignments (dict or list): Alignments ('left', 'center', 'right').
+            num_index_columns (int): Number of left-most columns to treat as index-like.
+            title (str): Optional title.
+            show_lines (bool): Add row separator lines.
+            box_style (rich.box.Box): Border style (see below).
+        """
+        colnames = list(df.columns)
+
+        if isinstance(column_widths, list):
+            column_widths = {colnames[i]: w for i,
+                             w in enumerate(column_widths)}
+
+        if column_alignments is None:
+            column_alignments = {}
+        elif isinstance(column_alignments, list):
+            column_alignments = {
+                colnames[i]: a for i, a in enumerate(column_alignments)}
+
+        table = Table(title=title,
+                      box=box_style,
+                      show_lines=show_lines,
+                      expand=True)
+
+        for i, col in enumerate(colnames):
+            is_index = i < num_index_columns
+            table.add_column(
+                header=str(col),
+                width=column_widths.get(col, None),
+                justify=column_alignments.get(col, "left"),
+                style="dim" if is_index else None,
+                header_style="bold dim" if is_index else "bold",
+                no_wrap=False,
+                overflow="fold",
+                vertical="middle",
+                # divider=divider,
+            )
+
+        for _, row in df.iterrows():
+            table.add_row(*row.tolist())
+
+        return table
+
+    def rich_table(self, console, box_style=box.SQUARE):
+        """Render to a rich table using Console object console."""
+        # hijack max table width
+        mtw = self.max_table_width
+        tw_mode = self.table_width_mode
+        self.table_width_mode = 'explicit'
+        self.max_table_width = console.width
+        # figure col widths and aligners
+        cw_df = self.make_column_width_df()
+        cw = cw_df['recommended']
+        aligners = cw_df['alignment']
+        show_lines = self.hrule_widths[0] > 0
+
+        self._rich_table = table = GT.make_rich_table(self.df,
+                                                      cw,
+                                                      aligners,
+                                                      num_index_columns=self.nindex,
+                                                      title=self.caption,
+                                                      show_lines=show_lines,
+                                                      box_style=box_style)
+
+        self.max_table_width = mtw
+        self.table_width_mode = tw_mode
+        return table

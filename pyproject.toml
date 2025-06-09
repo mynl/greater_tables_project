@@ -16,6 +16,7 @@ dependencies = [
     "faker",
     "IPython",
     "pandas",
+    "rich",
     ]
 classifiers = [
     "Development Status :: 4 - Beta",
