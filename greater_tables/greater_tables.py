@@ -977,8 +977,7 @@ class GT(object):
         if self.table_width_mode == 'explicit':
             # target width INCLUDES padding and column marks |
             target_width = self.max_table_width - (PADDING + 1) * n_col - 1
-            logger.info(f'Col padding effect {
-                        self.max_table_width=} ==> {target_width=}')
+            logger.info(f'Col padding effect {self.max_table_width=} ==> {target_width=}')
         elif self.table_width_mode == 'natural':
             target_width = natural + (PADDING + 1) * n_col + 1
         elif self.table_width_mode == 'breakable':
@@ -2076,8 +2075,7 @@ class GT(object):
             if i == 1:
                 # first column sets row height for entire row
                 sio.write(f'\tcolumn {i:>2d}/.style={{'
-                          f'nodes={{align={
-                              ad[al]:<6s}}}, text height=0.9em, text depth=0.2em, '
+                          f'nodes={{align={ad[al]:<6s}}}, text height=0.9em, text depth=0.2em, '
                           f'inner xsep={column_sep}em, inner ysep=0, '
                           f'text width={max(2, 0.6 * w):.2f}em}},\n')
             else:

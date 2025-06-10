@@ -3,7 +3,7 @@ setlocal
 
 :: --- Configuration ---
 set "PYTHON_VERSION=3.10"
-set "PROJECT_NAME="greater_tables_project"
+set "PROJECT_NAME=greater_tables_project"
 REM set "PROJECT_REPO=https://github.com/mynl/%PROJECT_NAME%.git"
 set "PROJECT_REPO=c:\s\telos\python\greater_tables_project"
 set "BUILD_DIR=C:\tmp\%PROJECT_NAME%_rtd_build"
@@ -20,6 +20,7 @@ mkdir "%BUILD_DIR%"
 :: --- Clone Repository ---
 echo Cloning repository...
 git clone --depth 1 "%PROJECT_REPO%" "%BUILD_DIR%"
+rem git clone "%PROJECT_REPO%" "%BUILD_DIR%"
 if %ERRORLEVEL% NEQ 0 (
     echo Git clone failed. Exiting.
     exit /b %ERRORLEVEL%
@@ -28,20 +29,20 @@ if %ERRORLEVEL% NEQ 0 (
 cd "%BUILD_DIR%"
 
 :: --- Fetch latest changes ---
-echo Fetching latest changes...
-git fetch origin --force --prune --prune-tags --depth 50 refs/heads/master:refs/remotes/origin/master
-if %ERRORLEVEL% NEQ 0 (
-    echo Git fetch failed. Exiting.
-    exit /b %ERRORLEVEL%
-)
+rem echo Fetching latest changes...
+rem git fetch origin --force --prune --prune-tags --depth 50 refs/heads/master:refs/remotes/origin/master
+rem if %ERRORLEVEL% NEQ 0 (
+rem     echo Git fetch failed. Exiting.
+rem     exit /b %ERRORLEVEL%
+rem )
 
 :: --- Checkout master branch ---
-echo Checking out master branch...
-git checkout --force origin/master
-if %ERRORLEVEL% NEQ 0 (
-    echo Git checkout failed. Exiting.
-    exit /b %ERRORLEVEL%
-)
+rem echo Checking out master branch...
+rem git checkout --force origin/master
+rem if %ERRORLEVEL% NEQ 0 (
+rem     echo Git checkout failed. Exiting.
+rem     exit /b %ERRORLEVEL%
+rem )
 
 :: --- Setup Virtual Environment ---
 echo Creating virtual environment for Python %PYTHON_VERSION%...
