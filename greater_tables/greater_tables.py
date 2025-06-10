@@ -168,6 +168,7 @@ class GT(object):
       right
     :param formatters: None or dict (type or colname) -> format function
       for the column; formatters trump ratio_cols
+    :param unbreakable: None or list of columns to be considered unbreakable
     :param ratio_cols: None, or "all" or list of column names treated as
       ratios. Set defaults in derived class suitable to application.
     :param year_cols: None, or "all" or list of column names treated as
@@ -267,6 +268,7 @@ class GT(object):
                  label='',
                  aligners=None,
                  formatters=None,
+                 unbreakable=None,
                  ratio_cols=None,
                  year_cols=None,
                  date_cols=None,
@@ -486,6 +488,12 @@ class GT(object):
                             logger.debug(
                                 f'coercing {i}={c} from {old_type} to float FAILED')
 
+        # massage unbreakable
+        if unbreakable is None:
+            unbreakable = []
+        elif isinstance(unbreakable, str):
+            unbreakable = [unbreakable]
+
         # now can determine types and infer the break penalties (for column sizes)
         self.float_col_indices = []
         self.integer_col_indices = []
@@ -499,27 +507,33 @@ class GT(object):
             if cn in self.date_cols:
                 logger.debug(f'col {i}/{cn} specified as date col')
                 self.date_col_indices.append(i)
-                self.break_penalties.append(Breakability.DATE)
+                self.break_penalties.append(
+                    Breakability.NEVER if cn in unbreakable else Breakability.DATE)
             elif is_datetime64_any_dtype(ser):
                 logger.debug(f'col {i} = {self.df.columns[i]} is DATE')
                 self.date_col_indices.append(i)
-                self.break_penalties.append(Breakability.DATE)
+                self.break_penalties.append(
+                    Breakability.NEVER if cn in unbreakable else Breakability.DATE)
             elif is_integer_dtype(ser):
                 logger.debug(f'col {i} = {self.df.columns[i]} is INTEGER')
                 self.integer_col_indices.append(i)
-                self.break_penalties.append(Breakability.NEVER)
+                self.break_penalties.append(
+                    Breakability.NEVER if cn in unbreakable else Breakability.NEVER)
             elif is_float_dtype(ser):
                 logger.debug(f'col {i} = {self.df.columns[i]} is FLOAT')
                 self.float_col_indices.append(i)
-                self.break_penalties.append(Breakability.NEVER)
+                self.break_penalties.append(
+                    Breakability.NEVER if cn in unbreakable else Breakability.NEVER)
             else:
                 logger.debug(f'col {i} = {self.df.columns[i]} is OBJECT')
                 self.object_col_indices.append(i)
                 c = ser.name
                 if c in self.year_cols or c in self.ratio_cols:
-                    self.break_penalties.append(Breakability.NEVER)
+                    self.break_penalties.append(
+                        Breakability.NEVER if cn in unbreakable else Breakability.NEVER)
                 else:
-                    self.break_penalties.append(Breakability.ACCEPTABLE)
+                    self.break_penalties.append(
+                        Breakability.NEVER if cn in unbreakable else Breakability.ACCEPTABLE)
 
         # figure out column and index alignment
         if aligners is not None and np.any(self.df.columns.duplicated()):
@@ -1473,6 +1487,14 @@ class GT(object):
     margin-left: auto;
     margin-right: auto;
     }}
+    /* center tables in quarto context */
+    .greater-table {{
+        display: block;
+        text-align: center;
+    }}
+    .greater-table > table {{
+        display: inline-table;
+    }}
     /* tag formats */
     #{self.df_id} caption {{
         padding: {2 * padt}px {padr}px {padb}px {padl}px;
@@ -1821,7 +1843,7 @@ class GT(object):
             raise ValueError(f'unknown mode {mode}')
 
     def make_tikz(self,
-                  column_sep=3 / 8,
+                  column_sep=4 / 8,   # was 3/8
                   row_sep=1 / 8,
                   container_env='table',
                   extra_defs='',
@@ -2490,7 +2512,7 @@ class GT(object):
         Returns:
             A tuple containing the table string (empty if not found) and the caption string (or None if no caption).
         """
-        table_match = re.search(r"((?:\|.*\|\s*\n)+)", txt, re.DOTALL)
+        table_match = re.search(r"((?:\|.*\|\s*(?:\n|$))+)", txt, re.DOTALL)
         caption_match = re.search(
             r"^(?:table)?:\s*(.+)", txt, re.MULTILINE + re.IGNORECASE)
 
