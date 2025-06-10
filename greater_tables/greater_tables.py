@@ -364,8 +364,7 @@ class GT(object):
         # TODO: implement
         table_width_mode = table_width_mode.lower()
         if table_width_mode not in ('explicit', 'natural', 'breakable', 'minimum'):
-            raise ValueError(f'Inadmissible options {
-                             table_width_mode} for table_width_mode.')
+            raise ValueError(f'Inadmissible options {table_width_mode} for table_width_mode.')
         self.table_width_mode = table_width_mode
         self.table_width_header_adjust = table_width_header_adjust
         self.table_width_header_relax = table_width_header_relax

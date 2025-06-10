@@ -1,39 +1,41 @@
-@echo off
-setlocal
+REM USE doc-test instead!!
+echo use doc test...
+rem @echo off
+rem setlocal
 
-:: Define paths
-set REPO_URL=https://github.com/mynl/greater_tables_project
-set BUILD_DIR=C:\tmp\greater_tables_docs
-set VENV_DIR=%BUILD_DIR%\venv
+rem :: Define paths
+rem set REPO_URL=https://github.com/mynl/greater_tables_project
+rem set BUILD_DIR=C:\tmp\greater_tables_docs
+rem set VENV_DIR=%BUILD_DIR%\venv
 
-:: Remove existing directory if it exists
-if exist "%BUILD_DIR%" rd /s /q "%BUILD_DIR%"
+rem :: Remove existing directory if it exists
+rem if exist "%BUILD_DIR%" rd /s /q "%BUILD_DIR%"
 
-:: Clone the latest development repo
-git clone --depth 1 %REPO_URL% "%BUILD_DIR%"
-if %errorlevel% neq 0 exit /b %errorlevel%
+rem :: Clone the latest development repo
+rem git clone --depth 1 %REPO_URL% "%BUILD_DIR%"
+rem if %errorlevel% neq 0 exit /b %errorlevel%
 
-pushd "%BUILD_DIR%"
+rem pushd "%BUILD_DIR%"
 
-:: Create virtual environment
-python -m venv "%VENV_DIR%"
-if %errorlevel% neq 0 exit /b %errorlevel%
+rem :: Create virtual environment
+rem python -m venv "%VENV_DIR%"
+rem if %errorlevel% neq 0 exit /b %errorlevel%
 
-:: Activate virtual environment
-call "%VENV_DIR%\Scripts\activate"
+rem :: Activate virtual environment
+rem call "%VENV_DIR%\Scripts\activate"
 
-:: Upgrade pip and install dependencies from pyproject.toml
-python -m pip install --upgrade pip
-pip install --upgrade build setuptools
-pip install .
-pip install ".[doc]"  || pip install sphinx  # Ensure Sphinx is installed
+rem :: Upgrade pip and install dependencies from pyproject.toml
+rem python -m pip install --upgrade pip
+rem pip install --upgrade build setuptools
+rem pip install .
+rem pip install ".[doc]"  || pip install sphinx  # Ensure Sphinx is installed
 
-:: Build the documentation
-sphinx-build -b html docs docs/_build/html
-if %errorlevel% neq 0 exit /b %errorlevel%
+rem :: Build the documentation
+rem sphinx-build -b html docs docs/_build/html
+rem if %errorlevel% neq 0 exit /b %errorlevel%
 
-:: Deactivate virtual environment
-deactivate
+rem :: Deactivate virtual environment
+rem deactivate
 
-echo Documentation build complete: %BUILD_DIR%\docs\_build\html
-endlocal
+rem echo Documentation build complete: %BUILD_DIR%\docs\_build\html
+rem endlocal
