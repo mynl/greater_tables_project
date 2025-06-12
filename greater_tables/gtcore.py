@@ -322,7 +322,7 @@ class GT(object):
         # self.df.columns.names = [None] * self.df.columns.nlevels
         self.df_id = df_short_hash(self.df)
         # TODO: update / change
-        self.str_table_fmt = str_table_fmt
+        # self.str_table_fmt = str_table_fmt
         # TODO: implement
         table_width_mode = table_width_mode.lower()
         if table_width_mode not in ('explicit', 'natural', 'breakable', 'minimum'):

@@ -16,6 +16,7 @@ from pathlib import Path
 import re
 import sys
 from textwrap import wrap
+from typing import Optional, Union, Literal
 import warnings
 
 from bs4 import BeautifulSoup
@@ -29,6 +30,7 @@ from rich.table import Table
 
 from . gtenums import Breakability, Alignment
 from . gtformats import GT_Format, TableFormat
+from . gtconfig import GTConfigModel
 from . hasher import df_short_hash
 
 # turn this fuck-fest off
@@ -306,11 +308,11 @@ class GT(object):
         # self.df.columns.names = [None] * self.df.columns.nlevels
         self.df_id = df_short_hash(self.df)
         # TODO: update / change
-        self.str_table_fmt = str_table_fmt
+        # self.str_table_fmt = str_table_fmt
         # TODO: implement
-        config.table_width_mode = config.table_width_mode.lower()
-        if config.table_width_mode not in ('explicit', 'natural', 'breakable', 'minimum'):
-            raise ValueError(f'Inadmissible options {config.table_width_mode} for config.table_width_mode.')
+        # self.table_width_mode = config.table_width_mode.lower()
+        # if config.table_width_mode not in ('explicit', 'natural', 'breakable', 'minimum'):
+        #     raise ValueError(f'Inadmissible options {config.table_width_mode} for config.table_width_mode.')
         # self.table_width_mode = table_width_mode
         # self.table_width_header_adjust = table_width_header_adjust
         # self.table_width_header_relax = table_width_header_relax
@@ -406,7 +408,7 @@ class GT(object):
             assert callable(
                 config.default_formatter), 'config.default_formatter must be callable'
 
-            def wrapped_config.default_formatter(x):
+            def wrapped_default_formatter(x):
                 try:
                     return config.default_formatter(x)
                 except ValueError:
@@ -1388,7 +1390,7 @@ class GT(object):
         )
         return txt
 
-    def make_style(self, config.tabs):
+    def make_style(self, tabs):
         """Write out custom CSS for the table."""
         if self.config.debug:
             head_tb = '#0ff'
@@ -1797,7 +1799,7 @@ class GT(object):
                   post_process='',
                   label='',
                   latex=None,
-                  config.sparsify=1):
+                  sparsify=1):
         """
         Write DataFrame to custom tikz matrix to allow greater control of
         formatting and insertion of horizontal and vertical divider lines
@@ -2004,7 +2006,7 @@ class GT(object):
                                 column_sep=column_sep,
                                 row_sep=row_sep,
                                 latex=latex,
-                                config.debug=config.debug))
+                                debug=self.config.debug))
 
         # table header
         # title rows, start with the empty spacer row
@@ -2175,7 +2177,7 @@ class GT(object):
         return sio.getvalue()
 
     @staticmethod
-    def estimate_column_widths(df, target_width, nc_index, scale, config.equal=False):
+    def estimate_column_widths(df, target_width, nc_index, scale, equal=False):
         """
         Estimate sensible column widths for the dataframe [in what units?]
 
@@ -2290,7 +2292,7 @@ class GT(object):
         return colw, tabs
 
     @staticmethod
-    def config.sparsify(df, cs):
+    def sparsify(df, cs):
         out = df.copy()
         for i, c in enumerate(cs):
             mask = df[cs[:i + 1]].ne(df[cs[:i + 1]].shift()).any(axis=1)
@@ -2298,7 +2300,7 @@ class GT(object):
         return out
 
     @staticmethod
-    def config.sparsify_old(col):
+    def sparsify_old(col):
         """
         config.sparsify col values, col a pd.Series or dict, with items and accessor
         column results from a reset_index so has index 0,1,2... this is relied upon.
@@ -2320,7 +2322,7 @@ class GT(object):
         return new_col, rules
 
     @staticmethod
-    def config.sparsify_mi(mi, bottom_level=False):
+    def sparsify_mi(mi, bottom_level=False):
         """
         as above for a multi index level, without the benefit of the index...
         really all should use this function
