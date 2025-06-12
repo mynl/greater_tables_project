@@ -52,3 +52,7 @@ dev = [
     "sphinx-toggleprompt",
     "sphinx-multitoc-numbering"
 ]
+
+
+[project.scripts]
+gt = "greater_tables.cli:cli"

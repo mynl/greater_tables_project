@@ -1,3 +1,121 @@
+sort out the variety of readmes... this is the main one
+
+# v 3.0 update
+
+* config files
+* unified col width and info dataframe
+* de-texing
+* cli for config and writeout a csv etc.
+* tests
+
+# TODO
+
+* Ratio cols with multi index columns
+* % in tex output - never allow comments?
+* center / left / right table output -> CSS
+* ?Option to hide index
+* Bring over the roll your own logger
+
+***
+
+# from GPT
+
+
+Absolutely—here’s a structured summary of everything we’ve covered, organized by topic.
+
+---
+
+## 🧱 Project Structure & Philosophy
+
+* Your `GreaterTables` class formats a `pandas.DataFrame` to **HTML, text, or LaTeX**.
+* The class is **immutable**: formatting is fixed at construction time, like a pure value object.
+* You avoid branchy, incremental APIs (like `ggplot`) and prefer creating fresh objects.
+* You wanted a way to handle growing config complexity—→ led to a **YAML config + Pydantic schema** design.
+
+---
+
+## 📁 Project Layout
+
+```
+greater_tables_project/
+├── greater_tables/
+│   ├── __init__.py
+│   ├── gtconfig.py          ← config model + loader
+│   ├── gtcore.py            ← GreaterTables class
+│   └── defaults/
+│       └── config_template.yaml
+├── tests/
+├── pyproject.toml
+```
+
+* `GTConfigModel` = schema + default source of truth
+* `GTConfig` = singleton loader and validator
+* `config_template.yaml` = editable fallback + documentation base
+
+---
+
+## 🔧 Config Management
+
+* All defaults and types are declared in `GTConfigModel` (Pydantic).
+* Config is **loaded from YAML**, validated by `GTConfigModel`.
+* You can **generate** a valid config file from the model using `.model_dump() → YAML`.
+* Singleton pattern (`GTConfig.__new__`) caches the config at runtime.
+
+### Helpers
+
+* `GTConfig().get(overrides=...)` gives a safe, override-able config
+* `write_template(path)` writes a default config YAML for user to edit
+
+---
+
+## 🛠 Git Workflow (Solo Dev, Linear)
+
+* Use **tags** (`git tag v0.2.0`) to label stable versions
+* Use **`git reset --hard <tag>`** to roll back and discard later commits
+* Avoid branches entirely—keep a **single linear history**
+* Tags let you bounce around safely, with names instead of hashes
+* Releases on GitHub are tags + metadata, optional for publishing
+
+---
+
+## ⚙️ CLI Tool
+
+* Built with `click`, with subcommands:
+
+  * `gt render data.csv --format html`
+  * `gt write-template`
+* Reads any Pandas-supported file (`.csv`, `.feather`, `.pkl`, etc.)
+* Outputs to console or to file
+* Uses current config by default, or override with `--config path.yaml`
+
+---
+
+## 🧠 Design Principles You’re Following
+
+| Principle                    | Your Approach                               |
+| ---------------------------- | ------------------------------------------- |
+| Immutability                 | `GT(df, config)` is fixed once created      |
+| Separation of concerns       | `GTConfigModel` holds defaults/types        |
+| Config as code/documentation | `config_template.yaml` generated from model |
+| CLI-first mindset            | `click` used to expose functionality        |
+| Linear Git workflow          | Tags for rollback, no branches              |
+
+---
+
+Let me know if you want me to generate:
+
+* a Markdown doc for contributors
+* a `.bat` script to roll back to a tag
+* test scaffolding or release automation
+
+You're in great shape. Gum-level perfection achieved.
+
+
+
+***
+
+# OLD
+
 # Greater Tables
 
 Creating presentation quality tables from pandas dataframes is frustrating. It is hard to left-align text and right-align numbers using pandas `display` or `df.to_html`. The  `great_tables` package does a really nice job with pandas and polars dataframes but does not support indexes or TeX output. 

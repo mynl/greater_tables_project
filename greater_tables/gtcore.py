@@ -1,9 +1,14 @@
-# -*- coding: utf-8 -*-
+"""
+Core rendering logic for GreaterTables.
 
-# table formatting again
+Defines the `GreaterTables` class, which formats and renders pandas DataFrames
+to HTML, plain text, or LaTeX output using a validated configuration model.
+
+This is the main entry point for rendering logic. See `gtconfig.py` for configuration schema.
+"""
+
 from collections import namedtuple
 from decimal import InvalidOperation
-from enum import IntEnum
 from io import StringIO
 from itertools import groupby
 import logging
@@ -22,6 +27,8 @@ from pandas.api.types import is_datetime64_any_dtype, is_integer_dtype, \
 from rich import box
 from rich.table import Table
 
+from . gtenums import Breakability
+from . gtformats import GT_Format, TableFormat
 from . hasher import df_short_hash
 
 # turn this fuck-fest off
@@ -52,51 +59,6 @@ logger.info(f'Logger Setup; {__name__} module recompiled.')
 # temp = None
 
 
-class Breakability(IntEnum):
-    """To track if a column should or should not be broken (wrapped)."""
-
-    NEVER = 0
-    DATE = 3
-    MAYBE = 5
-    ACCEPTABLE = 10
-
-
-# specify text mode
-Line = namedtuple('Line', ['begin', 'hline', 'sep', 'end', 'index_sep'])
-DataRow = namedtuple('DataRow', ['begin', 'sep', 'end', 'index_sep'])
-TableFormat = namedtuple('TableFormat', [
-    'lineabove',
-    'linebelowheader',
-    'linebetweenrows',
-    'linebelow',
-    'headerrow',
-    'datarow',
-    'padding',
-    'with_header_hide'
-])
-
-# generic text format
-GT_Format = TableFormat(
-    lineabove=Line('┍', '━', '┯', '┑', '┳'),
-    linebelowheader=Line('┝', '━', '┿', '┥', '╋'),
-    linebetweenrows=Line('├', '─', '┼', '┤', '╂'),
-    linebelow=Line('┕', '━', '┷', '┙', '┻'),
-    headerrow=DataRow('│', '│', '│', '┃'),
-    datarow=DataRow('│', '│', '│', '┃'),
-    padding=1,
-    with_header_hide=None
-)
-
-# GT_Format = TableFormat(
-#     lineabove=Line('\u250d', '\u2501', '\u252f', '\u2511', '\u2533'),
-#     linebelowheader=Line('\u251d', '\u2501', '\u253f', '\u2525', '\u254b'),
-#     linebetweenrows=Line('\u251c', '\u2500', '\u253c', '\u2524', '\u2502'),
-#     linebelow=Line('\u2515', '\u2501', '\u2537', '\u2519', '\u253b'),
-#     headerrow=DataRow('\u2502', '\u2502', '\u2502', '\u2503'),
-#     datarow=DataRow('\u2502', '\u2502', '\u2502', '\u2503'),
-#     padding=1,
-#     with_header_hide=None
-# )
 
 
 class GT(object):
@@ -274,41 +236,41 @@ class GT(object):
                  date_cols=None,
                  raw_cols=None,
                  show_index=True,
-                 default_integer_str='{x:,d}',
-                 default_float_str='{x:,.3f}',
-                 default_date_str='%Y-%m-%d',
-                 default_ratio_str='{x:.1%}',
-                 default_formatter=None,
-                 table_float_format=None,
-                 table_hrule_width=1,
-                 table_vrule_width=1,
-                 hrule_widths=None,
-                 vrule_widths=None,
-                 sparsify=True,             # index sparsification - almost certainly want this!
-                 sparsify_columns=True,     # column sparsification with colspans
-                 spacing='medium',          # tight, medium, wide
-                 padding_trbl=None,         # tuple of four ints for padding
-                 tikz_scale=1.0,
-                 font_body=0.9,
-                 font_head=1.0,
-                 font_caption=1.1,
-                 font_bold_index=False,
-                 pef_precision=3,
-                 pef_lower=-3,
-                 pef_upper=6,
-                 cast_to_floats=True,
-                 header_row=True,
-                 tabs=None,
-                 equal=False,
-                 caption_align='center',
-                 large_ok=False,
-                 max_str_length=-1,
-                 str_table_fmt='mixed_grid',
-                 table_width_mode='explicit',
-                 table_width_header_adjust=0.1,
-                 table_width_header_relax=10,
-                 max_table_width=200,
-                 debug=False):
+                 # --> config
+                 # default_integer_str='{x:,d}',
+                 # default_float_str='{x:,.3f}',
+                 # default_date_str='%Y-%m-%d',
+                 # default_ratio_str='{x:.1%}',
+                 # default_formatter=None,
+                 # table_float_format=None,
+                 # table_hrule_width=1,
+                 # table_vrule_width=1,
+                 # hrule_widths=None,
+                 # vrule_widths=None,
+                 # sparsify=True,             # index sparsification - almost certainly want this!
+                 # sparsify_columns=True,     # column sparsification with colspans
+                 # spacing='medium',          # tight, medium, wide
+                 # padding_trbl=None,         # tuple of four ints for padding
+                 # tikz_scale=1.0,
+                 # font_body=0.9,
+                 # font_head=1.0,
+                 # font_caption=1.1,
+                 # font_bold_index=False,
+                 # pef_precision=3,
+                 # pef_lower=-3,
+                 # pef_upper=6,
+                 # cast_to_floats=True,
+                 # header_row=True,
+                 # tabs=None,
+                 # equal=False,
+                 # caption_align='center',
+                 # large_ok=False,
+                 # max_str_length=-1,
+                 # str_table_fmt='mixed_grid',  # no longer used
+                 # table_width_mode='explicit',
+                 # table_width_header_adjust=0.1,
+                 # table_width_header_relax=10,
+                 ):
 
         # deal with alternative input modes
         if df is None:
