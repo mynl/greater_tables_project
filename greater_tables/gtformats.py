@@ -1,3 +1,4 @@
+# coding: utf-8
 """
 Define text table formats.
 
@@ -80,3 +81,11 @@ GT_Format = TableFormat(
 #     padding=1,
 #     with_header_hide=None
 # )
+
+
+def default_formatter(x):
+    """
+
+
+
+    """

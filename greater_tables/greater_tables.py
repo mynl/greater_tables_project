@@ -23,6 +23,7 @@ from rich import box
 from rich.table import Table
 
 from . hasher import df_short_hash
+from . gtformats import GT_Format, TableFormat
 
 # turn this fuck-fest off
 pd.set_option('future.no_silent_downcasting', True)
@@ -60,43 +61,6 @@ class Breakability(IntEnum):
     MAYBE = 5
     ACCEPTABLE = 10
 
-
-# specify text mode
-Line = namedtuple('Line', ['begin', 'hline', 'sep', 'end', 'index_sep'])
-DataRow = namedtuple('DataRow', ['begin', 'sep', 'end', 'index_sep'])
-TableFormat = namedtuple('TableFormat', [
-    'lineabove',
-    'linebelowheader',
-    'linebetweenrows',
-    'linebelow',
-    'headerrow',
-    'datarow',
-    'padding',
-    'with_header_hide'
-])
-
-# generic text format
-GT_Format = TableFormat(
-    lineabove=Line('┍', '━', '┯', '┑', '┳'),
-    linebelowheader=Line('┝', '━', '┿', '┥', '╋'),
-    linebetweenrows=Line('├', '─', '┼', '┤', '╂'),
-    linebelow=Line('┕', '━', '┷', '┙', '┻'),
-    headerrow=DataRow('│', '│', '│', '┃'),
-    datarow=DataRow('│', '│', '│', '┃'),
-    padding=1,
-    with_header_hide=None
-)
-
-# GT_Format = TableFormat(
-#     lineabove=Line('\u250d', '\u2501', '\u252f', '\u2511', '\u2533'),
-#     linebelowheader=Line('\u251d', '\u2501', '\u253f', '\u2525', '\u254b'),
-#     linebetweenrows=Line('\u251c', '\u2500', '\u253c', '\u2524', '\u2502'),
-#     linebelow=Line('\u2515', '\u2501', '\u2537', '\u2519', '\u253b'),
-#     headerrow=DataRow('\u2502', '\u2502', '\u2502', '\u2503'),
-#     datarow=DataRow('\u2502', '\u2502', '\u2502', '\u2503'),
-#     padding=1,
-#     with_header_hide=None
-# )
 
 
 class GT(object):
@@ -1716,7 +1680,10 @@ class GT(object):
                     # dx = data in index
                     # if this is the level that changes for this row
                     # will use a top rule  hence omit i = 0 which already has an hrule
-                    if i > 0 and hrule == '' and j == index_change_level[i]:
+                    # here have to be careful - if the index is not ! then not every row
+                    # appears in the index change level. But if it DOES NOT appear then
+                    # it isn't a change level so no rule required
+                    if i > 0 and hrule == '' and i in index_change_level and j == index_change_level[i]:
                         hrule = f'grt-hrule-{j}'
                     # html.append(f'<td class="grt-dx-r-{i} grt-dx-c-{j} {self.df_aligners[j]} {hrule}">{c}</td>')
                     col_id = f'grt-c-{j}'

@@ -18,18 +18,21 @@ import sys
 from textwrap import wrap
 from typing import Optional, Union, Literal
 import warnings
+import yaml
 
 from bs4 import BeautifulSoup
 from cachetools import LRUCache
 import numpy as np
 import pandas as pd
+from pandas.errors import IntCastingNaNError
 from pandas.api.types import is_datetime64_any_dtype, is_integer_dtype, \
     is_float_dtype   # , is_numeric_dtype
+from pydantic import ValidationError
 from rich import box
 from rich.table import Table
 
 from . gtenums import Breakability, Alignment
-from . gtformats import GT_Format, TableFormat
+from . gtformats import GT_Format, TableFormat, Line, DataRow
 from . gtconfig import GTConfigModel
 from . hasher import df_short_hash
 
@@ -242,7 +245,8 @@ class GT(object):
         **overrides,
     ):
         if config and config_path:
-            raise ValueError("Pass either 'config' or 'config_path', not both.")
+            raise ValueError(
+                "Pass either 'config' or 'config_path', not both.")
 
         if config:
             base_config = config
@@ -251,7 +255,8 @@ class GT(object):
                 raw = yaml.safe_load(config_path.read_text(encoding="utf-8"))
                 base_config = GTConfigModel.model_validate(raw)
             except (ValidationError, OSError) as e:
-                raise ValueError(f"Failed to load config from {config_path}") from e
+                raise ValueError(f"Failed to load config from {
+                                 config_path}") from e
         else:
             base_config = GTConfigModel()
 
@@ -402,7 +407,7 @@ class GT(object):
                 self.raw_cols = raw_cols
 
         # figure the default formatter (used in conjunction with raw columns)
-        if config.default_formatter is None:
+        if self.config.default_formatter is None:
             self.default_formatter = self.default_formatter
         else:
             assert callable(
@@ -413,13 +418,13 @@ class GT(object):
                     return config.default_formatter(x)
                 except ValueError:
                     return str(x)
-            self.default_formatter = wrapped_config.default_formatter
+            self.default_formatter = wrapped_default_formatter
 
         # cast as much as possible to floats
         with warnings.catch_warnings():
             warnings.simplefilter(
                 "ignore", category=pd.errors.PerformanceWarning)
-            if config.cast_to_floats:
+            if self.config.cast_to_floats:
                 for i, c in enumerate(self.df.columns):
                     if c in self.raw_cols or c in self.date_cols:
                         continue
@@ -552,10 +557,10 @@ class GT(object):
         # self.default_float_formatter = None
         # self.hrule_widths = hrule_widths or (0, 0, 0)
         # if not isinstance(self.config.hrule_widths, (list, tuple)):
-            # self.config.hrule_widths = (self.config.hrule_widths,)
+        # self.config.hrule_widths = (self.config.hrule_widths,)
         # self.vrule_widths = vrule_widths or (0, 0, 0)
         # if not isinstance(self.config.hrule_widths, (list, tuple)):
-            # self.config.hrule_widths = (self.config.hrule_widths, )
+        # self.config.hrule_widths = (self.config.hrule_widths, )
         # self.table_hrule_width = table_hrule_width
         # self.table_vrule_width = table_vrule_width
         # self.font_body = font_body
@@ -570,28 +575,25 @@ class GT(object):
         elif isinstance(tabs, (int, float)):
             self.tabs = (tabs,)
         elif isinstance(tabs, (np.ndarray, list, tuple)):
-            self.tabs = tabs  # Already iterable, self.config.tabs = as is
+            self.tabs = tabs  # Already iterable, self.tabs = as is
         else:
             self.tabs = [tabs]  # Fallback for anything else
         # self.equal = equal
 
-        if config.padding_trbl is None:
-            if config.spacing == 'tight':
-                config.padding_trbl = (0, 5, 0, 5)
-            elif config.spacing == 'medium':
-                config.padding_trbl = (2, 10, 2, 10)
-            elif config.spacing == 'wide':
-                config.padding_trbl = (4, 15, 4, 15)
+        if self.config.padding_trbl is not None:
+            padding_trbl = self.config_padding_trbl
+        elif self.config.padding_trbl is None:
+            if self.config.spacing == 'tight':
+                padding_trbl = (0, 5, 0, 5)
+            elif self.config.spacing == 'medium':
+                padding_trbl = (2, 10, 2, 10)
+            elif self.config.spacing == 'wide':
+                padding_trbl = (4, 15, 4, 15)
             else:
                 raise ValueError(
                     'config.spacing must be tight, medium, or wide or tuple of four ints.')
-        try:
-            self.padt, self.padr, self.padb, self.padl = config.padding_trbl
-        except ValueError:
-            # pydantics will see to this...
-            logger.error(
-                f'config.padding_trbl {config.padding_trbl=}, must be four ints, defaulting to medium padding')
-            self.padt, self.padr, self.padb, self.padl = 2, 10, 2, 10
+        # pydantic will see to it this is OK
+        self.padt, self.padr, self.padb, self.padl = padding_trbl
 
         # because of the problem of non-unique indexes use a list and
         # not a dict to pass the formatters to to_html
@@ -608,7 +610,7 @@ class GT(object):
         # cache for various things...
         self._cache = LRUCache(20)
         # config.sparsify
-        if config.sparsify and self.nindex > 1:
+        if self.config.sparsify and self.nindex > 1:
             self.df = GT.sparsify(self.df, self.df.columns[:self.nindex])
             # for c in self.df.columns[:self.nindex]:
             #     # config.sparsify returns some other stuff...
@@ -857,7 +859,7 @@ class GT(object):
                         self.default_float_formatter or self.make_float_formatter(self.df.iloc[:, i]))
                 else:
                     # print(f'{i} default')
-                    self._df_formatters.append(self.config.default_formatter)
+                    self._df_formatters.append(self.default_formatter)
             # self._df_formatters is now a list of length config.equal to cols in df
             if len(self._df_formatters) != self.df.shape[1]:
                 raise ValueError(
@@ -925,8 +927,10 @@ class GT(object):
         PADDING = 2  # per column
         if self.config.table_width_mode == 'explicit':
             # target width INCLUDES padding and column marks |
-            target_width = self.config.max_table_width - (PADDING + 1) * n_col - 1
-            logger.info(f'Col padding effect {self.config.max_table_width=} ==> {target_width=}')
+            target_width = self.config.max_table_width - \
+                (PADDING + 1) * n_col - 1
+            logger.info(f'Col padding effect {
+                        self.config.max_table_width=} ==> {target_width=}')
         elif self.config.table_width_mode == 'natural':
             target_width = natural + (PADDING + 1) * n_col + 1
         elif self.config.table_width_mode == 'breakable':
@@ -936,7 +940,8 @@ class GT(object):
 
         # extra space for the headers to relax, if useful
         if self.config.table_width_header_adjust > 0:
-            max_extra = int(self.config.table_width_header_adjust * target_width)
+            max_extra = int(
+                self.config.table_width_header_adjust * target_width)
         else:
             max_extra = 0
 
@@ -1004,7 +1009,14 @@ class GT(object):
                         ans['recommended'], ans['natural_w_header'])
 
             # Ensure final constraint
-            ans['recommended'] = ans['recommended'].astype(int)
+            try:
+                ans['recommended'] = ans['recommended'].astype(int)
+            except IntCastingNaNError:
+                print('getting error')
+                print(ans['recommended'])
+                ans['recommended'] = pd.to_numeric(
+                    ans['recommended'], errors='coerce').fillna(0).astype(int)
+
             logger.info("Raw rec: %s\tTweaks: %s\tActual: %s\tTarget: %s\tOver/(U): %s",
                         ans['raw_rec'].sum(),
                         ans['header_tweak'].sum(),
@@ -1517,7 +1529,7 @@ class GT(object):
         font-weight: bold;
     }}
 ''']
-        for i, w in enumerate(config.tabs):
+        for i, w in enumerate(tabs):
             style.append(f'    #{self.df_id} .grt-c-{i} {{ width: {w}em; }}')
         style.append('</style>')
         logger.info('CREATED CSS')
@@ -1547,15 +1559,15 @@ class GT(object):
         colw, tabs = GT.estimate_column_widths(
             self.df, self.config.max_table_width, nc_index=self.nindex, scale=1, equal=self.config.equal)
         if self.config.debug:
-            print(f'Make html Input {self.config.tabs=}\nComputed {tabs=}')
-        if self.config.tabs is not None:
-            if len(tabs) == len(self.config.tabs):
-                tabs = self.config.tabs
-            elif len(self.config.tabs) == 1:
-                tabs = self.config.tabs * len(tabs)
+            print(f'Make html Input {self.tabs=}\nComputed {tabs=}')
+        if self.tabs is not None:
+            if len(tabs) == len(self.tabs):
+                tabs = self.tabs
+            elif len(self.tabs) == 1:
+                tabs = self.tabs * len(tabs)
             else:
                 logger.error(
-                    f'{self.config.tabs=} must be None, a single number, or a list of numbers of the correct length. Ignoring.')
+                    f'{self.tabs=} must be None, a single number, or a list of numbers of the correct length. Ignoring.')
         # print('HTML ' + ', '.join([f'{c:,.2f}' for c in tabs]))
 
         # set column widths; tabs returns lengths of strings in each column
@@ -1665,7 +1677,9 @@ class GT(object):
                     # dx = data in index
                     # if this is the level that changes for this row
                     # will use a top rule  hence omit i = 0 which already has an hrule
-                    if i > 0 and hrule == '' and j == index_change_level[i]:
+                    # appears in the index change level. But if it DOES NOT appear then
+                    # it isn't a change level so no rule required
+                    if i > 0 and hrule == '' and i in index_change_level and j == index_change_level[i]:
                         hrule = f'grt-hrule-{j}'
                     # html.append(f'<td class="grt-dx-r-{i} grt-dx-c-{j} {self.df_aligners[j]} {hrule}">{c}</td>')
                     col_id = f'grt-c-{j}'
@@ -1752,8 +1766,12 @@ class GT(object):
     @staticmethod
     def apply_formatters_work(df, formatters):
         """Apply formatters to a DataFrame."""
-        new_df = pd.DataFrame({i: map(f, df.iloc[:, i])
-                               for i, f in enumerate(formatters)})
+        try:
+            new_df = pd.DataFrame({i: map(f, df.iloc[:, i])
+                                   for i, f in enumerate(formatters)})
+        except TypeError:
+            print('NASTY TYPE ERROR')
+            raise
         new_df.columns = df.columns
         return new_df
 
@@ -1899,7 +1917,7 @@ class GT(object):
         row sep={row_sep}em,
         column sep={column_sep}em,
         nodes in empty cells,
-        nodes={{rectangle, scale={scale}, text badly ragged {config.debug}}},
+        nodes={{rectangle, scale={scale}, text badly ragged {debug}}},
 """
         # put draw=blue!10 or so in nodes to see the node
 
@@ -1928,12 +1946,12 @@ class GT(object):
                     "ignore", category=pd.errors.PerformanceWarning)
                 df = df.reset_index(
                     drop=False, col_level=df.columns.nlevels - 1)
-            if config.sparsify:
+            if sparsify:
                 if hrule is None:
                     hrule = set()
-            for i in range(config.sparsify):
-                # TODO update to new config.sparsify!!
-                df.iloc[:, i], rules = GT.config.sparsify_old(df.iloc[:, i])
+            for i in range(sparsify):
+                # TODO update to new sparsify!!
+                df.iloc[:, i], rules = GT.sparsify_old(df.iloc[:, i])
                 # don't want lines everywhere
                 if len(rules) < len(df) - 1:
                     hrule = set(hrule).union(rules)
@@ -1960,15 +1978,15 @@ class GT(object):
         # estimate... originally called guess_column_widths, with more parameters
         colw, tabs = GT.estimate_column_widths(df, self.config.max_table_width, nc_index=nc_index, scale=self.config.tikz_scale, equal=self.config.equal)  # noqa
         if self.config.debug:
-            print(f'Make TikZ Input {self.config.tabs=}\nComputed {tabs=}')
-        if self.config.tabs is not None:
-            if len(tabs) == len(self.config.tabs):
-                tabs = self.config.tabs
-            elif len(self.config.tabs) == 1:
-                tabs = self.config.tabs * len(tabs)
+            print(f'Make TikZ Input {self.tabs=}\nComputed {tabs=}')
+        if self.tabs is not None:
+            if len(tabs) == len(self.tabs):
+                tabs = self.tabs
+            elif len(self.tabs) == 1:
+                tabs = self.tabs * len(tabs)
             else:
                 logger.error(
-                    f'{self.config.tabs=} must be None, a single number, or a list of numbers of the correct length. Ignoring.')
+                    f'{self.tabs=} must be None, a single number, or a list of numbers of the correct length. Ignoring.')
         # print('TIKZ ' + ', '.join([f'{c:,.2f}' for c in tabs]))
         # print(f'TIKZ {colw=}, {tabs=}')
         logger.info(f'tabs: {tabs}')
@@ -1995,10 +2013,12 @@ class GT(object):
             latex = ''
         else:
             latex = f'[{latex}]'
-        config.debug = ''
+        debug = ''
         if self.config.debug:
             # color all boxes
-            config.debug = ', draw=blue!10'
+            debug = ', draw=blue!10'
+        else:
+            debug = ''
         sio.write(header.format(container_env=container_env,
                                 caption=caption,
                                 extra_defs=extra_defs,
@@ -2006,7 +2026,7 @@ class GT(object):
                                 column_sep=column_sep,
                                 row_sep=row_sep,
                                 latex=latex,
-                                debug=self.config.debug))
+                                debug=debug))
 
         # table header
         # title rows, start with the empty spacer row
@@ -2024,7 +2044,8 @@ class GT(object):
             if i == 1:
                 # first column sets row height for entire row
                 sio.write(f'\tcolumn {i:>2d}/.style={{'
-                          f'nodes={{align={ad[al]:<6s}}}, text height=0.9em, text depth=0.2em, '
+                          f'nodes={{align={
+                              ad[al]:<6s}}}, text height=0.9em, text depth=0.2em, '
                           f'inner xsep={column_sep}em, inner ysep=0, '
                           f'text width={max(2, 0.6 * w):.2f}em}},\n')
             else:
@@ -2053,7 +2074,7 @@ class GT(object):
         if isinstance(df.columns, pd.MultiIndex):
             for lvl in range(len(df.columns.levels)):
                 nl = ''
-                sparse_columns[lvl], mi_vrules[lvl] = GT.config.sparsify_mi(df.columns.get_level_values(lvl),
+                sparse_columns[lvl], mi_vrules[lvl] = GT.sparsify_mi(df.columns.get_level_values(lvl),
                                                                      lvl == len(df.columns.levels) - 1)
                 for cn, c, al in zip(df.columns, sparse_columns[lvl], align):
                     # c = wfloat_format(c)
@@ -2268,7 +2289,7 @@ class GT(object):
                 # data all seems about the same width
                 tabs.append(common_size)
         logger.info(f'Determined tab config.spacing: {tabs}')
-        if config.equal:
+        if equal:
             # see if config.equal widths makes sense
             dt = tabs[nl:]
             if max(dt) / sum(dt) < 4 / 3:
@@ -2302,7 +2323,7 @@ class GT(object):
     @staticmethod
     def sparsify_old(col):
         """
-        config.sparsify col values, col a pd.Series or dict, with items and accessor
+        sparsify col values, col a pd.Series or dict, with items and accessor
         column results from a reset_index so has index 0,1,2... this is relied upon.
         TODO: this doesn't work if there is a change in a higher level but not this level
         """
