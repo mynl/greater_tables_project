@@ -10,6 +10,43 @@ Welcome to greater_tables's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   greater_tables
+   greater_tables.data
+
+
+Introduction
+============
+
+.. include:: ../README.md
+    :parser: myst_parser.sphinx_
+
+
+Other
+=======
+
+Auto doc files generated with::
+
+    sphinx-apidoc -o . ..\greater_tables\
+
+File layout:
+
+    C:\S\TELOS\PYTHON\GREATER_TABLES_PROJECT\GREATER_TABLES
+    |   cli.py
+    |   gtconfig.py
+    |   gtcore.py
+    |   gtenums.py
+    |   gtformats.py
+    |   hasher.py
+    |   testdf.py
+    |   tex_svg.py
+    |   __init__.py
+    |
+    +---data
+    |   |   tex_list.csv
+    |   |   tex_list.py
+    |   |   words-12.md
+    |   |   __init__.py
+
 
 
 Indices and tables
@@ -18,35 +55,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
-
-Introduction
-============
-
-All about greater_tables.
-
-
-``greater_tables`` Class
-=========================
-
-.. autoclass:: greater_tables.GT
-   :members:
-   :undoc-members:
-   :show-inheritance:
-   :private-members:
-
-.. automodule:: greater_tables
-   :members:
-   :undoc-members:
-   :show-inheritance:
-   :private-members:
-
-Utilties
-========
-
-.. automodule:: greater_tables.utilities
-   :members:
-   :undoc-members:
-   :show-inheritance:
-   :private-members:
-

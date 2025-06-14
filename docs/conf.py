@@ -50,7 +50,8 @@ extensions = [
     'sphinx_panels',
     'sphinxcontrib.bibtex',
     'sphinx_multitoc_numbering',
-    'sphinx_rtd_dark_mode']
+    'sphinx_rtd_dark_mode',
+    'myst_parser']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

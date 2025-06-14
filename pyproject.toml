@@ -7,16 +7,16 @@ name = "greater_tables"
 dynamic = ["version"]
 description = "Perfect tables from pandas dataframes."
 authors = [{name = "Stephen J Mildehall", email = "mynl@me.com" }]
-readme = "README.md"
+readme = {file = "README.md", content-type = "text/markdown"}
 license = { text = "MIT" }
 requires-python = ">=3.10"
 dependencies = [
     "bs4",
     "cachetools",
-    "faker",
-    "IPython",
+    "pydantic",
     "pandas",
     "rich",
+    "IPython",
     ]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -47,6 +47,7 @@ dev = [
     "pickleshare",
     "recommonmark>=0.7.1",
     "setuptools>=62.3.2",
+    "myst_parser",
     "sphinx>=5.0",
     "sphinx-panels",
     "sphinx-rtd-dark-mode",
@@ -56,6 +57,13 @@ dev = [
     "sphinx-multitoc-numbering"
 ]
 
-
 [project.scripts]
 gt = "greater_tables.cli:cli"
+
+[tool.flake8]
+max-line-length = 144
+ignore = ["E501", "E201", "W503"]
+
+[tool.pycodestyle]
+max_line_length = 144
+ignore = ["E501", "E201", "W503"]

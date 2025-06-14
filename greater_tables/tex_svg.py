@@ -41,13 +41,14 @@ class TikzProcessor:
 """
 
 
-    def __init__(self, txt, base_path='.', tex_engine='pdflatex'):
+    def __init__(self, txt, file_name='', base_path='.', tex_engine='pdflatex'):
         self.txt = txt
         self.tex_engine = tex_engine
         self.base_path = Path(base_path).resolve()
         self.out_path = self.base_path / 'tikz'
         self.out_path.mkdir(exist_ok=True)
-        self.file_path = self.out_path / txt_short_hash(txt)
+        file_name = file_name or  txt_short_hash(txt)
+        self.file_path = self.out_path / file_name
         self.format_file = self.out_path / 'tikz_format.fmt'
 
     def split_tikz(self):

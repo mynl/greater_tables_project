@@ -35,6 +35,7 @@ from . gtenums import Breakability, Alignment
 from . gtformats import GT_Format, TableFormat, Line, DataRow
 from . gtconfig import GTConfigModel
 from . hasher import df_short_hash
+from . tex_svg import TikzProcessor
 
 # turn this fuck-fest off
 pd.set_option('future.no_silent_downcasting', True)
@@ -1450,14 +1451,14 @@ class GT(object):
     margin-left: auto;
     margin-right: auto;
     }}
-    /* center tables in quarto context */
+    /* center tables in quarto context
     .greater-table {{
         display: block;
         text-align: center;
     }}
     .greater-table > table {{
         display: inline-table;
-    }}
+    }} */
     /* tag formats */
     #{self.df_id} caption {{
         padding: {2 * padt}px {padr}px {padb}px {padl}px;
@@ -2793,3 +2794,12 @@ class GT(object):
         self.config.max_table_width = mtw
         self.config.table_width_mode = tw_mode
         return table
+
+    def as_svg(self):
+        """Render tikz into svg text."""
+        tz = TikzProcessor(self._repr_latex_(), file_name=self.df_id)
+        p = tz.file_path.with_suffix('.svg')
+        if not p.exists():
+            tz.process_tikz(verbose=False)
+        txt = p.read_text()
+        return txt
