@@ -5,7 +5,8 @@ GPT from SJMM design.
 """
 
 from datetime import datetime, timedelta
-from itertools import cycle
+from importlib.resources import files
+from itertools import cycle, chain
 from math import prod
 from pathlib import Path
 from typing import Optional, Union
@@ -81,20 +82,38 @@ class TestDataFrameFactory:
         self._index_namer = cycle(nwl)
 
         # read words and create cycler
-        p = Path(__file__).parent / 'words-12.md'
-        assert p.exists()
-        txt = p.read_text(encoding='utf-8')
+        data_path = files('greater_tables').joinpath('data', 'words-12.md')
+        with data_path.open('r', encoding='utf-8') as f:
+            txt = f.read()
         word_list = txt.split('\n')
         temp = word_list[:]
         random.shuffle(temp)
         self._word_gen = cycle(temp)
 
         # read tex expressions and create cycler
-        tex_list = pd.read_csv(Path(__file__).parent /
-                               'tex_list.csv')['expr'].to_list()
+        data_path = files('greater_tables').joinpath('data', 'tex_list.csv')
+        with data_path.open('r', encoding='utf-8') as f:
+            tex_list = pd.read_csv(f, index_col=0)['expr'].to_list()
+        # trim down slightly
         tex_list = [i for i in tex_list if len(i) < 50]
         random.shuffle(tex_list)
         self._tex_gen = cycle(tex_list)
+
+        self.simple_namer = {
+            'd': 'date',
+            'f': 'float',
+            'h': 'hash',
+            'i': 'integer',
+            'l': 'large_float',
+            'm': 'yr-mo',
+            'p': 'path',
+            'r': 'ratio',
+            's': 'string',
+            't': 'time',
+            'v': 'extreme_float',
+            'x': 'tex',
+            'y': 'year',
+        }
 
         # lengths of index (word count) sampled from:
         self.index_value_lengths = [1]*10 + [2] * 4 + [3]
@@ -113,13 +132,14 @@ class TestDataFrameFactory:
             l   log float (greater range than float)
             m   year - month
             p   path (filename)
+            r   ratio (smaller floats, for percents)
             sx  string length x
             t   time
+            v   very large range float
             x   tex text - an equation
             y   year
 
-
-        Args:
+            Args:
             rows: Number of rows.
             columns: Column type spec (int for all float cols, or string type codes).
             index: Index level types (int for RangeIndex or string like 'ti').
@@ -168,7 +188,7 @@ class TestDataFrameFactory:
             ['d', 'f', 'i', 's3', 'l', 'h', 't', 'p'], size=self.rng.integers(3, 7))
         missing = round(float(self.rng.uniform(0, 0.15)), 2)
         index = ''.join(self.rng.choice(
-            ['t', 'd', 'i', 's2'], size=index_levels))
+            ['t', 'd', 'y', 'i', 's2'], size=index_levels))
         col_index = ''.join(self.rng.choice(
             ['s', 's2', 's2', 's3'], size=column_levels))
         return self.make(rows=rows, columns=''.join(col_types), index=index, col_index=col_index, missing=missing)
@@ -182,18 +202,22 @@ class TestDataFrameFactory:
         else:
             col_types = self._parse_colspec(columns)
         # if col_index is an int then use all strings of that depth
-        if isinstance(col_index, int):
-            col_index_types = ['s'] * col_index
+        if col_index == 'simple':
+            col_idx = map(self.simple_namer.get, [i[0] for i in col_types])
+            col_idx = pd.Index(col_idx, name='simple')
         else:
-            col_index_types = self._parse_colspec(col_index)
+            if isinstance(col_index, int):
+                col_index_types = ['s'] * col_index
+            else:
+                col_index_types = self._parse_colspec(col_index)
+            col_idx = self._make_index(col_index_types, len(col_types))
         if isinstance(index, int):
             index = ['s'] * index
         else:
             index = self._parse_colspec(index)
-            print(index)
+            # print(index)
         # col names are a transposed index.
         df = pd.DataFrame(index=range(rows))
-        col_idx = self._make_index(col_index_types, len(col_types))
         for dt, c in zip(col_types, range(len(col_idx))):
             df[c] = self._generate_column(dt, rows)
         df.columns = col_idx
@@ -210,15 +234,23 @@ class TestDataFrameFactory:
             return pd.Series([" ".join(self.word() for i in range(max_words)) for j in range(n)])
         if dtype == 'f':
             return pd.Series(self.rng.normal(loc=100000, scale=250000, size=n))
+        if dtype == 'r':
+            return pd.Series(self.rng.normal(loc=0.5, scale=0.35, size=n))
         if dtype == 'l':
             # log float (greater range)
             return pd.Series(np.exp(self.rng.normal(loc=-4 / 2 + 4, scale=4, size=n)))
+        if dtype == 'v':
+            # log float (greater range)
+            sc = 5
+            return pd.Series(np.exp(self.rng.normal(loc=-sc**2 / 2 + 10, scale=sc, size=n)))
         if dtype == 'i':
             return pd.Series(self.rng.integers(-1e4, 1e6, size=n), dtype='int64')
         if dtype == 'd':
             start_date = TestDataFrameFactory.random_date_within_last_n_years(
                 10)
             return pd.Series(pd.date_range(start=start_date, periods=n, freq='D'))
+        if dtype == 'y':
+            return pd.Series(random.sample(range(1990, 2031), n))
         if dtype == 't':
             start_dt = datetime.now() - timedelta(days=365 * 2)
             return pd.Series([
@@ -347,7 +379,11 @@ class TestDataFrameFactory:
              for w, k in zip(level_value_lengths, level_choices)]
         x = [[next(j) for j in r] for i in range(rows)]
         names = random.sample(name_word_list, levels)
-        idx = pd.MultiIndex.from_tuples(
-            random.sample(x, rows), names=names).sort_values()
+        if levels == 1:
+            idx = pd.Index(
+                list(chain.from_iterable(random.sample(x, rows))), name=names[0]).sort_values()
+        else:
+            idx = pd.MultiIndex.from_tuples(
+                random.sample(x, rows), names=names).sort_values()
         assert idx.is_unique
         return idx

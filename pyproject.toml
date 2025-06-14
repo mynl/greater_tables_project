@@ -30,6 +30,9 @@ classifiers = [
 include = ["greater_tables"]
 exclude = ["img", "tests", "docs"]
 
+[tool.setuptools.package-data]
+"greater_tables" = ["data/*.csv", "data/*.md"]
+
 [tool.setuptools.dynamic]
 version  = { attr = "greater_tables.__version__" }
 

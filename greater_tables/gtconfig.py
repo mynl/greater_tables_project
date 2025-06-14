@@ -62,11 +62,11 @@ class GTConfigModel(BaseModel):
     table_vrule_width: int = Field(
         1, description="Width of vertical rule separating index from body"
     )
-    hrule_widths: Optional[tuple[int, int, int]] = Field(
-        (0, 0, 0), description="Tuple of three ints for horizontal rule widths (for multiindex use)"
+    hrule_widths: Optional[tuple[float, float, float]] = Field(
+        (0, 0, 0), description="Tuple of three floats for horizontal rule widths (for multiindex use)"
     )
-    vrule_widths: Optional[tuple[int, int, int]] = Field(
-        (0, 0, 0), description="Tuple of three ints for vertical rule widths (for multiindex columns)"
+    vrule_widths: Optional[tuple[float, float, float]] = Field(
+        (0, 0, 0), description="Tuple of three floats for vertical rule widths (for multiindex columns)"
     )
 
     sparsify: bool = Field(

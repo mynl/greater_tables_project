@@ -26,3 +26,11 @@ def df_short_hash(df, length=12):
     hash_str = base64.b32encode(hash_bytes).decode("utf-8").rstrip("=")  # Trim padding
 
     return f"T{hash_str[:length]}"  # Prefix with 'T' to ensure a valid ID
+
+
+def txt_short_hash(txt):
+    hasher = hashlib.md5()
+    hasher.update(txt.encode('utf-8'))
+    hash_bytes = hasher.digest()
+    hash_str = base64.b32encode(hash_bytes).decode("utf-8").rstrip("=")  # Trim padding
+    return hash_str[::2]

@@ -261,7 +261,11 @@ class GT(object):
             base_config = GTConfigModel()
 
         # access through config
-        self.config = base_config.model_copy(update=overrides)
+        # update and validate; need to merge to avoid repeated args
+        merged = dict(base_config.model_dump(), **overrides)
+        self.config = GTConfigModel(**merged)
+        # no validation
+        # self.config = base_config.model_copy(update=overrides)
 
         # deal with alternative input modes for df: None, DataFrame, Series, markdown text table
         if df is None:
