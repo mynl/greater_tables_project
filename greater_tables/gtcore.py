@@ -256,8 +256,8 @@ class GT(object):
                 raw = yaml.safe_load(config_path.read_text(encoding="utf-8"))
                 base_config = GTConfigModel.model_validate(raw)
             except (ValidationError, OSError) as e:
-                raise ValueError(f"Failed to load config from {
-                                 config_path}") from e
+                raise ValueError(
+                    f"Failed to load config from {config_path}") from e
         else:
             base_config = GTConfigModel()
 
@@ -697,32 +697,6 @@ class GT(object):
         """Formatter for columns flagged as raw."""
         return str(x)
 
-    # def config.default_formatter(self, x):
-    #     """Universal formatter for other types."""
-    #     try:
-    #         # werid wrinkle here: float('infinity') -> np.inf!!
-    #         f = float(x)
-    #         if self.default_float_formatter:
-    #             return self.default_float_formatter(f)
-    #         try:
-    #             i = int(x)
-    #         except ValueError:
-    #             try:
-    #                 i = int(f)
-    #             except OverflowError:
-    #                 # this came up! Passed the work "Infinity"
-    #                 return str(x)
-    #         if i == f:
-    #             return self.config.default_integer_str.format(x=i)
-    #         else:
-    #             # TODO BEEF UP?
-    #             return self.config.default_float_str.format(x=f)
-    #     except (TypeError, ValueError):
-    #         if self.config.max_str_length < 0:
-    #             return str(x)
-    #         else:
-    #             return str(x)[:self.config.max_str_length]
-
     def default_formatter(self, x):
         """Default universal formatter for other types (GTP re-write of above cluster)."""
         try:
@@ -934,8 +908,8 @@ class GT(object):
             # target width INCLUDES padding and column marks |
             target_width = self.config.max_table_width - \
                 (PADDING + 1) * n_col - 1
-            logger.info(f'Col padding effect {
-                        self.config.max_table_width=} ==> {target_width=}')
+            logger.info(f'Col padding effect {self.config.max_table_width=}'
+                        f' ==> {target_width=}')
         elif self.config.table_width_mode == 'natural':
             target_width = natural + (PADDING + 1) * n_col + 1
         elif self.config.table_width_mode == 'breakable':
@@ -2049,8 +2023,8 @@ class GT(object):
             if i == 1:
                 # first column sets row height for entire row
                 sio.write(f'\tcolumn {i:>2d}/.style={{'
-                          f'nodes={{align={
-                              ad[al]:<6s}}}, text height=0.9em, text depth=0.2em, '
+                          f'nodes={{align={ad[al]:<6s}}}, '
+                          'text height=0.9em, text depth=0.2em, '
                           f'inner xsep={column_sep}em, inner ysep=0, '
                           f'text width={max(2, 0.6 * w):.2f}em}},\n')
             else:
