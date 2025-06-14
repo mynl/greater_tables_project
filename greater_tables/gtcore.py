@@ -16,19 +16,24 @@ from pathlib import Path
 import re
 import sys
 from textwrap import wrap
+from typing import Optional, Union, Literal
 import warnings
+import yaml
 
 from bs4 import BeautifulSoup
 from cachetools import LRUCache
 import numpy as np
 import pandas as pd
+from pandas.errors import IntCastingNaNError
 from pandas.api.types import is_datetime64_any_dtype, is_integer_dtype, \
     is_float_dtype   # , is_numeric_dtype
+from pydantic import ValidationError
 from rich import box
 from rich.table import Table
 
-from . gtenums import Breakability
-from . gtformats import GT_Format, TableFormat
+from . gtenums import Breakability, Alignment
+from . gtformats import GT_Format, TableFormat, Line, DataRow
+from . gtconfig import GTConfigModel
 from . hasher import df_short_hash
 
 # turn this fuck-fest off
@@ -55,11 +60,6 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 logger.info(f'Logger Setup; {__name__} module recompiled.')
 
-# TODO Remove!
-# temp = None
-
-
-
 
 class GT(object):
     """
@@ -79,7 +79,7 @@ class GT(object):
 
     * ``pd.Series`` converted to ``DataFrame``
     * ``list`` converted to  ``DataFrame``, optionally using row 0 as
-      ``header_row``
+      ``config.header_row``
     * A string is  assumed to be a pipe-separated markdown table which is
       converted to a ``DataFrame`` setting aligners per the alignment row
     * All other input types are an error
@@ -91,7 +91,7 @@ class GT(object):
     **Mangling**
 
     * If show_index, the index is reset and kept, so that all columns are on an
-      equal footing
+      config.equal footing
     * The index change levels are computed to determine LaTeX hrules
     * ratio year, and raw columns converted to a list (can be input as a single
       string name)
@@ -141,75 +141,75 @@ class GT(object):
     :param raw_cols: None, or "all" or list of column names that are NOT
       cast to floats. Set defaults in derived class suitable to application.
     :param show_index: if True, show the index columns, default True
-    :param default_integer_str: format f-string for integers, default
+    :param config.default_integer_str: format f-string for integers, default
       value '{x:,d}'
-    :param default_float_str: format f-string for floats, default
+    :param config.default_float_str: format f-string for floats, default
       value '{x:,.3f}'
-    :param default_date_str: format f-string for dates, default '%Y-%m-%d'.
+    :param config.default_date_str: format f-string for dates, default '%Y-%m-%d'.
       NOTE: no braces or x!
-    :param default_ratio_str: format f-string for ratios, default '{x:.1%}'
-    :param table_float_format: None or format string for floats in the
+    :param config.default_ratio_str: format f-string for ratios, default '{x:.1%}'
+    :param config.table_float_format: None or format string for floats in the
       table format function, applied to entire table, default None
-    :param table_hrule_width: width of the table top, botton and header
+    :param config.table_hrule_width: width of the table top, botton and header
       hrule, default 1
-    :param table_vrule_width: width of the table vrule, separating the
+    :param config.table_vrule_width: width of the table vrule, separating the
       index from the body, default 1
-    :param hrule_widths: None or tuple of three ints for hrule widths
+    :param config.hrule_widths: None or tuple of three ints for hrule widths
       (for use with multiindexes)
-    :param vrule_widths: None or tuple of three ints for vrule widths
+    :param config.vrule_widths: None or tuple of three ints for vrule widths
       (for use when columns have multiindexes)
-    :param sparsify: if True, sparsify the index columns, you almost always
+    :param config.sparsify: if True, config.sparsify the index columns, you almost always
       want this to be true!
-    :param sparsify_columns: if True, sparsify the columns, default True,
+    :param config.sparsify_columns: if True, config.sparsify the columns, default True,
       generally a better look, headings centered in colspans
-    :param spacing: 'tight', 'medium', 'wide' to quickly set cell padding.
+    :param config.spacing: 'tight', 'medium', 'wide' to quickly set cell padding.
       Medium is default (2, 10, 2, 10).
-    :param padding_trbl: None or tuple of four ints for padding, in order
+    :param config.padding_trbl: None or tuple of four ints for padding, in order
       top, right, bottom, left.
-    :param tikz_scale: scale factor applied to tikz LaTeX tables.
-    :param font_body: font size for body text, default 0.9. Units in em.
-    :param font_head: font size for header text, default 1.0. Units in em.
-    :param font_caption: font size for caption text, default 1.1.
+    :param config.tikz_scale: scale factor applied to tikz LaTeX tables.
+    :param config.font_body: font size for body text, default 0.9. Units in em.
+    :param config.font_head: font size for header text, default 1.0. Units in em.
+    :param config.font_caption: font size for caption text, default 1.1.
       Units in em.
-    :param font_bold_index: if True, make the index columns bold,
+    :param config.font_bold_index: if True, make the index columns bold,
       default False.
-    :param pef_precision: precision (digits after period) for pandas
+    :param config.pef_precision: precision (digits after period) for pandas
       engineering format, default 3.
-    :param pef_lower: apply engineering format to floats with absolute
-      value < 10**pef_lower; default -3.
-    :param pef_upper: apply engineering format to floats with absolute
-      value > 10**pef_upper; default 6.
-    :param cast_to_floats: if True, try to cast all non-integer, non-date
+    :param config.pef_lower: apply engineering format to floats with absolute
+      value < 10**config.pef_lower; default -3.
+    :param config.pef_upper: apply engineering format to floats with absolute
+      value > 10**config.pef_upper; default 6.
+    :param config.cast_to_floats: if True, try to cast all non-integer, non-date
       columns to floats
-    :param header_row: True: use first row as headers; False no headings.
+    :param config.header_row: True: use first row as headers; False no headings.
       Default True
-    :param tabs: None or list of column widths in characters or a common
+    :param config.tabs: None or list of column widths in characters or a common
       int or float width. (It is converted into em; one character is about
       0.5em on average; digits are exactly 0.5em.) If None, will be calculated.
       Default None.
-    :param equal: if True, set all column widths equal. Default False. Maybe
+    :param config.equal: if True, set all column widths config.equal. Default False. Maybe
       ignored, depending on computed ideal column widths.
-    :param caption_align: for the caption
-    :param large_ok: signal that you are intentionally applying to a large
+    :param config.caption_align: for the caption
+    :param config.large_ok: signal that you are intentionally applying to a large
       dataframe. Sub-classes may restrict or apply .head() to df.
-    :param max_str_length: maximum displayed length of object types, that
+    :param config.max_str_length: maximum displayed length of object types, that
       are cast to strings. Eg if you have nested DataFrames!
     :param str_table_fmt: table border format used for string output
       (markdown), default mixed_grid DEPRECATED??
-    :param table_width_mode:
-        'explicit': set using max_table_width
+    :param config.table_width_mode:
+        'explicit': set using config.max_table_width
         'natural': each cell on one line (can be very wide with long strings)
         'breakable': wrap breakable cells (text strings) at word boundaries
           to fit longest word
         'minimum': wrap breakable and ok-to-break (dates) cells
-    :param table_width_header_adjust: additional proportion of table width
+    :param config.table_width_header_adjust: additional proportion of table width
       used to balance header columns.
-    :param table_width_header_relax: extra spaces allowed per column heading
+    :param config.table_width_header_relax: extra spaces allowed per column heading
       to facilitate better column header wrapping.
-    :param max_table_width: max table width used for markdown string output,
+    :param config.max_table_width: max table width used for markdown string output,
       default 200; width is never less than minimum width. Padding (3 chars
-      per row plus 1) consumed out of max_table_width in string output mode.
-    :param debug: if True, add id to caption and use colored lines in table,
+      per row plus 1) consumed out of config.max_table_width in string output mode.
+    :param config.debug: if True, add id to caption and use colored lines in table,
       default False.
     """
 
@@ -224,55 +224,50 @@ class GT(object):
     TEX_WIDE = {'frac', 'sqrt', 'sum', 'int', 'prod'}
     TEX_SPACING = {'quad', 'qquad', ',', ';', ' ', '!'}
 
-    def __init__(self,
-                 df,
-                 caption='',
-                 label='',
-                 aligners=None,
-                 formatters=None,
-                 unbreakable=None,
-                 ratio_cols=None,
-                 year_cols=None,
-                 date_cols=None,
-                 raw_cols=None,
-                 show_index=True,
-                 # --> config
-                 # default_integer_str='{x:,d}',
-                 # default_float_str='{x:,.3f}',
-                 # default_date_str='%Y-%m-%d',
-                 # default_ratio_str='{x:.1%}',
-                 # default_formatter=None,
-                 # table_float_format=None,
-                 # table_hrule_width=1,
-                 # table_vrule_width=1,
-                 # hrule_widths=None,
-                 # vrule_widths=None,
-                 # sparsify=True,             # index sparsification - almost certainly want this!
-                 # sparsify_columns=True,     # column sparsification with colspans
-                 # spacing='medium',          # tight, medium, wide
-                 # padding_trbl=None,         # tuple of four ints for padding
-                 # tikz_scale=1.0,
-                 # font_body=0.9,
-                 # font_head=1.0,
-                 # font_caption=1.1,
-                 # font_bold_index=False,
-                 # pef_precision=3,
-                 # pef_lower=-3,
-                 # pef_upper=6,
-                 # cast_to_floats=True,
-                 # header_row=True,
-                 # tabs=None,
-                 # equal=False,
-                 # caption_align='center',
-                 # large_ok=False,
-                 # max_str_length=-1,
-                 # str_table_fmt='mixed_grid',  # no longer used
-                 # table_width_mode='explicit',
-                 # table_width_header_adjust=0.1,
-                 # table_width_header_relax=10,
-                 ):
+    def __init__(
+        self,
+        df,
+        *,
+        caption='',
+        label='',
+        aligners: dict[str, callable] | None = None,
+        formatters: dict[str, callable] | None = None,
+        tabs: Optional[Union[list[float], float, int]] | None = None,
+        unbreakable=None,
+        ratio_cols=None,
+        year_cols=None,
+        date_cols=None,
+        raw_cols=None,
+        show_index=True,
+        #
+        config: GTConfigModel | None = None,
+        config_path: Path | None = None,
+        **overrides,
+    ):
+        if config and config_path:
+            raise ValueError(
+                "Pass either 'config' or 'config_path', not both.")
 
-        # deal with alternative input modes
+        if config:
+            base_config = config
+        elif config_path:
+            try:
+                raw = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+                base_config = GTConfigModel.model_validate(raw)
+            except (ValidationError, OSError) as e:
+                raise ValueError(f"Failed to load config from {
+                                 config_path}") from e
+        else:
+            base_config = GTConfigModel()
+
+        # access through config
+        # update and validate; need to merge to avoid repeated args
+        merged = dict(base_config.model_dump(), **overrides)
+        self.config = GTConfigModel(**merged)
+        # no validation
+        # self.config = base_config.model_copy(update=overrides)
+
+        # deal with alternative input modes for df: None, DataFrame, Series, markdown text table
         if df is None:
             # don't want None to fail
             df = pd.DataFrame([])
@@ -285,7 +280,7 @@ class GT(object):
             df = pd.DataFrame(df)
             # override this selection come what may
             show_index = False
-            if header_row:
+            if config.header_row:
                 # Set first row as column names
                 df.columns = df.iloc[0]
                 # Drop first row and reset index
@@ -301,9 +296,9 @@ class GT(object):
             raise ValueError(
                 'df must be a DataFrame, a list of lists, or a markdown table string')
 
-        if len(df) > 50 and not large_ok:
+        if len(df) > 50 and not config.large_ok:
             raise ValueError(
-                'Large dataframe (>50 rows) and large_ok not set to true...do you know what you are doing?')
+                'Large dataframe (>50 rows) and config.large_ok not set to true...do you know what you are doing?')
 
         if not df.columns.is_unique:
             raise ValueError('df column names are not unique')
@@ -324,17 +319,17 @@ class GT(object):
         # TODO: update / change
         # self.str_table_fmt = str_table_fmt
         # TODO: implement
-        table_width_mode = table_width_mode.lower()
-        if table_width_mode not in ('explicit', 'natural', 'breakable', 'minimum'):
-            raise ValueError(f'Inadmissible options {table_width_mode} for table_width_mode.')
-        self.table_width_mode = table_width_mode
-        self.table_width_header_adjust = table_width_header_adjust
-        self.table_width_header_relax = table_width_header_relax
-        self.max_table_width = max_table_width
-        self.debug = debug
-        if self.caption != '' and self.debug:
+        # self.table_width_mode = config.table_width_mode.lower()
+        # if config.table_width_mode not in ('explicit', 'natural', 'breakable', 'minimum'):
+        #     raise ValueError(f'Inadmissible options {config.table_width_mode} for config.table_width_mode.')
+        # self.table_width_mode = table_width_mode
+        # self.table_width_header_adjust = table_width_header_adjust
+        # self.table_width_header_relax = table_width_header_relax
+        # self.max_table_width = max_table_width
+        # self.debug = debug
+        if self.caption != '' and self.config.debug:
             self.caption += f' (id: {self.df_id})'
-        self.max_str_length = max_str_length
+        # self.max_str_length = max_str_length
         # before messing
         self.show_index = show_index
         self.nindex = self.df.index.nlevels if self.show_index else 0
@@ -342,7 +337,7 @@ class GT(object):
         self.ncols = self.df.shape[1]
         self.dt = self.df.dtypes
 
-        # reset index to put all columns on an equal footing, but note number ofindex cols
+        # reset index to put all columns on an config.equal footing, but note number ofindex cols
         with warnings.catch_warnings():
             if self.show_index:
                 warnings.simplefilter(
@@ -416,15 +411,15 @@ class GT(object):
                 self.raw_cols = raw_cols
 
         # figure the default formatter (used in conjunction with raw columns)
-        if default_formatter is None:
-            self.default_formatter = self._default_formatter
+        if self.config.default_formatter is None:
+            self.default_formatter = self.default_formatter
         else:
             assert callable(
-                default_formatter), 'default_formatter must be callable'
+                config.default_formatter), 'config.default_formatter must be callable'
 
             def wrapped_default_formatter(x):
                 try:
-                    return default_formatter(x)
+                    return config.default_formatter(x)
                 except ValueError:
                     return str(x)
             self.default_formatter = wrapped_default_formatter
@@ -433,7 +428,7 @@ class GT(object):
         with warnings.catch_warnings():
             warnings.simplefilter(
                 "ignore", category=pd.errors.PerformanceWarning)
-            if cast_to_floats:
+            if self.config.cast_to_floats:
                 for i, c in enumerate(self.df.columns):
                     if c in self.raw_cols or c in self.date_cols:
                         continue
@@ -552,33 +547,33 @@ class GT(object):
                         'formatters must be dict of callables or ints or format strings {x:...}')
 
         # store defaults
-        self.default_integer_str = default_integer_str
+        # self.default_integer_str = default_integer_str
         # VERY rarely used; for floats in cols that are not floats
-        self.default_float_str = default_float_str
-        self.default_date_str = default_date_str.replace(
-            '{x:', '').replace('}', '')
-        self.default_ratio_str = default_ratio_str
-        self.pef_precision = pef_precision
-        self.pef_lower = pef_lower
-        self.pef_upper = pef_upper
+        # self.default_float_str = default_float_str
+        # self.default_date_str = default_date_str.replace(
+            # '{x:', '').replace('}', '')
+        # self.default_ratio_str = default_ratio_str
+        # self.pef_precision = pef_precision
+        # self.pef_lower = pef_lower
+        # self.pef_upper = pef_upper
         self._pef = None
-        self.table_float_format = table_float_format
-        self.default_float_formatter = None
-        self.hrule_widths = hrule_widths or (0, 0, 0)
-        if not isinstance(self.hrule_widths, (list, tuple)):
-            self.hrule_widths = (self.hrule_widths,)
-        self.vrule_widths = vrule_widths or (0, 0, 0)
-        if not isinstance(self.hrule_widths, (list, tuple)):
-            self.hrule_widths = (self.hrule_widths, )
-        self.table_hrule_width = table_hrule_width
-        self.table_vrule_width = table_vrule_width
-        self.font_body = font_body
-        self.font_head = font_head
-        self.font_caption = font_caption
-        self.tikz_scale = tikz_scale
-        self.font_bold_index = font_bold_index
-        self.caption_align = caption_align
-        self.sparsify_columns = sparsify_columns
+        # self.table_float_format = table_float_format
+        # self.default_float_formatter = None
+        # self.hrule_widths = hrule_widths or (0, 0, 0)
+        # if not isinstance(self.config.hrule_widths, (list, tuple)):
+        # self.config.hrule_widths = (self.config.hrule_widths,)
+        # self.vrule_widths = vrule_widths or (0, 0, 0)
+        # if not isinstance(self.config.hrule_widths, (list, tuple)):
+        # self.config.hrule_widths = (self.config.hrule_widths, )
+        # self.table_hrule_width = table_hrule_width
+        # self.table_vrule_width = table_vrule_width
+        # self.font_body = font_body
+        # self.font_head = font_head
+        # self.font_caption = font_caption
+        # self.tikz_scale = tikz_scale
+        # self.font_bold_index = font_bold_index
+        # self.caption_align = caption_align
+        # self.sparsify_columns = sparsify_columns
         if tabs is None:
             self.tabs = None
         elif isinstance(tabs, (int, float)):
@@ -587,24 +582,22 @@ class GT(object):
             self.tabs = tabs  # Already iterable, self.tabs = as is
         else:
             self.tabs = [tabs]  # Fallback for anything else
-        self.equal = equal
+        # self.equal = equal
 
-        if padding_trbl is None:
-            if spacing == 'tight':
+        if self.config.padding_trbl is not None:
+            padding_trbl = self.config_padding_trbl
+        elif self.config.padding_trbl is None:
+            if self.config.spacing == 'tight':
                 padding_trbl = (0, 5, 0, 5)
-            elif spacing == 'medium':
+            elif self.config.spacing == 'medium':
                 padding_trbl = (2, 10, 2, 10)
-            elif spacing == 'wide':
+            elif self.config.spacing == 'wide':
                 padding_trbl = (4, 15, 4, 15)
             else:
                 raise ValueError(
-                    'spacing must be tight, medium, or wide or tuple of four ints.')
-        try:
-            self.padt, self.padr, self.padb, self.padl = padding_trbl
-        except ValueError:
-            logger.error(
-                f'padding_trbl {padding_trbl=}, must be four ints, defaultign to medium')
-            self.padt, self.padr, self.padb, self.padl = 2, 10, 2, 10
+                    'config.spacing must be tight, medium, or wide or tuple of four ints.')
+        # pydantic will see to it this is OK
+        self.padt, self.padr, self.padb, self.padl = padding_trbl
 
         # because of the problem of non-unique indexes use a list and
         # not a dict to pass the formatters to to_html
@@ -614,22 +607,22 @@ class GT(object):
         self._clean_html = ''
         self._clean_tex = ''
         self._rich_table = None
-        # finally sparsify and then apply formaters
+        # finally config.sparsify and then apply formaters
         # this radically alters the df, so keep a copy for now...
         self.df_pre_applying_formatters = self.df.copy()
         self.df = self.apply_formatters(self.df)
         # cache for various things...
         self._cache = LRUCache(20)
-        # sparsify
-        if sparsify and self.nindex > 1:
+        # config.sparsify
+        if self.config.sparsify and self.nindex > 1:
             self.df = GT.sparsify(self.df, self.df.columns[:self.nindex])
             # for c in self.df.columns[:self.nindex]:
-            #     # sparsify returns some other stuff...
-            #     self.df[c], _ = GT.sparsify(self.df[c])
+            #     # config.sparsify returns some other stuff...
+            #     self.df[c], _ = GT.config.sparsify(self.df[c])
 
     def __repr__(self):
         """Basic representation."""
-        return f"GreaterTable(df_id={self.df_id})"
+        return f"GT(df_id={self.df_id})"
 
     def __str__(self):
         """String representation, for print()."""
@@ -668,7 +661,7 @@ class GT(object):
     def default_ratio_formatter(self, x):
         """Ratio formatter."""
         try:
-            return self.default_ratio_str.format(x=x)
+            return self.config.default_ratio_str.format(x=x)
         except ValueError:
             return str(x)
 
@@ -680,7 +673,7 @@ class GT(object):
             dt = pd.to_datetime(x, errors='coerce')
             if pd.isna(dt):
                 return str(x)
-            return dt.strftime(self.default_date_str)
+            return dt.strftime(self.config.default_date_str)
         except Exception:
             logger.error("date error with %s", x)
             return str(x)
@@ -688,7 +681,7 @@ class GT(object):
     def default_integer_formatter(self, x):
         """Integer formatter."""
         try:
-            return self.default_integer_str.format(x=x)
+            return self.config.default_integer_str.format(x=x)
         except ValueError:
             return str(x)
 
@@ -703,7 +696,7 @@ class GT(object):
         """Formatter for columns flagged as raw."""
         return str(x)
 
-    # def default_formatter(self, x):
+    # def config.default_formatter(self, x):
     #     """Universal formatter for other types."""
     #     try:
     #         # werid wrinkle here: float('infinity') -> np.inf!!
@@ -719,23 +712,23 @@ class GT(object):
     #                 # this came up! Passed the work "Infinity"
     #                 return str(x)
     #         if i == f:
-    #             return self.default_integer_str.format(x=i)
+    #             return self.config.default_integer_str.format(x=i)
     #         else:
     #             # TODO BEEF UP?
-    #             return self.default_float_str.format(x=f)
+    #             return self.config.default_float_str.format(x=f)
     #     except (TypeError, ValueError):
-    #         if self.max_str_length < 0:
+    #         if self.config.max_str_length < 0:
     #             return str(x)
     #         else:
-    #             return str(x)[:self.max_str_length]
+    #             return str(x)[:self.config.max_str_length]
 
-    def _default_formatter(self, x):
-        """Default universal formatter for other types (GTP re-write of above cluster."""
+    def default_formatter(self, x):
+        """Default universal formatter for other types (GTP re-write of above cluster)."""
         try:
             f = float(x)
         except (TypeError, ValueError):
             s = str(x)
-            return s if self.max_str_length < 0 else s[:self.max_str_length]
+            return s if self.config.max_str_length < 0 else s[:self.config.max_str_length]
 
         if self.default_float_formatter:
             return self.default_float_formatter(f)
@@ -744,14 +737,14 @@ class GT(object):
             return str(x)
 
         if f.is_integer():
-            return self.default_integer_str.format(x=int(f))
+            return self.config.default_integer_str.format(x=int(f))
         else:
-            return self.default_float_str.format(x=f)
+            return self.config.default_float_str.format(x=f)
 
     def pef(self, x):
         """Pandas engineering format."""
         if self._pef is None:
-            self._pef = pd.io.formats.format.EngFormatter(accuracy=self.pef_precision, use_eng_prefix=True)   # noqa
+            self._pef = pd.io.formats.format.EngFormatter(accuracy=self.config.pef_precision, use_eng_prefix=True)   # noqa
         return self._pef(x)
 
     def make_float_formatter(self, ser):
@@ -772,9 +765,9 @@ class GT(object):
         # smallest = ser.abs().min()
         # sd = ser.sd()
         # p10, p50, p90 = np.quantile(ser, [0.1, .5, 0.9], method='inverted_cdf')
-        # pl = 10. ** self.pef_lower
-        # pu = 10. ** self.pef_upper
-        pl, pu = 10. ** self.pef_lower, 10. ** self.pef_upper
+        # pl = 10. ** self.config.pef_lower
+        # pu = 10. ** self.config.pef_upper
+        pl, pu = 10. ** self.config.pef_lower, 10. ** self.config.pef_upper
         if amean < 1:
             precision = 5
         elif amean < 10:
@@ -817,22 +810,22 @@ class GT(object):
         """
         if self._df_formatters is None:
             # because of non-unique indexes, index by position not name
-            if self.table_float_format is not None:
-                if callable(self.table_float_format):
+            if self.config.table_float_format is not None:
+                if callable(self.config.table_float_format):
                     # wrap in error protections
                     def ff(x):
                         try:
-                            return self.table_float_format(x=x)
+                            return self.config.table_float_format(x=x)
                         except ValueError:
                             return str(x)
                         except Exception as e:
                             logger.error(f'Custom float function raised {e=}')
                     self.default_float_formatter = ff
                 else:
-                    if type(self.table_float_format) != str:
+                    if type(self.config.table_float_format) != str:
                         raise ValueError(
-                            'table_float_format must be a string or a function')
-                    fmt = self.table_float_format
+                            'config.table_float_format must be a string or a function')
+                    fmt = self.config.table_float_format
 
                     def ff(x):
                         try:
@@ -871,7 +864,7 @@ class GT(object):
                 else:
                     # print(f'{i} default')
                     self._df_formatters.append(self.default_formatter)
-            # self._df_formatters is now a list of length equal to cols in df
+            # self._df_formatters is now a list of length config.equal to cols in df
             if len(self._df_formatters) != self.df.shape[1]:
                 raise ValueError(
                     f'Something wrong: {len(self._df_formatters)=} != {self.df.shape=}')
@@ -936,20 +929,23 @@ class GT(object):
 
         natural, acceptable, min_acceptable = ans.iloc[:, 3:].sum()
         PADDING = 2  # per column
-        if self.table_width_mode == 'explicit':
+        if self.config.table_width_mode == 'explicit':
             # target width INCLUDES padding and column marks |
-            target_width = self.max_table_width - (PADDING + 1) * n_col - 1
-            logger.info(f'Col padding effect {self.max_table_width=} ==> {target_width=}')
-        elif self.table_width_mode == 'natural':
+            target_width = self.config.max_table_width - \
+                (PADDING + 1) * n_col - 1
+            logger.info(f'Col padding effect {
+                        self.config.max_table_width=} ==> {target_width=}')
+        elif self.config.table_width_mode == 'natural':
             target_width = natural + (PADDING + 1) * n_col + 1
-        elif self.table_width_mode == 'breakable':
+        elif self.config.table_width_mode == 'breakable':
             target_width = acceptable + (PADDING + 1) * n_col + 1
-        elif self.table_width_mode == 'minimum':
+        elif self.config.table_width_mode == 'minimum':
             target_width = min_acceptable + (PADDING + 1) * n_col + 1
 
         # extra space for the headers to relax, if useful
-        if self.table_width_header_adjust > 0:
-            max_extra = int(self.table_width_header_adjust * target_width)
+        if self.config.table_width_header_adjust > 0:
+            max_extra = int(
+                self.config.table_width_header_adjust * target_width)
         else:
             max_extra = 0
 
@@ -983,7 +979,7 @@ class GT(object):
         if space >= 0:
             # Allocate the excess ------------------------------
             # Fancy col headings currently only for 1-d index
-            # TODO NOTE: use sparsify logic you have for index applied to df.T
+            # TODO NOTE: use config.sparsify logic you have for index applied to df.T
             # to sort the columns!!
             if df.columns.nlevels == 1:
                 # Step 1: baseline comes in from code above
@@ -1017,7 +1013,14 @@ class GT(object):
                         ans['recommended'], ans['natural_w_header'])
 
             # Ensure final constraint
-            ans['recommended'] = ans['recommended'].astype(int)
+            try:
+                ans['recommended'] = ans['recommended'].astype(int)
+            except IntCastingNaNError:
+                print('getting error')
+                print(ans['recommended'])
+                ans['recommended'] = pd.to_numeric(
+                    ans['recommended'], errors='coerce').fillna(0).astype(int)
+
             logger.info("Raw rec: %s\tTweaks: %s\tActual: %s\tTarget: %s\tOver/(U): %s",
                         ans['raw_rec'].sum(),
                         ans['header_tweak'].sum(),
@@ -1049,12 +1052,12 @@ class GT(object):
     @staticmethod
     def header_adjustment(df, min_widths, space, max_extra):
         """
-        Fine-adjust heading for optimal spacing.
+        Fine-adjust heading for optimal config.spacing.
 
         Return a dict with per-column recommended width adjustments to avoid
         intra-word breaks and reduce overall header height.
 
-        Parameters:fv
+        Parameters:
             df: DataFrame with 1-level string column names
             min_widths: dict of column name -> minimal acceptable width
             space: amount of space available to be allocated
@@ -1134,10 +1137,10 @@ class GT(object):
                         adjustments[col] = extra
             # temporary diagnostic DEBUG information - comment in prod
             # from IPython.display import display
-            # debug = pd.Series([col, min_acceptable[col], base_width, has_intra_word_break(col, base_width), extra0, max_extra,
+            # config.debug = pd.Series([col, min_acceptable[col], base_width, has_intra_word_break(col, base_width), extra0, max_extra,
             #     wrap(col,  base_width), extra],
             #     index=['col name', 'min acceptable', 'base_width (from data)', 'intra word break', 'extra0', 'max_extra', 'split', 'selected extra']).to_frame('Value')
-            # display(debug)
+            # display(config.debug)
         # make df[col name, amount of extra space for col, resulting number of lines]
         # this is needed as input for the optimal heading function (next)
         input_df = pd.DataFrame(options, columns=['col', 'extra', 'num_lines'])
@@ -1158,7 +1161,7 @@ class GT(object):
     @staticmethod
     def optimal_heading(input_df: pd.DataFrame, total_es_budget: int) -> tuple[int, dict[str, int]]:
         """
-        Optimize extra spacing for best heading.
+        Optimize extra config.spacing for best heading.
 
         Finds the best way to allocate extra space to minimize max_lines in heading.
 
@@ -1221,10 +1224,10 @@ class GT(object):
 
             For each column:
             * It iterates through its `(extra_space, num_lines)` options (which are sorted by `extra_space`).
-            * It finds the *smallest* `extra_space` value for which the corresponding `num_lines` is less than or equal to `target_max_lines`.
+            * It finds the *smallest* `extra_space` value for which the corresponding `num_lines` is less than or config.equal to `target_max_lines`.
             * If no such `extra_space` is found for a column (meaning even with the maximum available `extra` for that column, it still exceeds `target_max_lines`), then `target_max_lines` is not achievable, and the function returns `False`.
             * Otherwise, it sums up these minimum required `extra_space` values across all columns.
-            * If the total `extra_space` required is less than or equal to `total_es_budget`, the function returns `True` (meaning `target_max_lines` is achievable). Otherwise, it returns `False`.
+            * If the total `extra_space` required is less than or config.equal to `total_es_budget`, the function returns `True` (meaning `target_max_lines` is achievable). Otherwise, it returns `False`.
 
             .. code-block:: python
 
@@ -1405,7 +1408,7 @@ class GT(object):
 
     def make_style(self, tabs):
         """Write out custom CSS for the table."""
-        if self.debug:
+        if self.config.debug:
             head_tb = '#0ff'
             body_b = '#f0f'
             h0 = '#f00'
@@ -1427,8 +1430,8 @@ class GT(object):
             v0 = '#000'
             v1 = '#000'
             v2 = '#000'
-        table_hrule = self.table_hrule_width
-        table_vrule = self.table_vrule_width
+        table_hrule = self.config.table_hrule_width
+        table_vrule = self.config.table_vrule_width
         # for local use
         padt, padr, padb, padl = self.padt, self.padr, self.padb, self.padl
 
@@ -1437,7 +1440,7 @@ class GT(object):
     #{self.df_id}  {{
     border-collapse: collapse;
     font-family: "Roboto", "Open Sans Condensed", "Arial", 'Segoe UI', sans-serif;
-    font-size: {self.font_body}em;
+    font-size: {self.config.font_body}em;
     width: auto;
     /* tb and lr
     width: fit-content; */
@@ -1458,8 +1461,8 @@ class GT(object):
     /* tag formats */
     #{self.df_id} caption {{
         padding: {2 * padt}px {padr}px {padb}px {padl}px;
-        font-size: {self.font_caption}em;
-        text-align: {self.caption_align};
+        font-size: {self.config.font_caption}em;
+        text-align: {self.config.caption_align};
         font-weight: normal;
         caption-side: top;
     }}
@@ -1467,7 +1470,7 @@ class GT(object):
         /* top and bottom of header */
         border-top: {table_hrule}px solid {head_tb};
         border-bottom: {table_hrule}px solid {head_tb};
-        font-size: {self.font_head}em;
+        font-size: {self.config.font_head}em;
         }}
     #{self.df_id} tbody {{
         /* bottom of body */
@@ -1484,33 +1487,33 @@ class GT(object):
     }}
     /* class overrides */
     #{self.df_id} .grt-hrule-0 {{
-        border-top: {self.hrule_widths[0]}px solid {h0};
+        border-top: {self.config.hrule_widths[0]}px solid {h0};
     }}
     #{self.df_id} .grt-hrule-1 {{
-        border-top: {self.hrule_widths[1]}px solid {h1};
+        border-top: {self.config.hrule_widths[1]}px solid {h1};
     }}
     #{self.df_id} .grt-hrule-2 {{
-        border-top: {self.hrule_widths[2]}px solid {h2};
+        border-top: {self.config.hrule_widths[2]}px solid {h2};
     }}
     /* for the header, there if you have v lines you want h lines
-       hence use vrule_widths */
+       hence use config.vrule_widths */
     #{self.df_id} .grt-bhrule-0 {{
-        border-bottom: {self.vrule_widths[0]}px solid {bh0};
+        border-bottom: {self.config.vrule_widths[0]}px solid {bh0};
     }}
     #{self.df_id} .grt-bhrule-1 {{
-        border-bottom: {self.vrule_widths[1]}px solid {bh1};
+        border-bottom: {self.config.vrule_widths[1]}px solid {bh1};
     }}
     #{self.df_id} .grt-vrule-index {{
         border-left: {table_vrule}px solid {v0};
     }}
     #{self.df_id} .grt-vrule-0 {{
-        border-left: {self.vrule_widths[0]}px solid {v0};
+        border-left: {self.config.vrule_widths[0]}px solid {v0};
     }}
     #{self.df_id} .grt-vrule-1 {{
-        border-left: {self.vrule_widths[1]}px solid {v1};
+        border-left: {self.config.vrule_widths[1]}px solid {v1};
     }}
     #{self.df_id} .grt-vrule-2 {{
-        border-left: {self.vrule_widths[2]}px solid {v2};
+        border-left: {self.config.vrule_widths[2]}px solid {v2};
     }}
     #{self.df_id} .grt-left {{
         text-align: left;
@@ -1524,7 +1527,7 @@ class GT(object):
     }}
     #{self.df_id} .grt-head {{
         font-family: "Times New Roman", 'Courier New';
-        font-size: {self.font_head}em;
+        font-size: {self.config.font_head}em;
     }}
     #{self.df_id} .grt-bold {{
         font-weight: bold;
@@ -1558,8 +1561,8 @@ class GT(object):
         columns = bit.iloc[self.nindex:, :self.ncolumns]
 
         colw, tabs = GT.estimate_column_widths(
-            self.df, self.max_table_width, nc_index=self.nindex, scale=1, equal=self.equal)
-        if self.debug:
+            self.df, self.config.max_table_width, nc_index=self.nindex, scale=1, equal=self.config.equal)
+        if self.config.debug:
             print(f'Make html Input {self.tabs=}\nComputed {tabs=}')
         if self.tabs is not None:
             if len(tabs) == len(self.tabs):
@@ -1592,7 +1595,7 @@ class GT(object):
 
         # TODO Add header aligners
         # this is TRANSPOSED!!
-        if self.sparsify_columns:
+        if self.config.sparsify_columns:
             html.append("<thead>")
             for i in range(self.ncolumns):
                 # one per row of columns m index, usually only 1
@@ -1667,7 +1670,7 @@ class GT(object):
                 html.append("</tr>")
             html.append("</thead>")
 
-        bold_idx = 'grt-bold' if self.font_bold_index else ''
+        bold_idx = 'grt-bold' if self.config.font_bold_index else ''
         html.append("<tbody>")
         for i, (n, r) in enumerate(self.df.iterrows()):
             # one per row of dataframe
@@ -1678,7 +1681,9 @@ class GT(object):
                     # dx = data in index
                     # if this is the level that changes for this row
                     # will use a top rule  hence omit i = 0 which already has an hrule
-                    if i > 0 and hrule == '' and j == index_change_level[i]:
+                    # appears in the index change level. But if it DOES NOT appear then
+                    # it isn't a change level so no rule required
+                    if i > 0 and hrule == '' and i in index_change_level and j == index_change_level[i]:
                         hrule = f'grt-hrule-{j}'
                     # html.append(f'<td class="grt-dx-r-{i} grt-dx-c-{j} {self.df_aligners[j]} {hrule}">{c}</td>')
                     col_id = f'grt-c-{j}'
@@ -1708,7 +1713,7 @@ class GT(object):
 
     def clean_style(self, soup):
         """Minify CSS inside <style> blocks and remove /* ... */ comments."""
-        if not self.debug:
+        if not self.config.debug:
             for style_tag in soup.find_all("style"):
                 if style_tag.string:
                     # Remove CSS comments
@@ -1765,8 +1770,12 @@ class GT(object):
     @staticmethod
     def apply_formatters_work(df, formatters):
         """Apply formatters to a DataFrame."""
-        new_df = pd.DataFrame({i: map(f, df.iloc[:, i])
-                               for i, f in enumerate(formatters)})
+        try:
+            new_df = pd.DataFrame({i: map(f, df.iloc[:, i])
+                                   for i, f in enumerate(formatters)})
+        except TypeError:
+            print('NASTY TYPE ERROR')
+            raise
         new_df.columns = df.columns
         return new_df
 
@@ -1839,7 +1848,7 @@ class GT(object):
           never be a rule to the far right...it looks plebby; remember you must
           include the index columns!
 
-        sparsify  number of cols of multi index to sparsify
+        config.sparsify  number of cols of multi index to config.sparsify
 
         Issue: column with floats and spaces or missing causes problems (VaR,
         TVaR, EPD, mean and CV table)
@@ -1848,13 +1857,13 @@ class GT(object):
 
         keyword args:
 
-            scale           picks up self.tikz_scale; scale applied to whole
+            scale           picks up self.config.tikz_scale; scale applied to whole
                             table - default 0.717
             height          row height, rec. 1 (em)
             column_sep      col sep in em
             row_sep         row sep in em
             container_env   table, figure or sidewaysfigure
-            color           color for text boxes (helps debugging)
+            color           color for text boxes (helps config.debugging)
             extra_defs      TeX defintions and commands put at top of table,
                             e.g., \\centering
             lines           lines below these rows, -1 for next to last row
@@ -1971,8 +1980,8 @@ class GT(object):
         # number of index columns
         # have also converted everything to formatted strings
         # estimate... originally called guess_column_widths, with more parameters
-        colw, tabs = GT.estimate_column_widths(df, self.max_table_width, nc_index=nc_index, scale=self.tikz_scale, equal=self.equal)  # noqa
-        if self.debug:
+        colw, tabs = GT.estimate_column_widths(df, self.config.max_table_width, nc_index=nc_index, scale=self.config.tikz_scale, equal=self.config.equal)  # noqa
+        if self.config.debug:
             print(f'Make TikZ Input {self.tabs=}\nComputed {tabs=}')
         if self.tabs is not None:
             if len(tabs) == len(self.tabs):
@@ -2009,13 +2018,15 @@ class GT(object):
         else:
             latex = f'[{latex}]'
         debug = ''
-        if self.debug:
+        if self.config.debug:
             # color all boxes
             debug = ', draw=blue!10'
+        else:
+            debug = ''
         sio.write(header.format(container_env=container_env,
                                 caption=caption,
                                 extra_defs=extra_defs,
-                                scale=self.tikz_scale,
+                                scale=self.config.tikz_scale,
                                 column_sep=column_sep,
                                 row_sep=row_sep,
                                 latex=latex,
@@ -2037,7 +2048,8 @@ class GT(object):
             if i == 1:
                 # first column sets row height for entire row
                 sio.write(f'\tcolumn {i:>2d}/.style={{'
-                          f'nodes={{align={ad[al]:<6s}}}, text height=0.9em, text depth=0.2em, '
+                          f'nodes={{align={
+                              ad[al]:<6s}}}, text height=0.9em, text depth=0.2em, '
                           f'inner xsep={column_sep}em, inner ysep=0, '
                           f'text width={max(2, 0.6 * w):.2f}em}},\n')
             else:
@@ -2202,14 +2214,14 @@ class GT(object):
 
         :param df:
         :param nc_index: number of columns in the index...these are not counted as "data columns"
-        :param equal:  if True, try to make all data columns the same width (hint can be rejected)
+        :param config.equal:  if True, try to make all data columns the same width (hint can be rejected)
         :return:
             colw   affects how the tex is printed to ensure it "looks neat" (actual width of data elements)
             tabs   affects the actual output
         """
         # this
         # tabs from _tabs, an estimate column widths, determines the size of the table columns as displayed
-        # print(f'{nc_index=}, {scale=}, {equal=}')
+        # print(f'{nc_index=}, {scale=}, {config.equal=}')
         colw = dict.fromkeys(df.columns, 0)
         headw = dict.fromkeys(df.columns, 0)
         tabs = []
@@ -2280,17 +2292,17 @@ class GT(object):
             else:
                 # data all seems about the same width
                 tabs.append(common_size)
-        logger.info(f'Determined tab spacing: {tabs}')
+        logger.info(f'Determined tab config.spacing: {tabs}')
         if equal:
-            # see if equal widths makes sense
+            # see if config.equal widths makes sense
             dt = tabs[nl:]
             if max(dt) / sum(dt) < 4 / 3:
                 tabs = tabs[:nl] + [max(dt)] * (len(tabs) - nl)
-                logger.info(f'Taking equal width hint: {tabs}')
-                # print(f'Taking equal width hint: {tabs}')
+                logger.info(f'Taking config.equal width hint: {tabs}')
+                # print(f'Taking config.equal width hint: {tabs}')
             else:
-                logger.info(f'Rejecting equal width hint')
-                # print(f'Rejecting equal width hint')
+                logger.info(f'Rejecting config.equal width hint')
+                # print(f'Rejecting config.equal width hint')
         # look to rescale, shoot for width of 150 on 100 scale basis
         data_width = sum(tabs[nl:])
         index_width = sum(tabs[:nl])
@@ -2552,43 +2564,6 @@ class GT(object):
         control over column widths and the ability to demark the index
         columns.
 
-        Tabulate table formats are defined in namedtuples found in tf:
-
-        from tabulate import _table_formats as tf
-
-        This is a dict and e.g.,
-
-        tf['mixed_grid'] = TableFormat(
-            lineabove=Line(begin='┍', hline='━', sep='┯', end='┑'),
-            linebelowheader=Line(begin='┝', hline='━', sep='┿', end='┥'),
-            linebetweenrows=Line(begin='├', hline='─', sep='┼', end='┤'),
-            linebelow=Line(begin='┕', hline='━', sep='┷', end='┙'),
-            headerrow=DataRow(begin='│', sep='│', end='│'),
-            datarow=DataRow(begin='│', sep='│', end='│'),
-            padding=1,
-            with_header_hide=None)
-
-        tf.keys() = dict_keys(['simple', 'plain', 'grid', 'simple_grid',
-        'rounded_grid', 'heavy_grid', 'mixed_grid', 'double_grid',
-        'fancy_grid', 'outline', 'simple_outline', 'rounded_outline',
-        'heavy_outline', 'mixed_outline', 'double_outline', 'fancy_outline',
-        'github', 'pipe', 'orgtbl', 'jira', 'presto', 'pretty', 'psql', 'rst',
-        'mediawiki', 'moinmoin', 'youtrack', 'html', 'unsafehtml', 'latex',
-        'latex_raw', 'latex_booktabs', 'latex_longtable', 'tsv', 'textile',
-        'asciidoc'])
-
-        Parameters:
-            df: pandas.DataFrame
-                The data to display. Should have index reset, but specify index_levels.
-            data_col_widths: list[int]
-                List of visible widths (excluding padding) for each column.
-            data_col_aligns: list[str]
-                Alignment specifiers per column: 'left', 'center', or 'right'.
-            index_levels: int
-                Number of columns at the start considered index columns (split visually).
-            fmt: TableFormat
-                Box-drawing configuration (defaults to myFormat).
-
         Returns:
             str: A fully formatted table as a string (useful for print, logs, or files).
         """
@@ -2797,15 +2772,15 @@ class GT(object):
     def rich_table(self, console, box_style=box.SQUARE):
         """Render to a rich table using Console object console."""
         # hijack max table width
-        mtw = self.max_table_width
-        tw_mode = self.table_width_mode
-        self.table_width_mode = 'explicit'
-        self.max_table_width = console.width
+        mtw = self.config.max_table_width
+        tw_mode = self.config.table_width_mode
+        self.config.table_width_mode = 'explicit'
+        self.config.max_table_width = console.width
         # figure col widths and aligners
         cw_df = self.make_column_width_df()
         cw = cw_df['recommended']
         aligners = cw_df['alignment']
-        show_lines = self.hrule_widths[0] > 0
+        show_lines = self.config.hrule_widths[0] > 0
 
         self._rich_table = table = GT.make_rich_table(self.df,
                                                       cw,
@@ -2815,6 +2790,6 @@ class GT(object):
                                                       show_lines=show_lines,
                                                       box_style=box_style)
 
-        self.max_table_width = mtw
-        self.table_width_mode = tw_mode
+        self.config.max_table_width = mtw
+        self.config.table_width_mode = tw_mode
         return table
