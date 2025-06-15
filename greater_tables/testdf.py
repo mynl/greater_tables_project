@@ -4,6 +4,7 @@ Make fake dataframes for testing.
 GPT from SJMM design.
 """
 
+from collections import deque
 from datetime import datetime, timedelta
 from importlib.resources import files
 from itertools import cycle, chain
@@ -117,6 +118,14 @@ class TestDataFrameFactory:
 
         # lengths of index (word count) sampled from:
         self.index_value_lengths = [1]*10 + [2] * 4 + [3]
+        self.cache = deque(maxlen=10)
+
+    # def cache(self, n=0):
+    #     """Get nth item ago from cache, default = 0, latest."""
+    #     if n < len(self._cache):
+    #         return self._cache[n]
+    #     else:
+    #         print(f'Cache only contains {len(self._cache)} < {n} items.')
 
     def make(self, rows: int, columns: Union[int, str], index: Union[int, str] = 0,
              col_index: Union[int, str] = 0, missing: float = 0.0) -> pd.DataFrame:
@@ -168,14 +177,15 @@ class TestDataFrameFactory:
             self.rng = np.random.default_rng(self.seed)
         return self._generate(**self._last_args)
 
-    def random(self, index_levels: int = 0, column_levels: int = 0) -> pd.DataFrame:
+    def random(self, index_levels: int = 0, column_levels: int = 0, omit: str = 'p') -> pd.DataFrame:
         """
         Generate a DataFrame with randomly chosen settings.
+
 
         Args:
             index_levels: Number of index levels to use.
             column_levels: Number of column MultiIndex levels.
-
+            omit: omit column datatypes in omit
         Returns:
             DataFrame
         """
@@ -184,8 +194,10 @@ class TestDataFrameFactory:
         if column_levels == 0:
             column_levels = random.choice([1, 1, 1, 1, 1, 2, 2, 3])
         rows = self.rng.integers(5 * index_levels, 10 * index_levels)
+        valid_types = [i for i in ['d', 'f', 'i', 's3', 'l', 'h', 't', 'p', 'x', 'r', 'y']
+        if i not in omit]
         col_types = self.rng.choice(
-            ['d', 'f', 'i', 's3', 'l', 'h', 't', 'p'], size=self.rng.integers(3, 7))
+            valid_types, size=self.rng.integers(3, 7))
         missing = round(float(self.rng.uniform(0, 0.15)), 2)
         index = ''.join(self.rng.choice(
             ['t', 'd', 'y', 'i', 's2'], size=index_levels))
@@ -223,6 +235,7 @@ class TestDataFrameFactory:
         df.columns = col_idx
         df.index = self._make_index(index, rows)
         df = self._insert_missing(df, missing)
+        self.cache.appendleft(df)
         return df
 
     def _parse_colspec(self, spec: str) -> list[str]:
@@ -278,7 +291,7 @@ class TestDataFrameFactory:
         if len(desc) == 1:
             if desc[0] == 'i':
                 return pd.RangeIndex(n, name=self.index_name())
-            elif desc[0] in ('d', 't', 'x'):
+            elif desc[0] in ('d', 't', 'x', 'y'):
                 vals = self._generate_column(desc[0], n)
                 return pd.Index(vals, name=self.index_name())
             elif not all(i[0] == 's' for i in desc):

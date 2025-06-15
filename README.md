@@ -1,17 +1,9 @@
-sort out the variety of readmes... this is the main one
+# `greater_tables` Project
 
-https://shields.io/badges/read-the-docs
+![GitHub commit activity](https://img.shields.io/github/commit-activity/y/mynl/greater_tables_project)
 
 
-# v 3.0 update
-
-* config files
-* unified col width and info dataframe
-* de-texing
-* cli for config and writeout a csv etc.
-* tests
-
-# TODO
+## TODO
 
 * Ratio cols with multi index columns
 * % in tex output - never allow comments?
@@ -19,109 +11,14 @@ https://shields.io/badges/read-the-docs
 * ?Option to hide index
 * Bring over the roll your own logger
 
-***
+ 
+## Greater Tables
 
-# from GPT
+Display graphics vs. data tables 
 
+no colors, sparklines, shading, ... 
 
-Absolutely—here’s a structured summary of everything we’ve covered, organized by topic.
-
----
-
-## 🧱 Project Structure & Philosophy
-
-* Your `GreaterTables` class formats a `pandas.DataFrame` to **HTML, text, or LaTeX**.
-* The class is **immutable**: formatting is fixed at construction time, like a pure value object.
-* You avoid branchy, incremental APIs (like `ggplot`) and prefer creating fresh objects.
-* You wanted a way to handle growing config complexity—→ led to a **YAML config + Pydantic schema** design.
-
----
-
-## 📁 Project Layout
-
-```
-greater_tables_project/
-├── greater_tables/
-│   ├── __init__.py
-│   ├── gtconfig.py          ← config model + loader
-│   ├── gtcore.py            ← GreaterTables class
-│   └── defaults/
-│       └── config_template.yaml
-├── tests/
-├── pyproject.toml
-```
-
-* `GTConfigModel` = schema + default source of truth
-* `GTConfig` = singleton loader and validator
-* `config_template.yaml` = editable fallback + documentation base
-
----
-
-## 🔧 Config Management
-
-* All defaults and types are declared in `GTConfigModel` (Pydantic).
-* Config is **loaded from YAML**, validated by `GTConfigModel`.
-* You can **generate** a valid config file from the model using `.model_dump() → YAML`.
-* Singleton pattern (`GTConfig.__new__`) caches the config at runtime.
-
-### Helpers
-
-* `GTConfig().get(overrides=...)` gives a safe, override-able config
-* `write_template(path)` writes a default config YAML for user to edit
-
----
-
-## 🛠 Git Workflow (Solo Dev, Linear)
-
-* Use **tags** (`git tag v0.2.0`) to label stable versions
-* Use **`git reset --hard <tag>`** to roll back and discard later commits
-* Avoid branches entirely—keep a **single linear history**
-* Tags let you bounce around safely, with names instead of hashes
-* Releases on GitHub are tags + metadata, optional for publishing
-
----
-
-## ⚙️ CLI Tool
-
-* Built with `click`, with subcommands:
-
-  * `gt render data.csv --format html`
-  * `gt write-template`
-* Reads any Pandas-supported file (`.csv`, `.feather`, `.pkl`, etc.)
-* Outputs to console or to file
-* Uses current config by default, or override with `--config path.yaml`
-
----
-
-## 🧠 Design Principles You’re Following
-
-| Principle                    | Your Approach                               |
-| ---------------------------- | ------------------------------------------- |
-| Immutability                 | `GT(df, config)` is fixed once created      |
-| Separation of concerns       | `GTConfigModel` holds defaults/types        |
-| Config as code/documentation | `config_template.yaml` generated from model |
-| CLI-first mindset            | `click` used to expose functionality        |
-| Linear Git workflow          | Tags for rollback, no branches              |
-
----
-
-Let me know if you want me to generate:
-
-* a Markdown doc for contributors
-* a `.bat` script to roll back to a tag
-* test scaffolding or release automation
-
-You're in great shape. Gum-level perfection achieved.
-
-
-
-***
-
-# OLD
-
-# Greater Tables
-
-Creating presentation quality tables from pandas dataframes is frustrating. It is hard to left-align text and right-align numbers using pandas `display` or `df.to_html`. The  `great_tables` package does a really nice job with pandas and polars dataframes but does not support indexes or TeX output. 
+Creating presentation quality tables is difficult.   It is hard to left-align text and right-align numbers using pandas `display` or `df.to_html`. The  `great_tables` package does a really nice job with pandas and polars dataframes but does not support indexes or TeX output. 
 
 This package provides consistent HTML and TeX table output with flexible type-based formatting, and table rules. Neither output relies on the pandas `to_html` or `to_latex` functions. TeX output uses Tikz tables for very tight control over layout and grid lines. The package is designed for use in Jupyter Lab notebooks Quarto documents.
 
@@ -137,9 +34,19 @@ been maintaining a set of macros called
 reusable, extensible actuarial tools) in VBA and Python since the late
 1990s, and call all my macro packages "GREAT".
 
+## Documentation
+
+![](https://img.shields.io/readthedocs/greater_tables_project)
+
+Available on
+[readthedocs](https://greater-tables-project.readthedocs.io/en/latest).
+
+
 ## Installation
 
-``` python
+![](https://img.shields.io/pypi/format/greater_tables)
+
+```python
 pip install greater-tables
 ```
 
@@ -148,7 +55,7 @@ pip install greater-tables
 The following example shows quite a hard table. It is formatted using
 the `sGT` class, which is a subclass of `GT` with a few defaults set.
 
-``` {.python .cell-code}
+```python
 import pandas as pd
 import numpy as np
 from greater_tables import sGT
@@ -196,21 +103,37 @@ The output illustrates:
 
 More coming soon.
 
-## Documentation
 
-![](https://img.shields.io/readthedocs/greater_tables_project)
+## History
 
-Available on
-[readthedocs](https://greater-tables-project.readthedocs.io/en/latest).
+3.2.0
+-------
+* Added more tex snippets!
+* Refactored tikz and column width behavior
 
-## Versions
+3.1.0
+-------
+* adjustments for auto format
+* rearranged gtcore order of methods
 
 3.0.0
 -------
 
+* config files / pydantic config input 
+* unified col width and info dataframe
+* de-texing
+* cli for config and writeout a csv etc.
+
+* testdf suite
+* Automated TeX to SVG 
+
 2.0.0
 ------
 
+* **v2.0.0** solid release old-style, all-argument GT
+* Better column widths
+* Custom text output 
+* Rich table output 
 1.1.1
 -------
 * Added logo, updated docs.
@@ -251,3 +174,65 @@ Early development
 
 
 
+
+ 
+## 📁 Project Layout
+
+```
+greater_tables_project/
+|   LICENSE
+|   pyproject.toml
+|   README.md
+|   
++---dist
+|       
++---docs
+|   |   books.bib
+|   |   conf.py
+|   |   greater_tables.data.rst
+|   |   greater_tables.rst
+|   |   index.rst
+|   |   library.bib
+|   |   make.bat
+|   |   Makefile
+|   |   modules.rst
+|   |   start-server.bat
+|   |   style.csl
+|   |   
++---greater_tables
+|   |   __init__.py
+|   |   cli.py
+|   |   gtconfig.py
+|   |   gtcore.py
+|   |   gtenums.py
+|   |   gtformats.py
+|   |   hasher.py
+|   |   testdf.py
+|   |   tex_svg.py
+|   |   
+|   +---data
+|   |   |   __init__.py
+|   |   |   tex_list.csv
+|   |   |   tex_list.py
+|   |   |   words-12.md
+|           
++---greater_tables.egg-info
+|       
++---img
+|       hard-html.png
+|       hard-tex.png
+```
+
+ 
+
+## 🧠 Design Principles You’re Following
+
+| Principle                    | Your Approach                               |
+| ---------------------------- | ------------------------------------------- |
+| Immutability                 | `GT(df, config)` is fixed once created      |
+| Separation of concerns       | `GTConfigModel` holds defaults/types        |
+| Config as code/documentation | `config_template.yaml` generated from model |
+| CLI-first mindset            | `click` used to expose functionality        |
+| Linear Git workflow          | Tags for rollback, no branches              |
+
+ 

@@ -1,0 +1,3354 @@
+,expr
+0,$E[M_\tau] \ge 1$
+1,$\text{VaR}_{0.99}$
+2,$1/(24\times 60\times 60) = 0.000011574074074\dots$
+3,$\alpha=2$
+4,$\kappa_{T_\nu}(y)$
+5,$J(1)$
+6,$Y_1=X_1 + \dots + X_n$
+7,$\mathsf{Pr}(X\in A)=0$
+8,"$(\Omega,\F,\P)$"
+9,$\alpha > 2$
+10,$\alpha=-\infty$
+11,"$\mathsf{E}[\mathsf{CP}(\lambda, X)]=\lambda\mathsf{E}[X]$"
+12,$\beta=\dfrac{c_1-c_2}{c_1+c_2}$
+13,$p<0$
+14,$0 < \alpha_1=\alpha^{-1} < 1$
+15,$N':=kNT$
+16,$V_2 = V_1 / 12$
+17,$f_n$
+18,"$\Gamma(S,T)=\{ (S(\omega), T(\omega)\mid \omega\in\Omega \}$"
+19,$\theta = -1/\mu$
+20,"$\mathsf{CP}_1(\mu, X)$"
+21,$p-1=28$
+22,"$(E,\mathsf{E}E)$"
+23,$u_i \ge 0$
+24,$m_Y(s)=\mathsf E[Y\mid S=s]$
+25,$A_t$
+26,$0.9999\dots=0.9 \times (1 + 0.1 + 0.001 +\cdots) = 0.9 \times (1 - 0.1)^{-1} =1$
+27,$0\le k < 2^m$
+28,$2***52 \le f 2^N < 2**53$
+29,$D=\sum_{i\in I} D_i$
+30,$T(y)$
+31,$Z$
+32,$1/V(\mu)$
+33,$g(s) = s^\alpha$
+34,$Mg$
+35,$K(t):=\log\mathsf{E}[e^{tY}]=\kappa(t+\theta)-\kappa(\theta)$
+36,$R^S=g^{kS}$
+37,$\P(B\mid\A)(\cdot)$
+38,$ is the MGF of a gamma with shape $
+39,$\mathsf{Pr}(X>x)$
+40,$\beta=1$
+41,$\Gamma\not\in\F\otimes\B$
+42,$\theta(\mu)=\arctan(\mu)$
+43,"$s_0, s_1, s_2$"
+44,$-3$
+45,$N_a$
+46,$1+\mu^2-\sqrt{1+\mu^2}$
+47,$r_2=$
+48,$C > 0$
+49,$\int_0^1 xj(x)dx<\infty$
+50,$A = \bigcup_{n=1}^{\infty} A_n$
+51,$\tilde\Theta_1$
+52,$0<b<1$
+53,$t<0$
+54,$\mathsf{Var}(X_\nu)=\nu\mathsf{Var}(X_1)$
+55,$X_T$
+56,"$\Delta=\{(\omega,\omega) \mid \omega\in\Omega\}$"
+57,$\log(\mathit{ROL}) = a + b \log(\mathit{EL}) + b X$
+58,$\mathsf{E}[r(X)]=\mu$
+59,$\mathsf{E}[X\mid T=t]=\mathsf{var}phi(t)$
+60,$d=0.13$
+61,$v=(1+i)^{-1}$
+62,$\sigma(Y)$
+63,$26$
+64,$x_1\leftrightarrow y_2$
+65,$\mathsf{var}phi(t) = P^\omega_t X(\omega) = \mathsf{E}[X\mid T=t]$
+66,$\alpha=\frac{2-p}{1-p}$
+67,$T=y$
+68,$X=X\mid\theta$
+69,$\alpha < 0)$
+70,$p_\beta$
+71,$\P=\mu P_t$
+72,$y^*=\min(y)$
+73,"$F(\omega, x)$"
+74,$-\log(1-\Phi(x))$
+75,$1/\beta$
+76,$\mathsf{E}[X\mid T=t]$
+77,$A=\bigcup_i A_i$
+78,$M_F^+$
+79,$X \mapsto X+k$
+80,$\xi(A\mid\cdot)$
+81,$\omega^n=1$
+82,"$X,X_1,X_2$"
+83,"$p=1,2$"
+84,$256$
+85,"$\forall \omega\in\Omega,\ A\to P(A, \omega)$"
+86,$PV=kNT$
+87,$d(y;\mu)=(y-\mu)^2$
+88,$g=2\nu^4/(1-f)+3c+1$
+89,$A_i$
+90,$P=\alpha +F_1 /a = \alpha + (N'/w - \alpha a)/ a = N'/aw$
+91,$\P(B)$
+92,"$D=\{ (x,y) \mid x=y \}$"
+93,$n \to \infty$
+94,$\mathcal D\subset\F$
+95,$\mu=\lambda\alpha/\beta$
+96,$\nu=1$
+97,$\alpha / \beta$
+98,$\{A_i\} \subseteq \mathcal{M}$
+99,$0\not\in\Theta_p$
+100,"$(-1/2,0)$"
+101,"$50 billion of net income, and its return on equity was 5.5%. Statutory insurance companies paid $"
+102,$\mu^3+2\mu^2+\mu^2\sqrt{\mu^2+2\mu}$
+103,"$(0,1)$"
+104,$\epsilon_1$
+105,"$f_{X_t},f_{T_x}$"
+106,$T_*=10^7\mathrm K$
+107,$M_G(\zeta):=\mathsf{E}(e^{\zeta G})$
+108,"$(\Omega, \mathcal{F}, P)$"
+109,"$\mu,\nu$"
+110,$\eta=\bfx\beta$
+111,"$\nu(dy)=\delta_0(dy)+1_{(0,\infty)}dy$"
+112,$\mathcal K$
+113,$2\times 10^{20}$
+114,$f_Y(y)=\nu f_Z(\nu y)$
+115,"$\phi:(L,\A)\to \mathbb{R}$"
+116,$X_i\sim X$
+117,$D$
+118,"$(S,\S)$"
+119,$\alpha>0$
+120,$-\alpha < -2$
+121,$e^{-\theta x}$
+122,$λ^*(N) = 1$
+123,$L(\nu)=\sum_{1\le i\le \nu} X_i$
+124,$x$
+125,$\sigma(\A\otimes\B)$
+126,"$X_1, \dots, X_n$"
+127,$\A\otimes \B$
+128,$n=\sum_i n_i$
+129,$(1-p)(1-\alpha)=(p-1)(\alpha-1)= -1$
+130,$x_1+y_1 \le x_2+y_1\le x_2+y_2$
+131,"$\mu^t P^x_t f(x,t)$"
+132,$\alpha$
+133,$\nu(M\setminus f(L))=0$
+134,$X_1$
+135,$j(x)=\alpha x^{-\alpha-1}$
+136,$\sigma=0$
+137,$\sum_i a_i=a$
+138,$\beta$
+139,$g(T(X)\mid \lambda)$
+140,$y\theta-\kappa(\theta)$
+141,$N:=(1-\alpha)M$
+142,$\tau(\theta)=\mu$
+143,$\nu=f\mu$
+144,$r \approx 1.496 \times 10^{11} \ \text{m}$
+145,$\kappa_X(\theta)=\lambda(e^\theta-1)$
+146,$m\to\infty$
+147,$\int X_n=1$
+148,$\psi=1_{A\times B}$
+149,$(3) \rightarrow (9 = 9) \rightarrow (27 = 4) \rightarrow (12 = 12) \rightarrow (36 = 13) \rightarrow (39 = 16) \rightarrow (48 = 2) \rightarrow (6 = 6) \rightarrow (18 = 18) \rightarrow (54 = 8) \rightarrow (24 = 1)$
+150,$\mu=19.005$
+151,$\mathsf E[XY] \not=\mathsf E[X]\mathsf E[Y]$
+152,$p=0.831588$
+153,$\forall X\exists U[\forall Y\forall x(x\in Y \wedge Y \in  X)\rightarrow x\in U]$
+154,$\theta=\log(\mu/(n-\mu))$
+155,"$1_A:\Omega\to\{0,1\}$"
+156,$Q=T\P$
+157,$\sup$
+158,$\text{ш}$
+159,$X=x$
+160,$100 - 10^5$
+161,$c(y)e^{\theta y}$
+162,$dy/y = kdx / kx=dx/x$
+163,"$\displaystyle\int_{T^{-1}(B)}  X \,d\P$"
+164,$c_1 + c_2 >0$
+165,$x\le 0$
+166,$\G\subset \F$
+167,$a=5$
+168,"$[0,0] \succeq [\epsilon, \epsilon]$"
+169,$Y_t=X_1+\cdots + X_{N(t)}$
+170,$\mathsf{E}[X\mid\G](ω)=\mathsf{E}[X]$
+171,$\kappa(\theta)=e^\theta$
+172,"$178.7 billion of expenses. Commissions and brokerage accounted for 25.1 percent and claim adjustment services for 13.5 percent of the total. Taxes licenses and fees were 6.3 percent. However, their remaining expense items are broken out by expense category, such as employee salaries and benefits or advertising, rather than insurer value-add function. They also reported a cost of capital of 13 percent, applied to equity capital of $"
+173,$\mathsf{E}[\mathsf{E}[X\mid \G_1]\mid \G_2]=\mathsf{E}[X\mid \G_1]$
+174,$\kappa'(\theta)=\tau(\theta)=\mu$
+175,$d>2$
+176,$X\mid\theta$
+177,$n_i$
+178,$(X_n)_{n \geq 1}$
+179,$\kappa(s)=\log\mathsf{E}[e^{sX_1}]$
+180,$\{ \omega \mid \P(B\mid\G)(\omega) < 0 \}\in\G$
+181,$3000$
+182,"$P(A, ω) = 1_A(ω)$"
+183,"$(0,t_1]$"
+184,$f_0\in L^1(\mathbb R)$
+185,$E\setminus F\in R$
+186,"$L(e,t)\sim D(et, \phi)$"
+187,$X_j$
+188,"$\psi=1_\Gamma(S,T)$"
+189,$\forall A\in\F$
+190,$\tau(\theta)$
+191,$D_i^n$
+192,$1 \times 10^{24}$
+193,$V(\mu)=\mu^p$
+194,$p \in G$
+195,$L_X(s)/L_Y(s)\to\infty$
+196,$\BB(S)$
+197,$c^{p-2}\to\infty$
+198,$1+x^2$
+199,$\mu_x = -d\log({{}_tp_x})/dt = \lim_{t\downarrow 0} {}_tq_x/t$
+200,$V(m)\sim c_0m^p$
+201,$a(h_1+h_2)\le 2aw$
+202,$A_n$
+203,$j(x)\propto x^{-3/2}e^{-\beta x}$
+204,$B\in\B$
+205,$V(\mu)\propto \mu$
+206,$\P(A)=0$
+207,"$p:\Omega\times\F\to [0,1]$"
+208,$\theta\in\Theta$
+209,$1/\sqrt{\alpha}\to 0$
+210,$I_x$
+211,"$\Omega=[0,1]$"
+212,$\xi(\cdot\mid t)$
+213,$V_T(m)= m^3V_X(1/m)=m^2$
+214,$\iota\lambda$
+215,"$[P,2P)$"
+216,$\rho E/(1-\tau) - rA$
+217,$\mathsf{E}[X\mid Y=y]$
+218,$A=\bigcup A_{ij}$
+219,$N_t = 0$
+220,$|\hat f|$
+221,$a^*=q(p^*)$
+222,"$\mathrm{Tw}_{3-p}(\mu, \sigma^2)$"
+223,$X_1=aX$
+224,$0.45 \times 8.6 = 3.9$
+225,$\mathbb{P}(A) < \delta$
+226,$t\mapsto e^{-2\pi it}$
+227,"$9.81 \, \text{m/s}^2$"
+228,$(x+t)\Gamma(x+t)=\Gamma(x+t+1)$
+229,$\hat \theta_s$
+230,$W'\subset\mathcal W$
+231,$m=m_1/a$
+232,$P=nb$
+233,$N_t$
+234,$T_*\propto |v|^2\propto GM/R$
+235,$\kappa(\theta)=\theta-\theta\log(-\theta)$
+236,"$1,2,\dots$"
+237,$m\to 0$
+238,$\int c(y)dy=\infty$
+239,$\lim_{\mu\to 0} V(\mu)=0$
+240,$\mu^3\sigma^2$
+241,$kS=m+Ra$
+242,$\mathsf E[XY]\not=\mathsf E[X]\mathsf E[Y]$
+243,$\P\vert_\F = λ$
+244,"$(-\infty, 0)$"
+245,$x_{\min{}}=9750$
+246,$\hat\theta_s>0.5$
+247,$S=T=$
+248,$\mathcal{C} = \{ A \in \Sigma : \mu(A) = \nu(A) \}$
+249,$N_t = 1$
+250,$\C$
+251,$0.03$
+252,$\BB(S)\otimes \A$
+253,$L^\infty$
+254,$\kappa$
+255,$\mathsf{CP}_1$
+256,$(1-{}_b\bar V)$
+257,$a\theta^2=c$
+258,$32$
+259,$1/\sqrt{\lambda}$
+260,"$p(t, B)=\P(S\in B\mid T):E\times \S\to [0,1]$"
+261,"$\forall A\forall p[\forall x\in A\exists !y\phi(x, y, p)\rightarrow\exists Y\forall x\in A\exists y\in Y\phi(x, y,p)]$"
+262,$a(w+h_2)$
+263,"$(2, 3)$"
+264,"$, apply the advanced form of the Lagrange Inversion Formula\footnote{$"
+265,$p=23$
+266,$\lambda = \P \times \Q$
+267,$\forall B\in\G$
+268,$\bar a_x$
+269,"$-l, -l+1, \dots, 0, \dots, l-1, l$"
+270,$a=1/c$
+271,"$(\Omega, \F)$"
+272,"$\min(\alpha_X, \alpha_Y) >2$"
+273,"$\inf\,\Omega=0$"
+274,$\frac{1}{2}$
+275,$2\lim_{\mu\to 0} V(\mu)/\mu^2=\lim_{\mu\to 0}V''(\mu)$
+276,$\lim_{\theta\uparrow 0} -\theta\log(-\theta) =0$
+277,$\mathsf{SD}(G')=\nu$
+278,$g\ge 0$
+279,$\P(A\mid\G) = \mathsf{E}[1_A\mid\G]$
+280,$l/P$
+281,$Y_t\to 0$
+282,$x/(1+x^2)$
+283,"$P:\F\times\Omega\to[0,1]$"
+284,$Z=0$
+285,$P(\cdot | \mathcal{G})(\omega)$
+286,$\mu^3$
+287,"$p\neq 1,2$"
+288,$\mathsf{Var}(s) =\mathsf{E}[s^2]$
+289,$|x_i-x_j|<1/k$
+290,$\kappa=0$
+291,$t=m/n$
+292,$X_t = X_0 e^{(\mu - \frac{1}{2} \sigma^2)t + \sigma W_t}$
+293,$10^2 - 10^4$
+294,$f\in  L^1(\mathbb R)$
+295,$\omega\not=\omega'$
+296,$l(t)$
+297,$r$
+298,$\mathsf{E}[T]$
+299,$\mathsf{E}[D_t \mid \F_{t-1}] \geq 0$
+300,$10^{-6} - 10^{-3}$
+301,$\tau(\tau^{-1}(\mu))=\mu$
+302,$P = 53.565 = v EL + d \max(L) = 46.6 / 1.15 + (0.15 / 1.15) \times 100$
+303,$\omega\mapsto \P(X\in B\mid \G)(\omega)$
+304,"$\mathsf p=(p_0,\dots,p_{n-1})$"
+305,$\exp(a\arcsin(z))=\sum_n \frac{p_n(a)}{n!}z^n$
+306,$\xi:\A\times M\to \mathbb{R}$
+307,$A_{x+b}$
+308,$\partial d/\partial\mu=-2(y-\mu)$
+309,$X_t - X_{t-1}$
+310,$1 <\alpha < 2$
+311,$1/n$
+312,$\omega^l=(\omega^n)^j=1$
+313,$8.617 \times 10^{27}$
+314,$A_x\cap A_y\not=\emptyset$
+315,$E\cap U_0=E$
+316,"$(\omega^{ij})_{i,j}$"
+317,$N(t)$
+318,$Y_t=t-N_t$
+319,$0<a<1$
+320,$\mathsf E[X] =\displaystyle\int_\Omega S(x)dx$
+321,$\lim_{n \to \infty} E[|X_n - X_\infty|] = 0$
+322,$\lambda e^{-\lambda}$
+323,$\not=$
+324,$X_{n \wedge \tau}$
+325,$N_t - A_t$
+326,$X_i\ge 0$
+327,$T_*$
+328,$N\times d$
+329,$a>0$
+330,$2^{402653211}$
+331,$\P(A\mid\G)_{\omega_0}\ge 0$
+332,"$P=\mathrm{EL} + r\,Q$"
+333,$\Omega\times \Omega$
+334,$ Integration by parts shows $
+335,$h > 0$
+336,$X+Y$
+337,"$767 billion of capital, part of $"
+338,$\mathsf{E}[X\mid\theta]$
+339,$\alpha_X > \alpha_Y + 2$
+340,$[0; -k]$
+341,$X \mapsto X + a$
+342,$8.75=10.5 / 1.2$
+343,$\epsilon_t$
+344,$\mathsf P(G)$
+345,$m_p$
+346,$g(X_n)=1$
+347,$1/b$
+348,$\rho(X) =\mathsf{TVaR}_p(X)$
+349,"$a\,\mathsf{E}\left[\dfrac{X_1}{X}\mid X\ge a  \right]$"
+350,$\mathbb{R}^2$
+351,$10^0$
+352,$l(y;\mu)=y\log(\mu) + (1-y)\log(1-\mu)$
+353,$1/2$
+354,$\mathsf{E}[X \mid X > q(p)]$
+355,$\bar a_{x:n\!\urcorner}$
+356,$p_s$
+357,$6.022\times 10^{23}$
+358,$y\in\Omega$
+359,$f_{X+Y}$
+360,$\phi(s)=\mathsf{E}[e^{isY}]$
+361,$A=E\cup P$
+362,$\mathsf{Pr}(\omega)$
+363,$\mathbb R$
+364,$(F((k-1/2)b)-F((k+1/2)b)) / b$
+365,$ which is an extreme stable with Lévy distribution $
+366,"$[0,1]$"
+367,$10^{32}$
+368,$\\sigma=2.58$
+369,$\mathsf{TVaR}(X)=q(p)=100.0$
+370,$f(t)=\overline{f(-t)}$
+371,$Pa=kg /ms^2=N/m^2$
+372,$\delta > 0$
+373,$Y_s$
+374,$\alpha_1$
+375,"$g, g^2, \dots,g^{q-1}, g^q\equiv 1$"
+376,$\log(2)$
+377,$(\sum_i \nu_i)(\kappa(t+\theta) - \kappa(\theta))$
+378,$E[Y_N]\le 0$
+379,"$\int_0^{100} g(S(x))\,dx$"
+380,$Y(ω)=\mathsf{E}[X\mid\G](ω)$
+381,$h(X) = \prod_{i=1}^{n} \frac{1}{x_i!}$
+382,$ which is an $
+383,$\mathcal{G} \subseteq \mathcal{F}$
+384,$\mathsf{E}(G)=1$
+385,$E\cup F\in R$
+386,$\mathbf{v}$
+387,$A_{ij}=\{\omega\mid F_{r_j}(\omega) < F_{r_i}(\omega) \}$
+388,"$[0, \infty)$"
+389,$A \subset \mathbb{R}$
+390,$p_s=\Phi((\hat\theta_s-0.5)/\hat\sigma_s)>0.5$
+391,$d=rv$
+392,$X\sim$
+393,$\mu = \nu$
+394,$602.6 billion and converted to net premium based on $
+395,$M_X(t)^n$
+396,$F^{\times}_{23}$
+397,$S(x) = x\cup \{x\}$
+398,$n\times 1$
+399,"$S:(L,\A)\to ??$"
+400,$\frac{1}{2}kT$
+401,$1 \times 10^{20}$
+402,$\Q$
+403,$\forall x$
+404,$13$
+405,$\mathsf{E}[X \mid X > q(p^*)]=103.333$
+406,$A \in \mathcal{M}$
+407,$(T\lambda)\{\lambda_t\Omega=\infty\}=0$
+408,"$\int_0^1 j(x)\,dx<\infty$"
+409,$2^9=512$
+410,"$1_{(0,1)}$"
+411,$\mu < \frac{1}{2} \sigma^2$
+412,$\exists \mu$
+413,$p_k$
+414,$Y_1$
+415,$d^*$
+416,$\pi$
+417,$P^T_S(\cdot\mid\cdot):\A\times M\to\mathbb{R}$
+418,$m_s$
+419,$y^*-x^* \ge \epsilon$
+420,$0<z<1$
+421,$x^{a-1}e^{x/\theta}$
+422,$X_S$
+423,$A=g^a\mod p$
+424,$\alpha aw$
+425,$p^*\le p$
+426,$(\bar\alpha+1)/\bar\alpha=1/(2-p)$
+427,$\F\otimes\B$
+428,$A\subset Y$
+429,$m_Y(·)$
+430,$R \propto M^{0.8}$
+431,$V$
+432,$\sum_{i\in I}(D_i-N_I)$
+433,$E_0$
+434,$1 \times 10^{13}$
+435,$p\downarrow 1$
+436,$\A_y \supset \A$
+437,$\mathsf{E}S(X)=q(p)$
+438,$f_1$
+439,$\beta \ge 1$
+440,$\mathit{EER}$
+441,$N B_1 ∪ N^c B_2$
+442,$\alpha(p)$
+443,"$Z_i\sim \mathrm{DM}^*(\theta, \nu_i)$"
+444,$B=g^k\pmod p$
+445,$v = 1/(1+r)$
+446,$23$
+447,$\P(A\cap B)$
+448,$s(x;\mu)=(x-\mu)/\sigma^2$
+449,$10^8$
+450,"$(R,S)$"
+451,$X_\infty$
+452,$\lambda=1/\sigma^2$
+453,$\text{VaR}_{\alpha}(X_j)$
+454,$\Omega\to\mathbb{R}$
+455,"$i=1,\dots, n$"
+456,$\mathsf{Q}\sim \mathsf{P}$
+457,$\nu Z_1$
+458,$\gamma>0$
+459,$k=1.333$
+460,$2.35 \times 10^{-4}$
+461,$[\P]$
+462,$p<\infty$
+463,$m / s^2$
+464,$\{ a_n\}$
+465,$\mu=-1-\dfrac{1}{\theta}$
+466,"$\displaystyle\int_{T^{-1}(B)} \mathsf{E}[X\mid T]\,d\P$"
+467,$1/P$
+468,$g(t)=h(t) / (1+l(t)) > 0$
+469,$\omega\in\Omega$
+470,$\nu\otimes P$
+471,"$\displaystyle\int_B \mathsf{E}[X\mid\G]\,d\P$"
+472,$T^{-1}(A)$
+473,$(\mu)$
+474,"$\mathsf E[X] =\displaystyle\int_0^\infty xf(x)\,dx = \displaystyle\int_0^\infty S(x)\,dx$"
+475,$\mathsf{Pr}(L'= l)$
+476,$\kappa'(\theta)>0$
+477,$\mathsf{E}[e^{sX_{m/n}}]=\mathsf{E}[e^{sX_{1}}]^{m/n}$
+478,$\ge \mathsf{VaR}$
+479,$y$
+480,$_1F_1$
+481,"$\mathrm{ED}^*(\theta, \lambda)/\lambda$"
+482,$b=1/1.2=0.83$
+483,$\sum_x x q_x$
+484,$a\theta=1$
+485,"$F(\omega, \cdot)$"
+486,"$a\in(0,2)$"
+487,$\mathcal{A} \subseteq \mathcal{C}$
+488,"$P(A, \F)$"
+489,$0\in\Theta$
+490,$|\hat F(f)|$
+491,"$\int_B \P(\bigcup_i A_i\mid\G)\,d\P$"
+492,$d$
+493,$x_i+y_j$
+494,$\sigma^2=1 / \lambda$
+495,$v^b{}_bq_x(1-{}_b\bar V)$
+496,$x\le 1$
+497,$X\P=\P(X^{-1}(\cdot)))$
+498,"$\forall E\in\A,\ \forall F\in \B$"
+499,$\lim_{\mu\to 0}V'(\mu)=\delta$
+500,$m=(K^{-1}Km)$
+501,$l(y;\mu)=y\theta(\mu)-\kappa(\theta(\mu))$
+502,$Z(\omega)$
+503,$B_s$
+504,$p > 1$
+505,${\lambda\alpha}/{\beta}$
+506,$\mathsf{E}[Y]=\mathsf{E}[N]\mathsf{E}[X]$
+507,$B=2\mathbb Z + \xi\mathbb Z$
+508,$p_\alpha\in B\cap F_\alpha$
+509,$X_S\ge \mathsf{E}[X_T\mid \F_S]$
+510,$\le x$
+511,$\sqrt{g d}$
+512,$K_\theta$
+513,$4\times$
+514,$B=M$
+515,$-stable distribution with L&eacute;vy density $
+516,"$r_1 = 1643984129.762957 \approx 1,643,984,129.8$"
+517,$\sup_n E[|X_n|]<\infty$
+518,$q=11$
+519,$\sigma_T$
+520,$\sigma=0.5$
+521,$P^T(T\not=t\mid t)=0$
+522,$(Mg+\alpha a)w$
+523,$\partial l/\partial \beta_i=0$
+524,$\px=\P(B\cap A)$
+525,$3.2 \times 10^{15}$
+526,$f=1/b$
+527,$255$
+528,"$I=[0, 32]$"
+529,"$\mathrm{Ga}(\mu, \sigma^2)$"
+530,$\nu(dy)=(e^{2y}-1)dy$
+531,$g^a\equiv n\pmod{p}$
+532,"$(3,\infty)$"
+533,"$F_\alpha - \bigcup_{\beta<\alpha} \{p_\beta, q_\beta\}$"
+534,$X_t\ge \mathsf{E}[Y\mid \F_t]$
+535,$U_0$
+536,$\forall a\forall b\exists x[a\in x \wedge b\in x]$
+537,$-\gamma|\theta|^\alpha$
+538,$\mathsf{E}[X_\theta]=\infty$
+539,$10^3 - 10^{-1}$
+540,"$[0, 1]$"
+541,$\alpha > 1$
+542,$\G=\sigma(Y)$
+543,$f_0$
+544,$X_1=0$
+545,$v_i$
+546,$K_{k+X}(t)=kt+K_X(t)$
+547,$\exists x[\forall z(z=\emptyset)\rightarrow z\in x \wedge \forall x\in x\forall z(z=S(x)\rightarrow z\in x)]$
+548,$\mathsf P$
+549,$d(y\mu) > 0$
+550,$\mathsf{E}[X \mid \G]$
+551,$\sum_ x x\mathrm{Po}(j(x)dx)$
+552,$\Gamma\in\G$
+553,$R=g^k\pmod p$
+554,$e[d_t d_s] = e[d_t]e[d_s]$
+555,$Z=\sum Z_i$
+556,$\Delta$
+557,"$e(f, y)$"
+558,$n$
+559,"$\mathrm{St}(\alpha, \beta, 1, 0)=\mathrm{St}(\alpha, \beta)$"
+560,$H(x)$
+561,$T_x=\inf\{ t > 0 \mid X_t\ge x\}$
+562,$F_n(x) := 1 - J_n(x)/J_n(0)$
+563,$-\kappa_T(y)$
+564,$r'=0$
+565,$1_G(\omega)$
+566,"$(\Omega, \mathcal{F}, \mathbb{P}, \{\mathcal{F}_t\}_{t \geq 0})$"
+567,$\alpha/\beta^2$
+568,"${x}\times A\subset [0,1]^2$"
+569,$\mathsf v = (\hat F(t_l))_l$
+570,$\theta=f(\mu)$
+571,$\kappa(\theta)=-\alpha\log(-\theta)$
+572,"$C=[0,\infty)$"
+573,$\\alpha=0$
+574,$\frac{1}{2}mv^2$
+575,$u =  1-e-l-r^*$
+576,$10^{17}$
+577,$\Omega=C^\circ$
+578,"$g_n = \max \{f_1,\dots,f_n\}$"
+579,"$\Lambda_{a,b}$"
+580,"$\P^x f(x, Tx) = \mu^tP^x_t\,f(x,t)$"
+581,$\forall X\exists P\forall z[z\subset X\rightarrow z\in P]$
+582,$x_{\min{}}$
+583,"$X_1, X_2, \ldots, X_n$"
+584,$i^{-a}=e^{-a\log i}=e^{-ia\pi/2}$
+585,$\forall A\in\A$
+586,"$y_1,\dots, y_n$"
+587,$4 \times 10^{-7} - 10^{-8}$
+588,$Ca_3Al_2(SiO_4)_3$
+589,$\kappa_X(\theta)=\log\mathsf{E}[e^{\theta X_t}]=\log\mathsf{E}[e^{\theta\sigma B_t + ct\theta}]=t(c\theta+ \sigma^2\theta^2/2)$
+590,$\sigma^2\mu^p$
+591,$Q$
+592,$n-1$
+593,$-1$
+594,$c^*(y):=e^{l(y;y)}=c(y)e^{y\tau^{-1}(y)-\kappa(\tau^{-1}(y))}$
+595,$(\omega^l)^n = (\omega^n)^{l} = 1$
+596,$J(x)/J(0)$
+597,$D∪ C^c$
+598,$CV(L(1))/\sqrt{\nu}$
+599,$X_1=99$
+600,$2^\lambda < \kappa$
+601,$1+1/3+1/5+\cdots$
+602,$dt$
+603,"$\int_\Omega f_0\,d\mu=\alpha$"
+604,$tE[\text{jumps}]$
+605,"$(X,\A)$"
+606,$\lambda\to (\alpha+1)/\alpha$
+607,$\nu(dx)$
+608,$0.5$
+609,$e^{-\beta s}s^{-1}\approx s^{-1}$
+610,"$b\in[-1,1]$"
+611,$X=X^+-X^-$
+612,"$S=\{0,1,2,\dots\}$"
+613,$x_i-x_j$
+614,$1.5\times 10^{37}$
+615,$\alpha(t) = t$
+616,$M[G]$
+617,$R^*$
+618,$\lambda^2\sigma=\lambda$
+619,$c(y)e^{y\theta - \kappa(\theta)}$
+620,"$a,b$"
+621,$d(y;\mu)=|y-\mu|$
+622,"$f(s,t)=\lim_n f_n(s,t)$"
+623,$D(E)$
+624,$0 \leq s < t$
+625,$P(Z\cap \Gamma) = \frac{1}{2}\mu(\Gamma) = P(Z)P(\Gamma)$
+626,$(-a)\Gamma(-a) = \Gamma(1-a)$
+627,$S=X$
+628,"$j(x)/J(1)1_{[1,\infty)}$"
+629,"$(-2,-1)$"
+630,"$(Y,\G,\Q)$"
+631,$M(u) = c_1 / |u|^\alpha$
+632,$|X_t| \leq M$
+633,$K_\delta * f\to f$
+634,$w=\sum_i w_i$
+635,$|X_\alpha| > c$
+636,"$(\alpha,\beta)$"
+637,$y\pm 2\sqrt{V(\mu)}$
+638,$\lambda > 0$
+639,$\rho=0.12$
+640,$g(T(X)\mid \lambda) = \lambda^{\sum_{i=1}^{n} x_i} e^{-n\lambda}$
+641,"$\int_0^{100} S(x)\,dx$"
+642,$A=\mathbb Z[\xi]$
+643,$a=1$
+644,$\delta=\log(1+i)$
+645,$\text{VaR}_{\alpha}(A)$
+646,$\omega_c$
+647,"$f(x_i;\theta) = g(\theta, \sum_i x_i)h(x_i)$"
+648,"$p\not\in\{1, 2\}$"
+649,$8$
+650,$\nu>0$
+651,$m_X(s) \to \mathsf E[X]$
+652,$X_n(\omega)$
+653,$p\neq 2$
+654,$ achieves the left-shift and $
+655,$x\in\mathbb{R}$
+656,$\sup X_n=1\not=\sup X=0$
+657,$\dfrac{e^{\theta x}}{x^{\alpha+1}}$
+658,$(\alpha-1)(1-p)=1$
+659,$\sigma>0$
+660,$m_Y(s)\to\infty$
+661,"$t\mapsto p(t, A)$"
+662,$<0.01$
+663,$\frac{1}{2-p}=\frac{\alpha-1}{\alpha}$
+664,$\P(A\mid\F)(\cdot)$
+665,$y_i$
+666,"$F(\cdot, F)=\P(T\le x\mid \G)(\omega)$"
+667,$\P(A\mid\G)(\cdot)$
+668,$U$
+669,$a=P+Q=\max(L)=100$
+670,$10^{-1} - 1$
+671,$2(Mg+\alpha a)w$
+672,$8.617 \times 10^{4}$
+673,$4 \times 10^3 - 10^4$
+674,$\infty$
+675,$\theta_d=0.60$
+676,$\mathsf{E}[X]$
+677,"$[0,\theta]$"
+678,$a_i + b_i\ \mathit{EL}$
+679,"$(\P_S,\sigma(T))$"
+680,$V_\kappa$
+681,$B=g^b\pmod p$
+682,"$(-\infty,0]$"
+683,$10000 \times (1-\alpha)$
+684,"$(\omega,\omega')\in\Delta$"
+685,"$p\not\in (0,1)$"
+686,$\mathsf{E}[D_t D_s] = \mathsf{E}[(X_t - X_{t-1})(X_s - X_{s-1})]$
+687,$λ$
+688,"$[-100, 1000)$"
+689,$ is the total return on invested assets and $
+690,$\mathcal{W}$
+691,"$\mu_0 : \mathcal{A} \to [0, \infty]$"
+692,"$\{\omega\mid P(\Gamma\cap Z, \omega) = \frac{1}{2}1_\Gamma(\omega) \ \forall\Gamma\in\mathscr I\})$"
+693,$2^{17}=131072<150000<2^{18}=262144$
+694,$E=hc/\lambda = 10^{-6}/\lambda$
+695,$S_n=X_1+\cdots + X_n$
+696,$(\tau^{-1})'(\mu)=1/V(\mu)$
+697,"$\int_B X\,d\P$"
+698,${}_b\bar V=1-\bar a_{x+b}/\bar a_x$
+699,$(E\cap U)$
+700,"$f(s, \cdot)$"
+701,$p_1$
+702,$\hat \theta>\theta_d$
+703,$y^*-x^* < \epsilon$
+704,$M < \infty$
+705,$M_\odot \approx 1.989 \times 10^{30} \ \text{kg}$
+706,$\xi:\Omega\to \mathbb{R}$
+707,$1 \times 10^{19}$
+708,$10^{20}$
+709,$\approx 45\%$
+710,$\theta_s=\hat\theta_s+\hat\sigma_s Z_s$
+711,$f(x) \mapsto kje^{\theta x} f(x)$
+712,"$ are better. By a shaping argument, assume $"
+713,$\nu$
+714,$ for different values of $
+715,$\kappa'$
+716,$p\approx 0.99$
+717,$p\neq 1$
+718,$\mu\to 0$
+719,$C=B+1$
+720,$T:\Omega\to Y$
+721,$\mathsf{E}(X\mid\G)$
+722,$h_2\le w$
+723,$t\sigma^2$
+724,$\mathsf{Var}(Z)=\sigma^2\mu^p$
+725,"$50 of the amount allowed on each claim in the classes under subsections 3, 4, 4-B, 5 and 6 must be deducted from the claim and included in the class under subsection 8. Claims may not be cumulated by assignment to avoid application on the $"
+726,$dt=1/n$
+727,$\mathsf{E}[x_t x_s] = \mathsf{E}[x_t \mathsf{E}[x_s \mid \F_t]] = \mathsf{E}[x_t^2]$
+728,$X_t=\mathsf{E}[Y\mid\F_t]$
+729,$A = X_1 + \cdots + X_d$
+730,$S=X+Y$
+731,$\sigma(\mathcal{A})$
+732,$\G_1\subset \G_2$
+733,$\phi$
+734,"$h=0,1/2, 1$"
+735,$(\F)$
+736,$0<\mathsf{E}[X_i]\le 1$
+737,$x\not= y$
+738,$\text{VaR}_{\alpha}$
+739,$\epsilon /2^{n+1}$
+740,$c_a\mapsto c_\lambda$
+741,$-\theta$
+742,$\lim_{\mu\to 0} V(\mu)/\mu^2=\infty$
+743,$a=1.75$
+744,"$\mathrm{DM}^*(\theta, \sum_i \nu_i)$"
+745,$X_{t-1}$
+746,$\mathcal{F}_{k-1}$
+747,$\kappa_t(s) = t \kappa(s)$
+748,$R$
+749,$n - 1$
+750,$\nu_B(A)=\P(B\cap T^{-1}(A))$
+751,$F_2$
+752,$x\!\urcorner$
+753,$\sin{}$
+754,$\bold x$
+755,$Y_N$
+756,$\rightarrow$
+757,$\theta=\log(\mu/(n+\mu))$
+758,"$X_n,X$"
+759,"$k=0,1,\dots,n-1$"
+760,$E[X_0] = 0$
+761,$10^5 - 10^{12}$
+762,$p\ge r\ge 1$
+763,"$\forall A\in \A,\ f(A) \in \B$"
+764,$s$
+765,$(k \approx 8.617 \times 10^{-5} \text{ eV/K}$
+766,$f'=\partial f/\partial\mu$
+767,$M^+_F$
+768,$B\in \B$
+769,$k(i)$
+770,$p=0.9$
+771,$\mathcal{M}$
+772,$10^7$
+773,"$[2P,3P)$"
+774,$N$
+775,"$p, q \in G$"
+776,$m(m+1)$
+777,"$\forall \gamma>0: \int_{|y|>\gamma} K_\delta(y)\,dy=1$"
+778,$2.6 \times 10^{12}$
+779,$m^*(O \setminus A) < \epsilon$
+780,"$\mathsf{CP}(\lambda,X)$"
+781,$10^{-6}$
+782,$t=0$
+783,$X\times Y$
+784,"$X\sim \mathrm{St}(\alpha, \beta=1, 0, 0; S1)$"
+785,"$t\in[t, t+dt]$"
+786,$2.2 \times 10^{24}$
+787,$-24$
+788,"$\psi(S,T)=1$"
+789,$t \geq \tau_n$
+790,$\epsilon_2$
+791,$\\hat f(x)$
+792,$b\mu_x v^b$
+793,$j(x)=1/x^{\alpha + 1}$
+794,$f:\Lambda\to\Omega$
+795,$ where $
+796,"$. As usual, reduce to premium of 1 per unit time by adjusting the time period. $"
+797,$l(y;y)$
+798,$\alpha_Y \le \alpha_X < \alpha_Y + 1$
+799,$V(\mu)\propto \mu^2$
+800,$2n^2$
+801,$N'/(Mg+\alpha a) - w\le w$
+802,$p=\infty$
+803,$q \in D$
+804,$F:\Omega\times\mathbb{R}\to\mathbb{R}$
+805,$\forall y\in Y$
+806,$3.1 - 100$
+807,$c > C$
+808,$\kappa'(\tau^{-1}(\mu))=\tau(\tau^{-1}(\mu))=\mu$
+809,$\mathsf E[g(X_n)]\to \mathsf E[g(x)]$
+810,$p = 0.5$
+811,$|\phi(-2\pi f)|$
+812,"$[0,0] \succeq [-k -k]$"
+813,"$T:(\Omega,\F)\to(M,\B)$"
+814,$\bar a_{n\!\urcorner}$
+815,$y\in C\subset\mathbf R$
+816,$\theta=c=\nu^2$
+817,$B'$
+818,$A$
+819,$\theta=-e^{-\mu}$
+820,$\mathsf{Var}(r(X))\ge 1/\mi(\mu)$
+821,$D ⊃ C N$
+822,"$|\mathcal W(g, W)|$"
+823,$(x)$
+824,$10^6 - 10^9$
+825,$\pi_1(E_1)\times \pi_2(E_2) = \P_1(E_1)\P_2(E_2)$
+826,${}_1F_1$
+827,$\mu=1$
+828,$\beta_1+\beta_2-\beta_0$
+829,$\Omega_p$
+830,$10^{15} - 10^{19}$
+831,$1/x$
+832,"$(0, \infty)$"
+833,$\mathsf{Pr}(\mathsf{CP}=n)=\sum_{k\ge n}\mathsf{Pr}(\mathsf{CP}=n\mid N=k)\mathsf{Pr}(N=k)$
+834,$\mu_*(M\cap E)=\mu_*(M'\cap E)=0$
+835,$A_1 \subseteq A_2 \subseteq \cdots$
+836,$Ann+V$
+837,$K > 0$
+838,$\mu-\sigma^2/2<0$
+839,$\alpha/\beta=\alpha\mu^{p-1}/(\alpha+1)\to 1$
+840,$2^{\aleph_0}$
+841,$Y=1-X$
+842,$1 < a < 2$
+843,$x_1 < x_2$
+844,$1-2^{n-1}$
+845,$0\ge \lambda \le 1$
+846,$\Lambda$
+847,$T_1-1$
+848,$x\downarrow 0$
+849,$Z_\nu$
+850,"$B(b)\approx -b\mu_xv^b \approx {-}_bq_xv^b = -A^{\, 1}_{x:b\!\urcorner}$"
+851,$1-p=\frac{1}{\alpha-1}$
+852,$\lim J(x)\to\infty$
+853,$g^mA^R=g^{m+Ra}$
+854,"$X=[0,1]^2$"
+855,"$\int |X_n(\omega) - X(\omega)| \,\mathsf{Pr}(d\omega)\to 0$"
+856,$\sigma^2\mu^p=\lambda\alpha(\alpha+1)/\beta^2$
+857,$M_\oplus \approx 5.972 \times 10^{24} \ \text{kg}$
+858,"$\int e^{\theta y}c(y)\,dy< \infty$"
+859,$\mathsf E[\log(X_1 / X_0)]$
+860,$J_n(0) < \infty$
+861,$N\mid G$
+862,$p^*=0.752$
+863,$\omega\in B_0$
+864,$R\to\infty$
+865,$\exists x\ [\forall z\ (z=\emptyset)\rightarrow z\in x \wedge \forall x\in x\forall z\ (z=S(x)\rightarrow z\in x)]$
+866,$2^2\rightarrow 3^3-1=2\times 3^2 + 2\times 3 + 2 = 26$
+867,$3\mu(U)/2$
+868,$\mathsf{E}[X_2\mid X \ge a]$
+869,$a=0$
+870,$N=0$
+871,$r_i<r_j$
+872,$\phi(0)$
+873,${{}_tp_x}$
+874,$e^{-\beta x}\approx 1$
+875,$t$
+876,"$\psi(S(\omega), T(\omega))=1$"
+877,$P_c(4450)^+$
+878,$\mathsf{E}[Y]=\mu=np/(1-p)$
+879,$\mathsf E_W$
+880,$2^{10}=1024$
+881,$x_{t-1}$
+882,"$ the mean decreases to zero and the variance increases, finally becoming infinite when $"
+883,"$\int_B \mathsf{E}(X\mid\G)(\omega)\,\P(d\omega)$"
+884,$\mathsf{E}[X\mid\G]$
+885,$ is positive and $
+886,$1/\sigma^2$
+887,$\log(\mathit{EER}) = \gamma + \eta  \log(\mathit{PFL}) + \beta  \log(\mathit{LGD})$
+888,$\mathsf{E}[D_t D_s] - \mathsf{E}[D_t]\mathsf{E}[D_s] = 0$
+889,$\bar a_{40}=17.95$
+890,$\log(\phi(x)) = -\log(\sqrt{2\pi}) - \displaystyle\frac{x^2}{2\ln(10)}$
+891,$\kappa_T$
+892,$L^p$
+893,$m_*$
+894,$\int_0^1 x^2j(x)dx<\infty$
+895,"$\theta\in(-\pi/2,\pi/2)$"
+896,"$(x_1, x_2)$"
+897,$F(x)=\int f(x)dx$
+898,$\P(A\mid\G)_{\omega_0}$
+899,$\exp(n(e^\zeta-1))$
+900,$M$
+901,$0<p<1$
+902,$10^6A_{75}=508676.91$
+903,"$(P, \leq)$"
+904,"$[0,\infty)$"
+905,$F\subset E_0$
+906,$l_s$
+907,$\{r_i\}$
+908,$PV/T$
+909,$\mathsf{Pr}(\{\omega \mid X_n(\omega)\to X(\omega) \})=1$
+910,$dt/t$
+911,$(X_t)$
+912,$\beta_0+\beta_2$
+913,$\mathsf{Var}(N)=\mathsf{E}[N]$
+914,$v = r\omega$
+915,$Y=xN$
+916,$g(Tx)=g(t)$
+917,$p\not=1/2$
+918,$8.617 \times 10^{8}$
+919,$\impliedby$
+920,$\mathsf{E}[D_t D_s]$
+921,$r_2$
+922,$g(s)=1-(1-s)^{1.59515}$
+923,$C(X)$
+924,$v^b{}_bq_x\bar a_{x+b} /\bar a_x=v^b{}_bq_x(1-{}_b\bar V)$
+925,$\epsilon > 0$
+926,$P_X$
+927,$1 — 1_B$
+928,$e^{st}-1\approx st + O(s^2)$
+929,$\int rf =\mathsf{E}[r]=\mu$
+930,$P_{x+b}-P_x > 0$
+931,$X_2=0$
+932,$A_1 \supseteq A_2 \supseteq \cdots$
+933,$\P(B\mid\G)$
+934,$V(\mu)=\mathsf{Var}(\mathsf{CP}_2)=\lambda(\mu/\lambda)^2x_2=\mu^2(x_2/\lambda)$
+935,$b\!\urcorner$
+936,$l = jn$
+937,$\bar\mu$
+938,$x_0\to\infty$
+939,$y_{0}=1$
+940,$r=0.045$
+941,$a$
+942,"$\phantom{P}= v\,\mathrm{EL} + d\,\max(\mathrm{loss})$"
+943,"$\mathsf{CP}(\lambda, X)$"
+944,$500g=4900N$
+945,$\omega$
+946,$N=40$
+947,$26 \rightarrow 2\times 4^2 + 2\times 4 + 1=41 \rightarrow 60 \rightarrow 83 \rightarrow 109\rightarrow\dots$
+948,$t=0.5$
+949,$\mathbb{R}^n$
+950,$. Thus $
+951,$X_i\sim L(1)$
+952,"$[0,x]$"
+953,$a\theta=1-s$
+954,$\phi(t)\approx \phi(0)$
+955,"$\phi:(E, \mathsf{E}E)\to(\mathbb{R}, \BB(\mathbb{R}))$"
+956,"$(M, \B)$"
+957,"$Y\sim\mathrm{Ga}(\mu,\alpha)$"
+958,$10^{23}$
+959,$1-r$
+960,$\mu+\mu\sqrt{\mu+2-2\sqrt{1+\mu}}$
+961,$\alpha>2$
+962,$Q:\Omega\times \mathsf{E}E\to\mathbb{R}$
+963,$m_X(·)$
+964,$\mathcal X\times M$
+965,$\alpha_X = \alpha_Y + 1$
+966,"$k=0,\dots, n$"
+967,$V_1$
+968,$D_t = X_t - X_{t-1} = \epsilon_t$
+969,"$(0, 1)$"
+970,$N=n$
+971,$D_s$
+972,$N_2$
+973,$\R$
+974,$x_1$
+975,$r \in G$
+976,$\P(A)$
+977,$13.8$
+978,$\phi\circ X$
+979,$P^T(\cdot\mid t)$
+980,$m(A) = m^*(A)$
+981,$\alpha_i(x)$
+982,"$\kappa_\nu(\theta)=\nu\,\kappa(\theta)$"
+983,$\mathsf{Var}(s)=1/\sigma^2$
+984,$s < t$
+985,$L(\nu)$
+986,$\sum_i x_i$
+987,$X=1_A$
+988,$\P(A)>0$
+989,"$T:(\Omega, \F) \to (M,\B)$"
+990,$\G=\sigma(T)$
+991,$c=1.124$
+992,$\frac{1}{1-p}+1=\frac{2-p}{1-p}$
+993,$J(1)<\infty$
+994,$D_t = (X_{t-1} + \epsilon_t)^2 - X_{t-1}^2 - 1 = 2X_{t-1}\epsilon_t + \epsilon_t^2 - 1$
+995,"$p:\Omega\times \F \to [0,1]$"
+996,"$\mu f=\int f\,d\mu=\int f(x)\mu(dx)$"
+997,$A \in \mathcal{C}$
+998,$p-1=22$
+999,$Q-0.4$
+1000,$A_n \uparrow A$
+1001,$ is the cumulant generating function for a CP with expected frequency $
+1002,$\mathsf{Var}(G)=a\theta^2$
+1003,"$\P(A)=\P(A\cap\Omega)=\int_\Omega 1_B\,d\P=\P(B)$"
+1004,$g(s)=d + sv$
+1005,$a:=\lim_{m\downarrow 0} V(m)/m$
+1006,$j(x)\to\infty$
+1007,$r=0.15$
+1008,"$A_t = \min(t, T)$"
+1009,$\alpha + 1$
+1010,$\mathsf{E}[D_t \mid \F_{t-1}] \leq 0$
+1011,$0\in\Theta_p$
+1012,$1/2+1/4+1/6+\cdots$
+1013,"$g(s)=\min(1, s / (1-p))$"
+1014,"$F(\omega, x) = \P(X\le x\mid\G)(\omega)$"
+1015,$A\in\tF$
+1016,$\bar A_{x+b}$
+1017,$\forall t\in E$
+1018,$p=1.0005$
+1019,$A_\omega$
+1020,$\BB(S)\otimes\A$
+1021,$L^*$
+1022,"$\mathsf{CP}(\lambda, X) = X_1+\cdots +X_N$"
+1023,$5 \times 10^9$
+1024,$. Insurance interpretation: $
+1025,$F_X$
+1026,$10^9$
+1027,$\mathcal{C}$
+1028,$x_n\downarrow 0$
+1029,"$\mathsf{CP}(\lambda, \hat X)$"
+1030,$\F=\G$
+1031,$(b-a)U_N$
+1032,$\mu$
+1033,$ is not differentiable at $
+1034,$0\le x\le 200$
+1035,$x=0$
+1036,$\mathsf{NA}(X_i) = \mathsf{CoTVaR}_p(X_i)$
+1037,$\hat\theta$
+1038,$J(x)\to\infty$
+1039,$X_1=X+b$
+1040,$\omega\in Z$
+1041,$\sigma^2$
+1042,$\omega<1/n$
+1043,$y\neq\mu$
+1044,$i\in I$
+1045,$\lambda=1$
+1046,$\alpha e^{-\beta x}/x$
+1047,$a=\mathsf{TVaR}(p^*)$
+1048,$\F_t$
+1049,$u''' > 0$
+1050,$\mathsf{Pr}(0)>0$
+1051,$\mu(E\cap U)\ge \alpha\mu(U)$
+1052,"$n_{\text{water, 20°C}} = \frac{2338 \times 1}{8.314 \times 293.15}$"
+1053,$10^{-8}$
+1054,"$(x_1,x_2]$"
+1055,$1/\sqrt{\alpha}$
+1056,$m(A)=0$
+1057,$\theta \neq 0$
+1058,$\epsilon>0$
+1059,$p_B$
+1060,"$P(A, \cdot) = \P(A\mid \F_1)(\cdot)$"
+1061,$P_{x+b}-P_x$
+1062,"$[a, b] \subset \mathbb{R}$"
+1063,${\lambda\alpha(\alpha+1)}/{\beta^2}$
+1064,"$\rho = 1000 \, \text{kg/m}^3$"
+1065,$\mu-\sigma^2/2$
+1066,$\{X_\alpha\}$
+1067,"$\mu^*(E)=\inf\left\{ \sum_{n\ge 1} \bar\mu(E_n) \mid E_n\in S(R),\ E\subset\bigcup_n E_n \right\}$"
+1068,"$\xi(\phi^{-1}(t)\mid t) = 1,\ \forall t\in M$"
+1069,$\P(X\le r\mid\G)=E[1_{X\le r}\mid\G]$
+1070,"$a\,\dfrac{\mathsf{E}[X_1\mid X \ge a]}{\mathsf{E}[X\mid X \ge a]}$"
+1071,$0 < a-1 < 1$
+1072,$t=t_0$
+1073,$\alpha<\omega_c$
+1074,$\nu\ll P$
+1075,"$[\epsilon_1, \epsilon_2] \succeq [0, \epsilon_1+\epsilon_2]$"
+1076,"$L(e,t)$"
+1077,$\forall X\ \exists U\ [\forall Y\ \forall x\ (x\in Y \wedge Y \in  X)\rightarrow x\in U]$
+1078,"$ x = 0, 1, 2, \ldots $"
+1079,$\mathsf{VaR}$
+1080,$X_n=1$
+1081,$\exists !x\phi(x)\leftrightarrow \exists x\phi(x)\wedge \forall x\forall y(\phi(x)\wedge \phi(y)\rightarrow x=y)$
+1082,$\bar P_{x+b}$
+1083,"$X_j=(x_{1j}, x_{2j},\dots,x_{Mj})^t$"
+1084,$m_X(s) \to \infty$
+1085,"$\omega\in [k2^{-m}, (k+1)2^{-m}]$"
+1086,$\alpha(2)=0$
+1087,"$(0,t]$"
+1088,$p_\alpha$
+1089,$r-\mu$
+1090,$V(\mu)$
+1091,$10^3$
+1092,$\bar a_x = (1-\bar A_x)/\delta$
+1093,$\theta\in\tilde\Theta$
+1094,$K=B^a=g^{ak}$
+1095,"$p\not\in\{0,1,2\}$"
+1096,$p=0.271$
+1097,$w(Z)/\mathsf{E}[w(Z)]$
+1098,$C_v$
+1099,$x_{\min{}}=0$
+1100,$\mu_f$
+1101,"$p\not=0,1,2,3$"
+1102,$\le$
+1103,$\P(A\mid \F_1)$
+1104,$\mathsf{E}[x_t x_{s-1}] = \mathsf{E}[x_t \mathsf{E}[x_{s-1} \mid \F_t]] = \mathsf{E}[x_t x_{t-1}]$
+1105,$\hat\sigma_s$
+1106,$X_t = X_{t-1} + \epsilon_t$
+1107,$x_{i2}$
+1108,$+l$
+1109,$(\alpha-1)/\beta$
+1110,$\lambda < \kappa$
+1111,$\forall A\in\mathsf{E}E$
+1112,$x_\mathrm{range}= x_{\max{}}-x_{\min{}}$
+1113,"$50) of the amount allowed on each claim in the classes under subsections (3) to (7), inclusive, of this section, shall be deducted from the claim and included in the class under subsection (9) of this section. Claims may not be cumulated by assignment to avoid application of the fifty dollars ($"
+1114,$\xi\mathbb Z$
+1115,$21$
+1116,$\delta_\mu$
+1117,$\A\otimes\B$
+1118,"$\px=\sum_i\int_B \mathsf{E}[X_i\mid \G]\,d\P$"
+1119,$\G(\omega)=\{\omega\}$
+1120,$X_c$
+1121,$A \subseteq O$
+1122,$BM^2$
+1123,$w(z)$
+1124,$x+t$
+1125,$\forall x[\exists y(y\in x)\rightarrow \exists y(y\in x \wedge \neg\exists z(z\in x \wedge z\in y))]$
+1126,$\nu_B\ll T\P$
+1127,"$\Delta m_{32}^2 \approx 2.44 \times 10^{-3} \, \text{eV}^2$"
+1128,$\mathrm{EL}$
+1129,$S(R)$
+1130,"$(\Omega, \F,\P)$"
+1131,$1.65 - 3.1$
+1132,$J(0)<\infty$
+1133,$X_s \le \mathsf{E}[X_t \mid \F_s]$
+1134,$\tau=0.5$
+1135,$\lambda$
+1136,$1+\epsilon$
+1137,$1-1/n$
+1138,$\gamma = \frac{1}{\sqrt{1 - (v/c)^2}}$
+1139,$\P(B\mid\A)$
+1140,$\nu=\theta m$
+1141,$d=1/(1+r)$
+1142,"$\mu(E) = \inf\{ \mu(U) \mid E\subset U, U\text{\ open} \}$"
+1143,"$p(\cdot, A)$"
+1144,$10^{-11} - 10^{-15}$
+1145,"$\int_0^1 x^2 j(x)\,dx$"
+1146,"$697.6 billion in 2016, $"
+1147,$\aleph_0$
+1148,$\P(A\mid Y=y)=\mathsf{E}[1_A\mid Y=y]$
+1149,$\mathsf E(G')=1-f$
+1150,$\beta<\alpha$
+1151,$y<0$
+1152,$(y-\mu)^2$
+1153,$\lambda=1/m$
+1154,$\eta(\theta)$
+1155,$\kappa_{T_x}$
+1156,$d^2$
+1157,$l(y;\mu)=\log(c(y))+y\tau^{-1}(\mu)-\kappa(\tau^{-1}(\mu))$
+1158,$1_A$
+1159,"$Y\sim N(\mu, \sigma^2)$"
+1160,$aggfft*aggfft = aggfft$
+1161,$10^{-3} - 7 \times 10^{-7}$
+1162,$\mathcal W$
+1163,$\mu_x = A+Bc^x$
+1164,$n=100$
+1165,$(c)$
+1166,$h(y) = -\log y$
+1167,$N(u) = -c_2/u^\alpha$
+1168,$1\le p\le 2$
+1169,"$\mathsf{E}[\psi(S,T)] = \displaystyle\int_M \P_T(dt)\int_L\psi(s,t)P^T_S(ds\mid t)$"
+1170,$2\nu$
+1171,$B_t$
+1172,$\{X\le x\}$
+1173,$\ge 2$
+1174,"$(-1,0)$"
+1175,"$\int_{\mathbb{R}} K_\delta(y)\,dy=1\ \ \forall \delta>0$"
+1176,"$\mu^*(E)=\inf\left\{ \sum_{n\ge 1} \bar\mu(E_n) \mid E_n\in \bar S,\ E\subset\bigcup_n E_n \right\}$"
+1177,$Z_1$
+1178,$GM/R$
+1179,$PV=N'$
+1180,$0<\alpha<1$
+1181,$2^{32}=4$
+1182,$\{T=t\}=\{t\}$
+1183,$\forall x\ \forall y\ \forall z\ (z \in x \leftrightarrow z \in y)\rightarrow x=y$
+1184,$\bar P_{40}=6908.82$
+1185,$D_i-N_i > 0$
+1186,$0.3$
+1187,$X_\alpha$
+1188,$A=0.00022$
+1189,$\mu=\tau(\theta)=\tan{\theta}$
+1190,$\{X_t\}$
+1191,"$P:\F\times M\to [0,1]$"
+1192,$\frac{p}{(1-p)^2}=\frac{p}{1-p}(1+\frac{p}{1-p})$
+1193,$\mu(A) = \nu(f(A))$
+1194,$g<q$
+1195,"$A \in \F, \omega\in \Omega$"
+1196,"$125 million of pretax cat losses net of reinsurance and reinstatement premiums in the quarter, with the primary event being the **Canadian crop** loss and the amount of $"
+1197,$\theta<0$
+1198,$\alpha(1)=\infty$
+1199,"$p_B(y)=p(B, y)$"
+1200,"$\px=\int_B \P(A\mid\G)\,d\P$"
+1201,$0.4-x^2/4.6-\log(x)$
+1202,$c(y)\ge 0$
+1203,$s \leq t$
+1204,$b = x_\mathrm{range}/ n  = (x_{\max{}}-x_{\min{}})/n$
+1205,$P(A|B) = \frac{P(A \cap B)}{P(B)}$
+1206,$\implies$
+1207,$7 \times 10^{-7} - 4 \times 10^{-7}$
+1208,$u>-br-v$
+1209,$\mathsf{E}[Y]=\mu$
+1210,"$-b, b$"
+1211,$\mu^0=1$
+1212,$= n \times 6.022 \times 10^{23} = 2.38\times 10^{24}$
+1213,$\sqrt{2Np}=19$
+1214,$\alpha=1/2$
+1215,$P^T_S(\cdot\mid\cdot)$
+1216,$g'$
+1217,$L_X(s)/L_Y(s) = k$
+1218,"$P(\omega, B)=\P(B\mid\G)(\omega)$"
+1219,$\mathbb{Q}$
+1220,$\{x\}=x-\lfloor x\rfloor$
+1221,$k/n$
+1222,$e^{-\lambda\nu}$
+1223,"$f_0, f_{1/2}, f_1$"
+1224,"$\iota: x\mapsto (x, Tx)$"
+1225,$F = m v^2 / r$
+1226,"$j=1,2, \dots, d$"
+1227,$m_X(s)\to\infty$
+1228,$g_n$
+1229,"$\mathit{Tw}_p(\mu, \sigma^2)$"
+1230,$\omega = \dfrac{d\theta}{dt}$
+1231,"$\psi(S,t)=1_{\{t\}}$"
+1232,$10^{10}$
+1233,$t = 1$
+1234,$-1.805$
+1235,$\propto$
+1236,"$n=2,3$"
+1237,$P=(kN/V)T\propto$
+1238,"$\mathsf{CP}(\lambda, \mathrm{gamma}(\alpha, \beta))$"
+1239,$M=E_0+B$
+1240,$\le 1$
+1241,$V(\mu)=\kappa''(\tau^{-1}(\mu))$
+1242,"$200 of losses otherwise payable to any claimant under this subsection. All claims under life insurance policies and annuity contracts, whether for death proceeds, annuity proceeds or investment values, must be treated as loss claims. Claims may not be cumulated by assignment to avoid application of the $"
+1243,"$ makes the left tail thinner, the right tail thicker, and increases the mean. The effect on the right tail is manageable because it is thinner than a normal, @Zolotarev1986, @Carr2003a. <!-- Zol thm 2.5.3 also Uchaikin, p 127 -->  As $"
+1244,$\bar X$
+1245,$\mathsf{E}[e^{sX_1}]=\mathsf{E}[e^{sX_{1/n}}]^n$
+1246,$X_1 + X_2 \sim 2^{1/\alpha}X$
+1247,"$x\in\Omega,L, t\in M$"
+1248,$f\in L^1(\mathbb R)$
+1249,$H$
+1250,$\alpha=\alpha(p)$
+1251,$A \in \mathcal{F}$
+1252,$m_X(s)$
+1253,$\bfx$
+1254,$\phi(t)$
+1255,$V(m) = m^3V^*(1/m)$
+1256,$t < s$
+1257,$C_p$
+1258,$CV=\nu=\sqrt{a}\theta$
+1259,$f(L)\in \BB$
+1260,$\beta_i$
+1261,$\tau^{-1}(\mu)=-1/(2\mu^2)$
+1262,$\psi$
+1263,$F((k+1/2)b)-F(k-1/2)b)$
+1264,$3.2 \times 10^{18}$
+1265,$10^{-2}$
+1266,$v$
+1267,$n>0$
+1268,$\backslash$
+1269,"$(X, \Sigma)$"
+1270,$X_t = e^{B_t - t^2/2}$
+1271,$\mathsf{Pr}(X ≥ x_0) = 1-p$
+1272,$1-p$
+1273,$t \neq s$
+1274,$\int c(y)dy = 1$
+1275,$P=53.565$
+1276,$\ge 0.98$
+1277,"$\mathsf{cov}(m_X(S), m_Y(S))\ge 0$"
+1278,$\lambda_x\uparrow \infty$
+1279,$\Theta=\{0\}$
+1280,$\P_X$
+1281,$p\ge 1$
+1282,$\Delta G$
+1283,$\hat F(x)=\sum_{i:x_i\le x} \lambda_i/\lambda$
+1284,$X_1=aX+b$
+1285,$x_t$
+1286,"$\kappa_{T_x}=x\,\kappa_{T}$"
+1287,$\mathsf{Pr}(X_1)$
+1288,$b(\theta)=e^{-\kappa(\theta)}$
+1289,$\P HX$
+1290,$\cap$
+1291,$\tau_n$
+1292,$\alpha=-1/2$
+1293,"$200 of losses otherwise payable to any claimant under this subsection other than the federal government. All claims under life insurance and annuity policies, whether for death proceeds, annuity proceeds or investment values, shall be treated as loss claims. Claims may not be cumulated by assignment to avoid application of the $"
+1294,$G=f+G'$
+1295,$8.617 \times 10^{10}$
+1296,$A\in\S$
+1297,$ is an interior point of $
+1298,$m$
+1299,$f$
+1300,$\forall\omega\in\Omega$
+1301,$\mathbb{R}$
+1302,"$L(e,t)=eR_t$"
+1303,$100$
+1304,$10^{-3} - 10^{-1}$
+1305,$\mathsf{E}[s]=0$
+1306,"$(M,\B)$"
+1307,$> \mathsf{VaR}$
+1308,$M_t = t$
+1309,$x\in D(E)$
+1310,$X_\nu/\nu$
+1311,$Z_c(3900)$
+1312,$P_t\{T\not=t\}=0$
+1313,$M=\Omega$
+1314,$p^*$
+1315,$k/T=\beta$
+1316,$1/r$
+1317,$a=0.75$
+1318,"$T(y)=(y, y^2)$"
+1319,$\kappa_T(y)=-\sqrt{-2y}$
+1320,$X = (x_{ij})$
+1321,$\tau \leq T$
+1322,"$ power is convolution, giving the hitting probability to the level $"
+1323,$\A$
+1324,$y\mapsto P_y(E)$
+1325,$m(F)=0$
+1326,"$\mathsf{CP}_2(\lambda, (\mu/\lambda)X)$"
+1327,$V(\mu)=\mu^2$
+1328,$x^2<x$
+1329,$Var(G) = a\theta^2$
+1330,$\alpha\le 0$
+1331,$m_1 r_1 = m_2 r_2$
+1332,$s\leftrightarrow p=1-s$
+1333,$\sigma^2V(\mu)$
+1334,$\bar P_{75}=53123.19$
+1335,$E_0+a_1$
+1336,$k>0$
+1337,$\int X_n\to 0$
+1338,$\mathsf P(A\mid \mathscr G)$
+1339,"$\omega = [0, 1]$"
+1340,$\mathsf E[X] = \mathsf{TVaR}_0(X)$
+1341,"$\omega\mapsto Q(\omega, B)$"
+1342,"$Z \sim \mathrm{DM}^*(\theta, \nu)$"
+1343,$X_k - X_{k-1}$
+1344,$=\mathsf{E}[X]/(1-p^*)$
+1345,$k(0)=\log(1)=0$
+1346,$X_n=X$
+1347,$B'=\bigcup_i G_i'$
+1348,$X_s \ge \mathsf{E}[X_t \mid \F_s]$
+1349,$x\neq 0$
+1350,$g=f+\epsilon 1_B>f$
+1351,$m(A)$
+1352,$\sigma(T)$
+1353,$\mathsf{E}[X_1] / \mathsf{E}[X]$
+1354,"$\mathsf{CP}(\lambda_i, x_i)$"
+1355,$u=0.271>0$
+1356,$\mathsf{E}E$
+1357,$\mathrm{NEF}(c)$
+1358,"$\mathrm{inf}\,S=0$"
+1359,$S\P=\P_S$
+1360,$\mathcal{A}$
+1361,$p_t(A)$
+1362,$\{y\mid c(y)\neq 0\}$
+1363,$b=0.53$
+1364,$d^*(0)=0$
+1365,$L'$
+1366,$\log(c(y))$
+1367,$Y\sim$
+1368,"$j=1,\dots,d$"
+1369,$\lambda=\sum_i\lambda_i$
+1370,$P_Y(y)=\P(Y\le y)$
+1371,$\mathsf{Pr}(Z=0)$
+1372,$\mathsf{E}[Z]=\mu$
+1373,$\mu A=\mu 1_A$
+1374,$x_n(\mathrm{Po}(\lambda_n) - \lambda_n)$
+1375,$ for $
+1376,$\P H\xi$
+1377,$g\in \mathcal{W}$
+1378,$\mu(U)>1/k$
+1379,$\mu\sqrt{1+2\mu}$
+1380,$\bar\theta_s$
+1381,$M\times d$
+1382,$1 \times 10^{15}$
+1383,$ be the waiting time until accumulated surplus equals $
+1384,"$(-1,-1/2)$"
+1385,$1/\nu$
+1386,$+$
+1387,$b > 0$
+1388,$K(x)=(\pi(x^2+1))^{-1}$
+1389,$2 \times 10^{14}$
+1390,$\mu = \dfrac{m_1 m_2}{m_1 + m_2}$
+1391,$E\cap F=(E\cup F) \setminus (E\triangle F)$
+1392,$\log(1-\Phi(x))$
+1393,$\frac{1}{2}mv^2 = \frac{3}{2}kT$
+1394,$(1 + \mu^2)^{3/2}$
+1395,$\P(T\in A\mid\G)(\cdot)$
+1396,$\omega=\exp(-2\pi i / n)$
+1397,$1.25 \times 10^{14}$
+1398,$\pm\infty$
+1399,$< \cdots <$
+1400,$\text{VaR}_\alpha$
+1401,$\mathit{PFL}$
+1402,"$ is average invested assets, equal to $"
+1403,$V(m)=m$
+1404,$V(\mu)=1$
+1405,"$U_n(a, b)$"
+1406,$(x^{-1}-x^{-3})\phi(x)$
+1407,$\omega\mapsto \P(A\mid G)(\omega)$
+1408,$f=1_A$
+1409,"$=\displaystyle\int_B^{\phantom{X}} \mathsf{E}[X\mid T=t] \,\P_T(dt)\quad$"
+1410,"$\psi(s,t)=1_B(t)\mathsf{E}[X\mid S=s,T=t]$"
+1411,$\mathsf{E}[Y_\theta]=y$
+1412,$\theta=0$
+1413,$l(t)=1$
+1414,"$\displaystyle\int H\xi\,d\P$"
+1415,$0.87$
+1416,$\mathsf{E}[X_1\mid X \ge a]$
+1417,$83.3=100/1.2$
+1418,$f\to\infty$
+1419,$G:=T_1-1$
+1420,$\P(C) = 1$
+1421,$\mathsf{CP}_2$
+1422,$\frac{an^2}{V^2}$
+1423,$r=1$
+1424,$\G$
+1425,$6\times 10^{14}$
+1426,${{}_tp_x} \mu_{x+t}$
+1427,"$(n,p)$"
+1428,$\BB$
+1429,$\sec\theta$
+1430,$p=3$
+1431,$X_t = \mathbb{E}[X \mid \mathcal{F}_t]$
+1432,"$=\displaystyle\int_B^{\phantom{X}} \mathsf{var}phi \,d\P_T\quad$"
+1433,"$P(A,t)=P_t(A)$"
+1434,$X_n(\omega)=n$
+1435,"$(\Omega,\F)$"
+1436,$d^*(x)\neq 0$
+1437,$\{\lambda_t\}$
+1438,"$Z=\mathsf{CP}(\lambda,\text{gamma}(\alpha,\beta))$"
+1439,"$0,1,2,\dots$"
+1440,$N=1000$
+1441,$\prod_{n\ge N}(1-\frac{1}{n})=0$
+1442,$17$
+1443,$\mathsf{TVaR}$
+1444,$\P_S=\P_T P^T_S$
+1445,$c=-\Gamma(-a)(c_1 + c_2)\cos (a\pi/2)$
+1446,$b_i$
+1447,$V_j$
+1448,$C_p / C_v$
+1449,$\beta_i(x) / \alpha_i(x) > 1 > S(x) / g(S(x))$
+1450,$X=X_1+X_2$
+1451,$E[X_\tau] = 1$
+1452,$\\cdots$
+1453,$\hat F$
+1454,$5 \times 10^{14}$
+1455,$\mathsf{E}(G)=a\theta$
+1456,"$S,T$"
+1457,$f^{-1}(\F)$
+1458,"$\Gamma(S,T)\in\A\otimes\B$"
+1459,$2$
+1460,$\dfrac{1}{1-p^*}\displaystyle\int_{1-p^*}^1 q(s)ds = q(p) = 100.0$
+1461,$ρ(X)$
+1462,"$t=0,1,2,\dots$"
+1463,$1500 = 250 \times (1+11)/2$
+1464,$z^n$
+1465,$\theta=\log(\mu)$
+1466,"$(1,2)$"
+1467,$(\delta(t-1) + \delta(t+1))/2$
+1468,$y-\mu$
+1469,$\kappa(\theta)=-\log(-\mu)$
+1470,$\theta\mapsto -\kappa(\theta)$
+1471,$\tilde \Theta$
+1472,$\phi\mu \ll \nu$
+1473,$V(\mu)=\mu$
+1474,$t=2$
+1475,$\px=\sum_i \P(B\cap A_i)$
+1476,"$g(s) = \min(1, s / (1-p))$"
+1477,$\kappa(\theta)=n\log(1+e^\theta)$
+1478,$x^{-\alpha}$
+1479,"$\mathsf{CP}_n:=\mathsf{CP}(J_n(0), X_n)$"
+1480,$j_n(x)=j(x)\wedge n$
+1481,$\mu_*$
+1482,"$(B, Km)$"
+1483,$\theta=(1-f)/a$
+1484,$\kappa''(\theta)=\tau'(\tau^{-1}(\mu))=1/(\tau^{-1})'(\mu))=V(\mu)$
+1485,$x_i+y_{k(i)}$
+1486,$7$
+1487,$)$
+1488,$d^*(x)=x^2$
+1489,$\mu=\kappa'(\theta)$
+1490,$P_c(4380)^+$
+1491,$\mathsf{E}[X\mid T]$
+1492,$\beta_0+\beta_1$
+1493,$\log(1-1/n)<-1/n$
+1494,$X_t = \mathsf{E}[X \mid \F_t]$
+1495,$\P(\bigcup_i B_i \mid\G)_{\omega_0} = \sum\P(B_i\mid\G)_{\omega_0}$
+1496,$\P(\cdot\mid\G)$
+1497,$x_0+x_1+x_2$
+1498,$\A_y$
+1499,$1\le p<\infty$
+1500,$\alpha\to\infty$
+1501,"$\alpha\in (0, 2]$"
+1502,$z$
+1503,$t\pi/2$
+1504,"$\Gamma(\alpha,\beta)$"
+1505,$\mathsf{E}[Y]=\mu=np$
+1506,$\P(\cdot\mid \G)(ω)$
+1507,$Z_s$
+1508,$\mathsf{E}[x_s \mid \F_t] = x_t$
+1509,$\{X=x\}$
+1510,$f = J/2^N$
+1511,"$\P(B\cap A)=\int_B \P(A\mid\G)\,d\P$"
+1512,$\alpha < 1$
+1513,$V(m)=mW(m)$
+1514,$>0$
+1515,$\test$
+1516,$-br-v=0.258$
+1517,$x_1\leftrightarrow y_1$
+1518,$n\ge 3$
+1519,$10^{16}$
+1520,$p=0.74$
+1521,$-\frac{1}{2}$
+1522,$e^t$
+1523,$10^2$
+1524,$nb=P$
+1525,$\P H\xi = \P HX$
+1526,$\{X \ge a\}$
+1527,$\xi(\omega)=\xi(X \mid \G)(\omega)$
+1528,$\mathsf{E}[e^{tY}]=\sum \mathsf{E}[(tY)^n/n!]$
+1529,"$B_1,B_2,\dots$"
+1530,$10^6$
+1531,$q \leq p$
+1532,"$\omega\mapsto P(\omega, B)$"
+1533,$e^{-k(x/\alpha)^{\alpha/(\alpha-1)}}<e^{-k(x/\alpha)^{2}}$
+1534,$\bar P_x = (1/\bar a_x)-\delta$
+1535,$\P(B\mid \G)(ω)$
+1536,$\bar M = \bar P_i - \bar S_i$
+1537,"$\phantom{P}= \mathrm{EL} + r\,(a-P)$"
+1538,$\P$
+1539,$\P(A_i)>0$
+1540,"$B\mapsto p(t, B)$"
+1541,$X>a$
+1542,$\alpha + Mg/a$
+1543,$X(t)$
+1544,$x^{-\alpha-1}e^{\theta x}$
+1545,$n^3$
+1546,$x>0$
+1547,$1 - T$
+1548,$v = \omega r$
+1549,$\alpha_X$
+1550,$-7$
+1551,$g \leftrightarrow$
+1552,$x\ge 0$
+1553,$\frac{\partial f}{\partial \mu}=\frac{\partial f}{\partial \mu}\frac{f}{f}  = \frac{\partial l}{\partial \mu}f$
+1554,$t/|t|$
+1555,$x - y$
+1556,$F(x)$
+1557,$0<\alpha\le 1$
+1558,$\alpha=\infty$
+1559,$Y_n=n-S_n$
+1560,$\mu^*(M\cap E)=\mu(E)$
+1561,$m^*$
+1562,$\nu\uparrow\infty$
+1563,$J(0)=\infty$
+1564,$g'(s) \ge 0$
+1565,$e^{ct}$
+1566,$B \in \F$
+1567,$\lambda_t \Omega$
+1568,$\int c(y)dy\neq 1$
+1569,$\approx 10^{-40}$
+1570,$\Sigma$
+1571,"$\P(A\cap G)= \int_G \P(A)\,d\P$"
+1572,$\tau=0.156$
+1573,$t > T$
+1574,$\nu(B)=\P 1_B\xi$
+1575,$E[X \mid \mathcal{F}_t] - E[X \mid \mathcal{F}_{t-1}]$
+1576,$\mathsf{CTE}_p <= \mathsf{CTE}^+_p <= \mathsf{TVaR}_p$
+1577,$X=1_B$
+1578,"$\Omega:=\tau(\mathrm{int}\,\Theta)$"
+1579,$S=\bigcup_j D^n_j$
+1580,"$(-\infty,0)$"
+1581,$\mathsf{E}[X_T]=\mathsf{E}[X_0]$
+1582,"$e',s', r', Q$"
+1583,$F_1$
+1584,$d \bar S/da$
+1585,$10^{-2} - 10$
+1586,$V(\mu)=\mu^2/\alpha$
+1587,$\rho(X) = (1-r)\mathsf E[X] + r\mathsf{TVaR}_p(X)$
+1588,"$u_A, u_E$"
+1589,$\Delta S$
+1590,$\P(\cdot\mid\A)$
+1591,$\Omega= \mathrm{int}\ \mathrm{conv}(S)$
+1592,$\P_T(B) = \P(T^{-1}(B)) = \P(T\in B)$
+1593,$\bar P_x:=\bar A_x / \bar a_x$
+1594,$2^8-1=255$
+1595,$105$
+1596,$6\times 16= 96$
+1597,$P(A | \mathcal{G})(\omega)$
+1598,$\le 0$
+1599,$10^{-12}$
+1600,$\bar S$
+1601,$P^T(F\mid t)$
+1602,$g(s) = vs  + d$
+1603,$N=kg m/s^2$
+1604,$2.38\times 10^{24}$
+1605,$\sum_n x_n^2\lambda_n$
+1606,$<a$
+1607,$L = 4\pi R^2 \sigma T^4$
+1608,"$\int_0^1 xj(x)\,dx<\infty$"
+1609,$C(t)$
+1610,$X = \sum_t D_t$
+1611,$M_{\text{Moon}} \approx 7.348 \times 10^{22} \ \text{kg}$
+1612,"$\int_B \mathsf{E}(\sum X_i\mid\G)\,d\P$"
+1613,$\gamma$
+1614,$X_t - X_s$
+1615,$a < b$
+1616,$0.999999999$
+1617,$H(x)=y$
+1618,$h(0.05) = 1-g(1-0.05) = 0.0203$
+1619,$\lambda\to\infty$
+1620,$U + (U+x)$
+1621,$B(b)>0$
+1622,$P^T(A\mid t)$
+1623,$\mathsf{E}[X\mid Y]$
+1624,$\lambda=\mathsf{E}[X]<1$
+1625,"$\int_B \xi\,d\P$"
+1626,$E=\Omega$
+1627,$V'$
+1628,$e'=0.24$
+1629,$\lambda=\lambda_1 + \lambda_2$
+1630,$\nu_0$
+1631,"$k=0,\dots,n-1$"
+1632,$< 10^{-22}$
+1633,$\mathring\Theta$
+1634,"$\partial\eta/\partial\beta_1=0,1,2$"
+1635,$A_x\setminus A_y$
+1636,$j(x)=x^{-5/2}$
+1637,$y_{2}=3$
+1638,$b - a$
+1639,$p \in P$
+1640,$\theta=s\theta_1+(1-s)\theta_2$
+1641,$\delta$
+1642,$X_n = 1$
+1643,$A=f^{-1}(B)$
+1644,$Z = Y\lambda$
+1645,$\mu^2$
+1646,$\delta^{18}O$
+1647,$X_n = 2^n \cdot I(A_n)$
+1648,$\{ P_t\}_t$
+1649,$\beta=0.57$
+1650,$L=L(\nu)$
+1651,$X_{T_x}=x$
+1652,"$\sim 696{,}000 \ \text{km}$"
+1653,$\eta(\theta)=\theta$
+1654,$E[X_{n+1} \mid \mathcal{F}_n] \leq X_n$
+1655,$10^{12} - 10^{15}$
+1656,$t<T$
+1657,$\nabla \times (\mathbf{v} \times \mathbf{B})$
+1658,$P(A | \mathcal{G})$
+1659,$ and $
+1660,"$v_A, v_E$"
+1661,$\lim \mathsf{E}[X_n] = \mathsf{E}[X] < \infty$
+1662,$U_\infty=\lim_N U_N$
+1663,$\mathsf{E}[e^{sX_{m/n}}]=\mathsf{E}[e^{sX_{1/n}}]^m$
+1664,$\forall a\ \forall b\ \exists x\ [a\in x \wedge b\in x]$
+1665,$F_n(x)\to F(x)$
+1666,$l$
+1667,$fT$
+1668,$f_P=f$
+1669,$P^T_S(A\mid\cdot)$
+1670,$\aleph_1$
+1671,$\rho$
+1672,$Z_i$
+1673,$x=q(p)$
+1674,"$p(dx,y)$"
+1675,$A_x$
+1676,$kg$
+1677,$\theta=\lambda\nu$
+1678,$Y_t = X_t^2 - t$
+1679,"$\P(A\cap B)= \int_B 1_A\,p\P$"
+1680,$X=1$
+1681,$D_i-N_i$
+1682,$\mathsf{Pr}(X_2)$
+1683,$\mathsf{Pr}(X_n\in A)\to\mathsf{Pr}(X\in A)$
+1684,$\A=f^{-1}(\BB)$
+1685,$e^{\theta y}>0$
+1686,$\{X_n\}$
+1687,$X_n$
+1688,$dx$
+1689,$=14\times 16+2=226$
+1690,"$\int f\,d\mu$"
+1691,$10^4 - 10^6$
+1692,"$x\in(-\frac{1}{2}\mu(U), \frac{1}{2}\mu(U))$"
+1693,$f(kb)$
+1694,$\sigma_s$
+1695,$k$
+1696,$-stable distribution with Lévy density $
+1697,$J$
+1698,$\sum_x dx = a$
+1699,$\theta_1$
+1700,$t=b$
+1701,"$(2,\infty)$"
+1702,"$1, =$"
+1703,$p_1+p_2=1$
+1704,"$X:(\Omega,\F)\to(\mathbb{R},\BB(\mathbb{R}))$"
+1705,$X_i$
+1706,"$\mathsf{Var}(X_x)=\mathsf{Var}(\mathsf{CP}(j_n(x)\delta, x))=x^2j_n(x)\delta$"
+1707,$\exp(\sigma \sqrt tZ)=\exp(\sigma^2t/2)$
+1708,$\kappa_X$
+1709,$. Let $
+1710,$B=\{p_\alpha\}$
+1711,$2.0-3.0$
+1712,"$\alpha_X\in(\alpha_Y+1/3, \alpha_Y+1/2)$"
+1713,$-8$
+1714,"$(L,\A)=(\Omega,\F)$"
+1715,$\P(B)=0$
+1716,$\P(A\cap B)=\P(A)\P(B)=\int_B P(A)\P_T(dt)$
+1717,$m=\kappa'(\theta)$
+1718,"$(\Omega,\F,\mu)$"
+1719,"$A_0,\dots,A_r\in\F$"
+1720,$\omega\in J$
+1721,"$T:(\Omega, \F)\to(E,\mathsf{E}E)$"
+1722,"$\{ \omega\mid p(\omega, A)=1_A(\omega),\ \forall A\in\G \}$"
+1723,"$1_{[0,1]}$"
+1724,$\sigma^2/n_i$
+1725,$Y=X_1+\cdots +X_N$
+1726,$p=0.99$
+1727,$e^{\theta x}j(x)$
+1728,$\bar a_x = \bar a_{x:b\!\urcorner} + v^b{}_bp_x\bar a_{x+b}$
+1729,$0\le t\le T_x$
+1730,$X \mapsto kX$
+1731,$r(X)$
+1732,$f(x)$
+1733,$r_1$
+1734,$q(g)$
+1735,$t-1$
+1736,$ct$
+1737,$P=vL + da$
+1738,$f(x)=\cos(2\pi\omega x)$
+1739,"$X,Y$"
+1740,$\alpha<0$
+1741,$t-s$
+1742,"$r=0.05, 0.15, 0.25$"
+1743,$f(x)=x^{-\alpha}L(x)$
+1744,"$X,Y,T$"
+1745,$G\in\mathscr G$
+1746,$s\downarrow 0$
+1747,$\tilde y$
+1748,$N' := kNT$
+1749,$N=365$
+1750,$l(y;\theta)=\log(c(y)) +y\theta-\kappa(\theta)$
+1751,$g^a=g^{\log_g(n)}=n$
+1752,"$(\mu,\sigma^2)$"
+1753,$m^2W(m)$
+1754,$m(m-1)$
+1755,$-2$
+1756,$\bar P_x$
+1757,$Y=y$
+1758,$0\not\in\Omega_p$
+1759,$N'$
+1760,$R>0$
+1761,$A=g^a \pmod p$
+1762,$\{\tau_n\}$
+1763,$q \in G$
+1764,$2T+U=0$
+1765,$.} with $
+1766,$2.38 \times 10^{24}$
+1767,$Y$
+1768,$X\mapsto aX+b$
+1769,$A'$
+1770,$P_y$
+1771,$W(\cdot)$
+1772,$X = 1$
+1773,$\bar\alpha=-\alpha$
+1774,$x^{-\alpha-1}e^{\theta x}/x$
+1775,$u_i$
+1776,$2.592 \times 10^{16}$
+1777,$j(x)$
+1778,$\P(B)=1$
+1779,$M_T(y)=w(e^{y})$
+1780,$\mathsf{CV}(G) = \mathsf{SD}(G') = \nu$
+1781,$A_n \in \mathcal{C}$
+1782,"$n=1,\dots,6$"
+1783,$c(y)=\binom{n}{y}$
+1784,$\kappa_1$
+1785,$N':=kN$
+1786,$L-L^*$
+1787,$t \geq T(\omega)$
+1788,"$(Y,\B)$"
+1789,$\mathscr I$
+1790,$2\pi$
+1791,$\mathsf{E}[|X_t|] < \infty$
+1792,$2K + U = 0$
+1793,$\mathsf{E}[X_{t+1} \mid \F_t] = X_t$
+1794,$6.3\times 10^{11}$
+1795,$\mu^*$
+1796,"$(T,\mu)$"
+1797,"$Ca(Mg,Fe)Si_2O_6$"
+1798,$x^*$
+1799,$10^4$
+1800,$Z(ω)$
+1801,"$Q(\omega, \cdot)$"
+1802,"$L=L(e,t)$"
+1803,$10$
+1804,$y=0$
+1805,"$30,000 per accident up to $"
+1806,$M_B(t)=(1-p)+pe^t$
+1807,$\sigma(X)$
+1808,$p_n(a)$
+1809,"$\theta\in\Theta\setminus\mathrm{int}\,\Theta$"
+1810,$1.7 \times 10^{-3}$
+1811,"$(\Omega\times M, \F\otimes\B)$"
+1812,$\tau(\theta)=\kappa'(\theta)$
+1813,$|X_\alpha|$
+1814,$m_1$
+1815,$m_X$
+1816,$\psi=1_\Gamma$
+1817,$\\infty$
+1818,$\mathsf{E}[e^{sX_1}]^{1/n}=\mathsf{E}[e^{sX_{1/n}}]$
+1819,$j(x)=x^{-3/2}$
+1820,$\B\subset \F$
+1821,$Nk$
+1822,$10^{-5}$
+1823,$U_N$
+1824,$\{X_{t \wedge \tau}\}$
+1825,$p_k=F((k+1/2)b)-F(k-1/2)b)$
+1826,$1/8.6$
+1827,$E[X_t \mid \mathcal{F}_{t-1}] = X_{t-1}$
+1828,$-15$
+1829,$dx/x$
+1830,"$50 of the amount allowed on each claim in the classes under paragraphs II, V, and VI except claims of the guaranty associations as defined in RSA 404-B, 404-H, 404-D, and 408-B shall be deducted from the claim. Claims may not be cumulated by assignment to avoid application of the $"
+1831,$u=-0.295$
+1832,$\forall\omega$
+1833,"$100 billion; and costs associated with providing regulated insurance paper, such as underwriting, product management, regulatory and compliance costs, taxes licenses and fees, billing, policy maintenance and policy issuance, of nearly 10% of premium, or $"
+1834,$p=1.005$
+1835,$r=0.038$
+1836,$X=X_s + X_l$
+1837,$\mathsf{Pr}(X_n=1)=1/n$
+1838,"$(-\epsilon, \epsilon)$"
+1839,"$A=\mathbb Q\cap [0,1]$"
+1840,$L^1(\mathbb R)\to L^1(\mathbb R)$
+1841,$a\to 2$
+1842,$MgAl_2O_4$
+1843,$6 \times 10^{}$
+1844,$-\alpha$
+1845,$\hat f(t)$
+1846,$\bar y - \kappa(\theta)=0$
+1847,"$\partial d/\partial\mu=-2\,\partial l/\partial \mu$"
+1848,$\lambda=\beta/\alpha$
+1849,${}_b\bar V$
+1850,$-2< -\alpha<-1$
+1851,$\to$
+1852,$G$
+1853,$\int_0^\epsilon (e^{sx}-1)j_n(x)dx \approx \int_0^\epsilon sxj_n(x)dx$
+1854,$\theta=-\alpha/\mu$
+1855,$A\in\G$
+1856,"$(\mu,\alpha)$"
+1857,$\mathsf{E}[z^T]$
+1858,$x_{\max{}}$
+1859,$0$
+1860,$\mathsf{Var}(aX)=a^2\mathsf{Var}(X)$
+1861,"$\mathsf E_g|\mathcal W(g, W)|$"
+1862,$\Gamma(\alpha):=\int_0^\infty x^{\alpha-1}e^{-x}dx$
+1863,$V(\mu)=1/(\tau^{-1})'(\mu)=\mu^2$
+1864,"$Y=[0,1]$"
+1865,$3$
+1866,$0\le t<\beta$
+1867,$\G\subseteq \F$
+1868,"$\{(\A_y, P_y)_{y\in Y} \}$"
+1869,$σ$
+1870,$10^{13}$
+1871,$g^{kS}=R^S=g^{m+Ra}=g^mA^R$
+1872,$2^{-(i+j)}$
+1873,$\gamma = 2/\sqrt(a) = 2\nu$
+1874,$\sigma=1$
+1875,$\alpha<2$
+1876,$0\le \tau\le 1$
+1877,$y-\kappa'(\theta)=0$
+1878,$F_\alpha$
+1879,$C_p = \frac{7}{2}R$
+1880,$N\times 1$
+1881,$g$
+1882,$\mathsf{Pr}(X_n>\epsilon)\to 0$
+1883,$agg$
+1884,"$\F,\A,\B$"
+1885,$E'=X\setminus E$
+1886,$\mu g=0$
+1887,$\sigma$
+1888,$1/V$
+1889,$\mathsf{Var}(Y)=np/(1-p)^2$
+1890,$\exp(\mu t)$
+1891,$\{a_n\}$
+1892,$1-p_s>0.5$
+1893,$1.38 \times 10^{-23}$
+1894,$\mathsf{E}[\mathsf{E}[X\mid \G_2]\mid \G_1]=\mathsf{E}[X\mid \G_1]$
+1895,$x \!\!\urcorner$
+1896,$10^5$
+1897,$n=2^m+k$
+1898,$\mathrm{NE}(\mu)$
+1899,$\{A_i\}$
+1900,$D_i$
+1901,$P(\omega)$
+1902,$\kappa'(\theta)=\mu$
+1903,$P_i+Q_i$
+1904,$10^{15}$
+1905,$X_l$
+1906,$G_i$
+1907,$d=2$
+1908,$X_{t \wedge \tau_n}$
+1909,$10^{-1} - 10^{-3}$
+1910,"$195 million or three points of losses on natural catastrophes including Hurricane Ida, the floods in Europe, and Winter Storm Uri. This compares to a combined ratio of 98 for 2020 which included $"
+1911,$|x|$
+1912,$p>2$
+1913,"$\{\emptyset, Ω\}$"
+1914,$c_0(y)=c(y)e^{l(y;y)}$
+1915,"$(0,t_1+t_2]$"
+1916,$Km\pmod p$
+1917,$x_i=n_i + i\xi$
+1918,$|x|^2$
+1919,"$\beta\in[-1,1]$"
+1920,$P^T_S(A\mid t)$
+1921,$\max X_i$
+1922,"$\forall \omega\not=\omega',\ \exists G\in\G:\ 1_G(\omega)\not=1_{G'}(\omega')$"
+1923,$K_\delta(x) = K(x/\delta) / \delta$
+1924,$N=(1-\alpha)M$
+1925,$X_t = \exp(B_t - t^2/2)$
+1926,$\alpha\ge 1$
+1927,$Y_t=\exp(B_t - t/2)$
+1928,$A \in \mathcal{A}$
+1929,$\mathsf{E}[x_{t-1} x_s] = \mathsf{E}[\mathsf{E}[x_{t-1} x_s \mid \F_{t-1}]] = \mathsf{E}[x_{t-1} \mathsf{E}[x_s \mid \F_{t-1}]] = \mathsf{E}[x_{t-1} x_{t-1}] = \mathsf{E}[x_{t-1}^2]$
+1930,$\Omega=N\cup (N+1)$
+1931,$\alpha\le 1$
+1932,$X=0$
+1933,$\sigma_n^2 = x_n^2\lambda_n$
+1934,$r = r_1 + r_2$
+1935,$T(X)$
+1936,$\mathsf{Pr}(N=n)=e^{-\lambda}\lambda^n/n!$
+1937,$ is allowable (oscillating) but tilts with mean $
+1938,$5 \times 10^{10}$
+1939,$m_2$
+1940,$\sigma^2=1/\lambda$
+1941,$\kappa(\theta)=\log \sum_n e^{\theta n}/n!$
+1942,$697.6 billion underlying @tbl-equity-what-if this implies $
+1943,$8.617 \times 10^{22}$
+1944,$c(y)$
+1945,$(\alpha-1)(p-1)=-1$
+1946,$\cos{}$
+1947,"$Mg,Fe)SiO_3$"
+1948,$n\times n$
+1949,$Y_\nu$
+1950,$(\beta)$
+1951,$A\in\A$
+1952,"$S:(\Omega, \F) \to (L,\A)$"
+1953,$10 - 10^2$
+1954,$0<\alpha< 1$
+1955,$E\subset U_0$
+1956,$0.01 \text{ kWh/GB}$
+1957,$\bar A^{1}_{x:n\!\urcorner}$
+1958,$N=\sum_{i\in I} N_i + N_a$
+1959,$l = L/P$
+1960,$2/\sqrt{a}= 2\nu/(1-f)$
+1961,$m_i(s)\to\mathsf E[X_i]$
+1962,$<1$
+1963,$\F\subset\mathscr P(\Omega)$
+1964,$b=1/f$
+1965,$y=-x$
+1966,$b>0$
+1967,$\mathsf{Pr}(T=n)$
+1968,"$n=1,2,3,\dots$"
+1969,$C_v = \frac{5}{2}R$
+1970,$PV = nRT$
+1971,$10^{9}$
+1972,$A=g^a\pmod p$
+1973,"$\int_K^\infty \mathbb{P}(|X_i| > t) \, dt$"
+1974,$n\ge 1$
+1975,$-4$
+1976,$\mathsf{E}[D_t \mid \F_{t-1}] = \mathsf{E}[X_t - X_{t-1} \mid \F_{t-1}] = 0$
+1977,"$P(\{ω\}, ω) = 1$"
+1978,$\kappa(\theta)$
+1979,$b=-1$
+1980,$w$
+1981,$\lambda(e^\theta-1)$
+1982,$e^{\theta x - t\kappa_X(\theta)}f_t(x)$
+1983,$-br-v=0.341$
+1984,$V(0)=1$
+1985,$\mathbb{R}\to\mathbb{R}$
+1986,"$\psi(S(\omega), t)=1_{L(t)}(S(\omega))$"
+1987,"$\forall E\in\A,\ \exists N\in\B:\ QN=0$"
+1988,$\Phi$
+1989,"$X = \{X_t, t \geq 0\}$"
+1990,$D_0 = \mathsf{E}[X]$
+1991,"$\phi:(L, \A) \to (M, \B)$"
+1992,$\mathscr G$
+1993,$F^{\times}_{359}$
+1994,$m_1=m+b$
+1995,$\exp(h(y))$
+1996,$\theta=\mu$
+1997,"$R = 8.314 \, \text{J/(mol·K)}$"
+1998,$nb$
+1999,$E\setminus E\in R$
+2000,$V(\cdot)$
+2001,$X_s$
+2002,"$P(N, ω) = 1$"
+2003,$ is a gamma process with density $
+2004,$N'/\alpha a\le w$
+2005,$1 \le l \le n-1$
+2006,$kP$
+2007,$ and rate $
+2008,$:=a$
+2009,"$\mathcal{W}(g, W)$"
+2010,$f_X$
+2011,$1 \times 10^{16}$
+2012,${}_tq_x=1-{{}_tp_x}$
+2013,$\mathsf{E}[X_T] = \mathsf{E}[X_0]$
+2014,$y=kx$
+2015,$\epsilon$
+2016,"$[\theta_r, \theta_d]$"
+2017,$Y_n$
+2018,$p=(2+\bar\alpha)/(1+\bar\alpha)$
+2019,$\alpha/\beta$
+2020,$Y=e^{-X}$
+2021,$\mu h<\infty$
+2022,$10^{-18} - 10^{-22}$
+2023,$\px=\P(\bigcup_i (B\cap A_i)$
+2024,"$, $"
+2025,$i$
+2026,$s_3$
+2027,$g'(S(X))$
+2028,$g(t)=h(t)\{ l(t) < 1\}$
+2029,$a<1$
+2030,$v_X = \text{Var}_{0.99}(X)$
+2031,"$(L, \A)$"
+2032,$\mathsf{E}[1_A\mid\G]$
+2033,$=kA$
+2034,$11$
+2035,$h_2$
+2036,$\log_2\ge 1$
+2037,$\bar L_i$
+2038,"$\A=\{A_1,A_2,\dots\}$"
+2039,"$i=A,E$"
+2040,$\mathsf{E}[N]$
+2041,$g=\mathsf{E}(G^3)=\nu^3 \mathsf{skew}(G')+3c+1$
+2042,$C$
+2043,$\mu=-\sigma^2/2$
+2044,$X_\infty=\mathsf{E}[Y\mid\F_{\infty^-}]$
+2045,$\mathsf{Pr}(X_n=0)=1-1/n$
+2046,$\mu(A) = \nu(A)$
+2047,$(T\lambda)g=\mu g$
+2048,$g(s)=vs +d > s$
+2049,$\mathsf{E}[X]=1$
+2050,$F = G m_1 m_2 / r^2$
+2051,$\mathsf P(A)$
+2052,$\mu\sqrt{\mu^2+4\mu}$
+2053,$\int_A Xd\P$
+2054,$g(\mu)=\eta$
+2055,$10^1$
+2056,$\lambda(F(x_2)-F(x_1))$
+2057,$D_t = X_t - X_{t-1}$
+2058,$0<\epsilon<1$
+2059,$A\in\G_Y$
+2060,$2 \times 10^{19}$
+2061,$j$
+2062,$\beta>0$
+2063,$\mathsf{E}[X_1\mid X > a^*]$
+2064,"$Y=\{y_1,\dots,y_n\}$"
+2065,$4l + 2$
+2066,$y_{1}=2$
+2067,$T_x$
+2068,$\bar A$
+2069,"$1, 2, 10$"
+2070,$j(x)=1/x^{a+1}$
+2071,"$\nu(B)=\int_B 1_A\,d\P$"
+2072,$nG$
+2073,$V_\nu$
+2074,$c^*$
+2075,$V(\mu)=e^\mu$
+2076,"$A, B$"
+2077,$\theta=\log(p)<0$
+2078,$X_2$
+2079,$\lambda\downarrow 0$
+2080,$g(s)$
+2081,$y\in Y$
+2082,$B\in\mathsf{E}E$
+2083,$\omega'\in\Delta_\omega$
+2084,"$(\Omega, \B)$"
+2085,$c_1=c_2=0$
+2086,$n=2$
+2087,$\Omega\times\Omega$
+2088,$\mathsf{E}[\cdot\mid\G]$
+2089,$\mathsf{E}[X_\nu]=\nu\mathsf{E}[X_1]$
+2090,"$\Gamma = \{(\omega,\omega)\}$"
+2091,$\hat F(t)=\phi(-2\pi t)$
+2092,$W$
+2093,$n=3$
+2094,$\kappa_1'(-\kappa(\theta))\kappa'(\theta)=1$
+2095,$\approx 0.9999999999$
+2096,$\max_{s\le t} X_s - X_t$
+2097,$m^2$
+2098,$2^{-1}$
+2099,$\mathcal F$
+2100,$g=3$
+2101,$T\P$
+2102,$10^{19}$
+2103,$b = B/P = 1/1.2 = 0.83$
+2104,$\int_{-f_{\max{}}}^{f_{\max{}}}$
+2105,$J(x)$
+2106,$X\equiv 1$
+2107,$E\in\A_y\ \forall y\in Y\setminus N$
+2108,"$\{E\subset\Omega\mid E\in\sigma(\C'), \C'\subset\sigma(\C),\text{ countable}\}$"
+2109,$g(\mu)=\log\mu$
+2110,$\mathsf{E}(G^3)=g$
+2111,$X_t=t-G_t$
+2112,$ is constant. This NEF is regular because $
+2113,$(X_N-a)^-$
+2114,"$(X,\F,\P)$"
+2115,$T^2$
+2116,"$\Phi(a, b)=(\phi(f(a)), \phi(b))$"
+2117,"$(\P,\sigma(T))$"
+2118,$X = X_1 + X_2$
+2119,$(x+b)$
+2120,$c(y)=\dfrac{1}{\pi}\dfrac{1}{1+y^2}$
+2121,$S(\omega)=\omega$
+2122,"$\G=\{ b(a_i,2^{-j}) \}_{i,j}$"
+2123,$B(b)$
+2124,$\mu=0$
+2125,$ corresponding to an extreme stable distribution with $
+2126,$0.999999$
+2127,$g(s)=d + vs$
+2128,$1 \times 10^{23}$
+2129,$M(t)=\mathsf E[\exp(tx)]=\phi(-it)$
+2130,$e^x-1$
+2131,$\to 0$
+2132,$Pa$
+2133,"$Y=\mathrm{ED}(\mu, \sigma^2)$"
+2134,$A\in \A$
+2135,$\tan{}$
+2136,$\mathcal{F}_n$
+2137,$\Q=\pi_Y(\R)$
+2138,${{}_tp_x}=\exp(-\int_0^t \mu_{x+s}ds)$
+2139,$k(\theta)=\left(\int c(y)e^{\theta y}dy\right)^{-1}$
+2140,$K_T(\theta)=-\log(1-\theta/\lambda)$
+2141,$\F_1 \subset \F$
+2142,$V(\mu)=\mathsf{Var}(\mathsf{CP}_1)=\mu x_2$
+2143,$(E\cap U) + x$
+2144,$\leftrightarrow$
+2145,$e+l+r^*$
+2146,$V_X(m)=m$
+2147,$B\subset Y$
+2148,$b^2 \mu_x /2$
+2149,$\lambda \uparrow 1$
+2150,$B$
+2151,$-br-v$
+2152,$-9$
+2153,$\theta\to 0$
+2154,"$c_1, c_2\ge 0$"
+2155,$-\theta - \lambda(e^{-\theta} - 1)) = y$
+2156,$B_i$
+2157,$= 1 - T_\mathrm{sink} / T_\mathrm{source}$
+2158,$\alpha_Y$
+2159,$5.97 \times 10^{24}$
+2160,$V(\mu)=1/(\tau^{-1})'(\mu)=\mu^3$
+2161,$t\ge 0$
+2162,$\alpha \mu(U_n) \le   \mu(E\cap U_n)$
+2163,$X-100$
+2164,"$B_1,B_2\in\F$"
+2165,$\mathsf{Var}(G)=c$
+2166,$\nu<1$
+2167,$\tF$
+2168,$c=0$
+2169,$x \!\urcorner$
+2170,$K_\delta$
+2171,$-6$
+2172,$\mathsf{Pr}(\mathsf{CP}(\lambda)=0)=e^{-\lambda}$
+2173,$\delta(t)$
+2174,$nu$
+2175,$B\mapsto\P(B\mid\G)(\omega)$
+2176,$\mathsf{Pr}(X\le x)$
+2177,$\mathcal F = \{F_\alpha\mid \alpha<\omega_c\}$
+2178,"$n_{\text{water, initial}}$"
+2179,$e^z/z$
+2180,$H(x)\not=H(y)$
+2181,$\B$
+2182,$p\to\infty$
+2183,$T\P(A)=\P(T^{-1}(A))>0$
+2184,$B=2.7\times 10^{-6}$
+2185,$\mu_1 = \mu_2$
+2186,$\mu^p$
+2187,"$P = 1 \, \text{GPa} = 1 \times 10^9 \, \text{Pascals}$"
+2188,$\omega\in B_1\cup\dots\cup B_r$
+2189,$10^{-43}$
+2190,$\mathsf{Pr}(L=l)$
+2191,$P_t f$
+2192,$(\bar a_x - \bar a_{b\!\urcorner})/\bar a_x$
+2193,$\ge 1$
+2194,$T_x=x$
+2195,$\mu_1$
+2196,$\sech$
+2197,$\mathbf{B}$
+2198,$\theta$
+2199,"$5/8, 1/4, 1/8$"
+2200,$\P(B\mid\A)=\P(B)$
+2201,$F = U - TS$
+2202,$L^r$
+2203,$\mu\{ l>1\}=0$
+2204,$i=\sqrt{-1}$
+2205,$2aw=0.0035$
+2206,$X=a$
+2207,$D-N = \sum_{i\in I} (D_i-N_i) - N_a$
+2208,$W(t)$
+2209,$(1-\alpha)M$
+2210,$s>0$
+2211,$\kappa_T(y)= -\theta=\log(w(y))$
+2212,$n\log_2(n)$
+2213,$A=F\triangle Q$
+2214,"$(a,b)$"
+2215,"$\mathrm{ED}(\mu, \sigma^2 / n_i)$"
+2216,$X_n(\omega)=1$
+2217,"$\{\omega\mid p(\omega, A(\omega))=1 \}$"
+2218,$X$
+2219,$r \leq p$
+2220,$\theta=\nu\lambda$
+2221,$\mathsf{Pr}(B=1)=\mathsf{Pr}(X>x)=p$
+2222,$x^{-3}$
+2223,$(\bar P_{x+b} - \bar P_x)\bar a_{x+b}=\bar A_{x+b}-\bar P_x \bar a_{x+b}=: {}_b\bar V$
+2224,$\hat\theta_s$
+2225,$20$
+2226,$1.805$
+2227,$\alpha=1$
+2228,$\mu=\lambda/ \psi$
+2229,$G\in \sigma(\A\otimes \B)$
+2230,"$p(B, y)$"
+2231,$\Gamma$
+2232,$z=1$
+2233,$m_X(s)\to\mathsf E[X] + k$
+2234,$Y_\epsilon$
+2235,$15$
+2236,"$\int_0^a \alpha_2(x)F(x)\, dx$"
+2237,$\alpha=0.99$
+2238,"$\int_B \P(A\mid\G)(\omega)\,\P(d\omega)$"
+2239,$-\kappa_1(-\kappa(\theta))=\theta$
+2240,$f_0\in\mathcal K$
+2241,$\mu=21.315$
+2242,$\P(A_0)=0$
+2243,$h_1$
+2244,"$g:[0,1]\to [0,1]$"
+2245,$g(s)=s^{0.72}$
+2246,"$\F\times\Omega\to [0,1]$"
+2247,"$380,000$"
+2248,"$\mathcal{W}(g, W)\subset \mathcal{W}$"
+2249,$\frac{1}{2}\sech(\pi y/2)$
+2250,$t^a$
+2251,$\bar y$
+2252,$p=\frac{\alpha-2}{\alpha-1}$
+2253,"$\forall A\ \forall p\ [\forall x\in A\ \exists !y\ \phi(x, y, p)\rightarrow\exists Y\ \forall x\in A\ \exists y\in Y\phi(x, y,p)]$"
+2254,$0\in\Omega_p$
+2255,"$l=0,1,\dots,n/2+1$"
+2256,"$(1, 2, 3, \dots)$"
+2257,$m=0$
+2258,$10^{-1}$
+2259,$ is accumulated profit from an inflow of premium 1 per unit time and a cumulative claims process $
+2260,$V(m)=m^3$
+2261,$T\lambda$
+2262,"$\G=\sigma(A_1,\dots,A_r)$"
+2263,$aw$
+2264,$\mi(\mu):=\mathsf{Var}(s)$
+2265,"$(i,j)$"
+2266,$x_2\leftrightarrow y_1$
+2267,$e$
+2268,$\frac{1}{4}(1 + 8\mu-\sqrt{1+8\mu})$
+2269,"$e(fT, y) = f(y)$"
+2270,"$I=[0,P)$"
+2271,$(y-t)/V(t)$
+2272,$p=1.995$
+2273,$B\in\G$
+2274,$\mathsf{Pr}(L'\ge l)$
+2275,$q(1-s)$
+2276,$A(\omega)$
+2277,$X_\nu$
+2278,$\mathsf{Pr}(|X_n(\omega)-X(\omega)|>\epsilon)\to 0$
+2279,$x\!\!\urcorner$
+2280,$\H$
+2281,$1 million punitive award is grossly excessive and unconstitutional in a case where Dr. Mann had only $
+2282,$\mathsf{E}[X\mid T] = \phi(T)$
+2283,$X_i=x_i$
+2284,$T_1 = 20°C = 293.15$
+2285,"$(-\infty,0)\subset\Theta$"
+2286,$x_{ij}$
+2287,$\delta\to 0$
+2288,"$\psi(S,T)$"
+2289,$\sigma(G)$
+2290,$\tau(\theta):=\kappa'(\theta)=\mu$
+2291,$X_2=100$
+2292,$\alpha=0$
+2293,$S\P(A) = \P(S\in A)$
+2294,$n\to \infty$
+2295,$\theta_s$
+2296,$T_0=T-1$
+2297,$\F_1$
+2298,$q(p^*)=0.0$
+2299,"$X_{i}=\mathsf{CP}(j_n({x_i})\delta, {x_i})-j_n({x_i})\delta {x_i}$"
+2300,$f^{-1}(\BB(\mathbb{R})) = \sigma(A_n)$
+2301,$ on $
+2302,$P$
+2303,$2^{256}\approx 10^{77}$
+2304,$T\P(A)=\P(T^{-1}(A))$
+2305,$T = 2L / \sqrt{g d}$
+2306,$x\subset X\leftrightarrow \forall z(z\in x\rightarrow z\in X)$
+2307,$g_n(x)=f_j(x)$
+2308,$\approx 1$
+2309,$p=0$
+2310,$J(x)<\infty$
+2311,"$\displaystyle\int_B \P(A\mid\G)\,d\P$"
+2312,$d\bar S_i/da$
+2313,$V_1 / V_2 = 12:1$
+2314,$\phi(x)/x$
+2315,$\forall X[\forall x\in X(x\not=\emptyset) \wedge \forall x\in X\forall y\in X(x=y\vee x\cap y=\emptyset)]\rightarrow\exists S\forall x\in X\exists !z(z\in S\wedge z\in x)$
+2316,$\mathsf{VaR}_p(X)-f(\mathsf{VaR}_p(X))$
+2317,"$(L,\A)$"
+2318,$x^2\mathsf{Var}[N]$
+2319,$m_1=am$
+2320,$10^{11}$
+2321,$\mathsf{Pr}(B=0)=1-p$
+2322,$\\alpha=1$
+2323,$\mu+\mu^3/2+(\mu^2/2)\sqrt{2+\mu^2}$
+2324,$\omega=\exp(2\pi i / n)$
+2325,"$|\mathcal{W}(g,W)|$"
+2326,$J(x) - J(x+dx) \approx j(x)dx$
+2327,$x_{\max{}} = x_{\min{}} + n$
+2328,$\theta>0$
+2329,$(m+1)$
+2330,"$\lim_{\mu\to 0} V(\mu)/\mu=\delta:=\inf\,\{S\setminus \{0 \}\}$"
+2331,$\approx 10^{-5}$
+2332,$X(ω)$
+2333,$6 \times 10^7$
+2334,$b$
+2335,$T^2 \propto r^3$
+2336,$\alpha < 2$
+2337,"$A\subset[0,1]$"
+2338,$A^c$
+2339,$\mathsf{Pr}(N=n)=p_n$
+2340,"$\{\lambda_t\}, with $"
+2341,$PV = kNT$
+2342,"$\mathsf{CP}(1,X)$"
+2343,$\phi:M\to\mathbb{R}$
+2344,$b=12$
+2345,$\mathsf{E}[X_x] = 0$
+2346,$\eta$
+2347,$A\in \F$
+2348,$10^{27}$
+2349,$\Omega$
+2350,$j(x)=x^{-\alpha-1}$
+2351,$f_X\sim cf_Y$
+2352,$C= \mathrm{conv}(S)^-$
+2353,$A_i=\{X=x_i\}$
+2354,$\P(B\cap A)$
+2355,$K=B^a=A^b=g^{ab}\pmod p$
+2356,$E[\tau]$
+2357,"$\int_0^1 x^2j(x)\,dx<\infty$"
+2358,$\nu\ge 0$
+2359,$\scriptstyle #1$
+2360,$\theta\mapsto -\kappa_1(\theta)$
+2361,$\sigma_s=0$
+2362,$x_2\leftrightarrow y_2$
+2363,$\sup_{\theta\in\Theta} y\theta-\kappa(\theta)$
+2364,$\mathsf{Pr}(T_x<\infty)=1$
+2365,$\mathsf{Var}(Y)=\mu^2/\alpha$
+2366,$nt$
+2367,$y_{3}=7$
+2368,$\P(B\mid \G)$
+2369,$\forall x\forall y[\forall z(z \in x \leftrightarrow z \in y)\rightarrow x=y]$
+2370,$\mathcal{F}_t = \sigma(X_s : s \leq t)$
+2371,$F_{\bar X}(x)=p_1F_1(x) + p_2F_2(x)$
+2372,$1 \times 10^{10}$
+2373,$f_t$
+2374,$F\subset M$
+2375,$\bar\theta_s<0.5$
+2376,$J(0)$
+2377,"$\alpha\in [0,1)$"
+2378,$\mathsf{Pr}(X_n=Y)=\mathsf{Pr}(X=Y)=0$
+2379,"$. It falls into the compensated IACP, case 3 group, discussed in [Part III](./2020-10-20-Probability-Models-for-Insurance-Losses/), and takes any real value, positive or negative, despite only having negative jumps. It has a thick left tail and thin right tail. Its mean is zero, but the variance does not exist. A tilt with $"
+2380,"$[a, b]$"
+2381,$X_t = ct+\sigma B_t$
+2382,"$1000 \, \text{kg/m}^3$"
+2383,$2.725$
+2384,$p\uparrow 2$
+2385,$\mathsf E(G)= f + \mathsf E(G') = 1$
+2386,"$c_1,c_2\ge 0$"
+2387,$\mu=\tau(\theta)=ne^\theta/(1+e^\theta)=np$
+2388,$\approx 27\%$
+2389,$v=1/1.15 = 0.87$
+2390,$X_n(\omega)\to 0$
+2391,$\tau$
+2392,$\log$
+2393,$\theta=-\mu^{-1}$
+2394,$L$
+2395,$x\mapsto x^c$
+2396,$\int_A m(Y)d\P=\int_A m(Y(\omega))\P(d\omega)$
+2397,"$(\Omega, \F, \P, \{\F_t\}_{t \geq 0})$"
+2398,$kX$
+2399,$\int (r-\mu)f=0$
+2400,$N_t - A_t = 1 - T$
+2401,"$P(·, ω)$"
+2402,$\{S\le T\}$
+2403,$X^{\tau_n}$
+2404,$1$
+2405,$d\mu = \kappa''(\theta)d\theta$
+2406,$+\frac{1}{2}$
+2407,$9$
+2408,"$B\mapsto p(\omega, B)$"
+2409,$\mathsf{E}(G)=M_G'(0)=1$
+2410,$(x-a)^+\wedge b$
+2411,$2.44 > 2 \times 1.2$
+2412,$E=U+T=-T$
+2413,$e^{-\lambda}>0$
+2414,"$r_2 = 3852972862.741849 \approx 3,852,972,862.7$"
+2415,$x^n=e^{n\log(x)}$
+2416,$\kappa(\theta(\mu))=n\log(n/(n+\mu))$
+2417,$E[X_\tau]$
+2418,$\mathbb R^\times$
+2419,$2/\sqrt{\alpha}$
+2420,"$\phantom{P}= \displaystyle\frac{1}{1+r}\,\mathrm{EL} + \displaystyle\frac{r}{1+r}\,a$"
+2421,$A_n \downarrow A$
+2422,$G=G_1-1$
+2423,$\{X_t\}_{t \geq 0}$
+2424,$\times T=\rho T$
+2425,$1 \times 10^{17}$
+2426,$k\in\mathbb Z$
+2427,$I_k$
+2428,"$\alpha=n/2,\beta=1/2$"
+2429,$r\in\mathbb{R}$
+2430,$\P(\Omega\mid\G)_{\omega_0}=1$
+2431,$5 \times 10^5$
+2432,$p\leftrightarrow p_1 = 3-p$
+2433,$\mu/V(\mu)$
+2434,$0 \le \alpha \le 1$
+2435,$r^*$
+2436,$6$
+2437,$p=2$
+2438,$q_1$
+2439,$0.4$
+2440,$g=W$
+2441,$\Omega\times\F$
+2442,$\mu(F)=0$
+2443,$\Delta = g^{-1}(\Delta_\mathbb{R})$
+2444,$\bigcup_{i=1}^{\infty} A_i \in \mathcal{M}$
+2445,$10^{-3}$
+2446,$T_\nu$
+2447,$n\ge 2$
+2448,$x=60$
+2449,$\sqrt{2Np}$
+2450,"$=\displaystyle\int_{T^{-1}(B)}^{\phantom{X}} \mathsf{var}phi(T) \,d\P\quad$"
+2451,$b=1$
+2452,$D_t$
+2453,$T\lambda \ll \mu$
+2454,$y_1 < y_2$
+2455,"$\int |X_n(\omega) - X(\omega)|^p\, \mathsf{Pr}(d\omega)\to 0$"
+2456,$p=e^\theta$
+2457,$v=1-d$
+2458,$m(y)$
+2459,$\alpha_X > 2$
+2460,"$[0,1] \times \{y\} \subset X$"
+2461,$t_l = l f_{\max{}} / n$
+2462,$l(t)<\infty$
+2463,$x\to 0$
+2464,$K(t)=\log M(t)$
+2465,"$a_1,a_2\in A$"
+2466,$16$
+2467,$\mu=T\lambda$
+2468,"$Y_l:=\mathsf{CP}(J(1), X_l)$"
+2469,$n\ge N$
+2470,"$1 million in punitive damages from Steyn, $"
+2471,$\G=\sigma(\A)$
+2472,$\sup_\Omega |X_n - X| \to 0$
+2473,$\mathsf{Var}(X)=\mathsf{E}[X^2]-\mathsf{E}[X]^2$
+2474,"$\mathsf{E}[e^{\theta X_t}] = e^{t\,\kappa_X(\theta)}$"
+2475,"$(x_i, y_{k(i)})$"
+2476,"$T:(\Omega,\F)\to (E,\mathsf{E}E)$"
+2477,$\int X=0$
+2478,$\omega_0$
+2479,$\Delta\in\F\otimes\F$
+2480,$\mu(a+b\mu)$
+2481,$n=2^{\log_2}$
+2482,$\lambda < 1$
+2483,$\beta_0+\beta_1+\beta_2$
+2484,$\log_g(n)=a$
+2485,$F\subset E\in \H\implies F\in \H$
+2486,$c(k)=\binom{n+k-1}{k}$
+2487,$M_t$
+2488,$x_{\min{}} = m_0b$
+2489,$(\tau^{-1})'(\mu)=1/V(\mu)=\mu^{-p}$
+2490,$\theta < 0$
+2491,$P^T(T=t\mid t)=\P(\{t\})=0$
+2492,$\cos(iz)=\cosh(z)$
+2493,$e^{\theta X_t -t\kappa_X(\theta)}$
+2494,"$0, 1, \dots, n - 1$"
+2495,"$J=\{\omega\mid P(\Gamma\cap Z, \omega) = \frac{1}{2}1_\Gamma(\omega) \ \forall\Gamma\in\G\}$"
+2496,$\lambda/r<1$
+2497,$0\leq f \leq 1$
+2498,$\mathsf v$
+2499,$10^{-15}$
+2500,$X\ge a$
+2501,$\mathcal{M} = \sigma(\mathcal{A})$
+2502,$x_{i1}$
+2503,$|b|$
+2504,"$b,-2b,b$"
+2505,$2^1+1\rightarrow 3^1+1-1=3^1 \rightarrow 4^1-1=3 \rightarrow 2 \rightarrow 1 \rightarrow 0$
+2506,"$[-\infty, 2]$"
+2507,$X_\infty(\omega)$
+2508,"$\mathcal W(g, W)$"
+2509,$p$
+2510,$\kappa_1'(-\kappa(\theta))=1/m$
+2511,$t \to \infty$
+2512,$\lambda_t$
+2513,"$[-10, 10)$"
+2514,$(T\lambda)g = \mu^t g(t)l(t) \le \mu h < \infty$
+2515,$E[\tau] = 2$
+2516,$ if $
+2517,"$(E, \mathsf{E}E)$"
+2518,$\H(R)$
+2519,$\mathsf{E}[X\mid\G]=\mathsf{E}[X]$
+2520,"$\psi:(L\times M, \A\otimes \B)\to\mathbb{R}$"
+2521,$\sum_{m\in\mathbb Z} F((mn + k +1/2)b)-F(mn + k - 1/2)b)$
+2522,$\partial l/\partial \mu$
+2523,$n\mathsf{Var}(X)$
+2524,"$\alpha_X\in(\alpha_Y+1/2, \alpha_Y+1)$"
+2525,$\F$
+2526,$X_t$
+2527,"$\px=\int_B \sum_i\mathsf{E}[X_i\mid \G]\,d\P$"
+2528,$m = n \times \text{molar mass} = 114.6g$
+2529,$\hat F / |\hat F|$
+2530,$f_Y$
+2531,$m=et$
+2532,$\omega = 2\pi / T$
+2533,$1 \times 10^{14}$
+2534,$J/K$
+2535,$f(\mu)= \mu$
+2536,"$f(X,Y)$"
+2537,$> 10^{19}$
+2538,$F = M v^2 / r$
+2539,$ which is an extreme stable with L&eacute;vy distribution $
+2540,$\mathsf{Pr}(X_n\in A)=1$
+2541,$h_f$
+2542,$T(x)$
+2543,$\sup_{\alpha \in A} \mathsf{E}[|X_\alpha|^p] < \infty$
+2544,$K=A^k\pmod p$
+2545,$3.2 \times 10^9$
+2546,$T''$
+2547,$\Delta H$
+2548,$N'/w-\alpha a\le Mg$
+2549,$\hat X$
+2550,"$p(\omega, \cdot)$"
+2551,"$F_n,F$"
+2552,"$M = \{M_t, t \geq 0\}$"
+2553,$x_2$
+2554,"$(\P_X, \sigma(T))$"
+2555,$\P_S$
+2556,$l(y;\mu)=\log(a(y) + y\tau^{-1}(g^{-1}(\bfx\beta))-\kappa[\tau^{-1}(g^{-1}(\bfx\beta))]$
+2557,$p=1.6$
+2558,$b=0$
+2559,$\mathrm{conv}(S)$
+2560,$\kappa(\theta)=-n\log(1-e^\theta)$
+2561,$\mathsf{E}[X\mid\sigma(T)]$
+2562,$\P(D ∪ C^c) = 1$
+2563,$\lambda = 2$
+2564,$x_i$
+2565,$t < T$
+2566,$Y_\nu=Z_\nu/\nu$
+2567,"$\lambda,\mu$"
+2568,$5 trillion business. Property casualty insurers write $
+2569,$10^{-4} \times$
+2570,$t = T$
+2571,$X=\sum_i X_i$
+2572,$dgS$
+2573,$10^9 - 10^{12}$
+2574,$\tau^{-1}$
+2575,$k(t)l(t)<\infty$
+2576,"$\mathit{ED}(\mu, \sigma^2)$"
+2577,$f \in C(X)$
+2578,$\theta=\tau^{-1}(\mu)$
+2579,$\theta=\log\left(\frac{p}{1-p}\right)$
+2580,$G = H - TS$
+2581,$\mu_2$
+2582,$1-0.271 = 0.729$
+2583,"$\int_0^1 xj(x)\,dx=\infty$"
+2584,$<$
+2585,"$(\Omega, \F, λ)$"
+2586,$25M limit above \$
+2587,$[(k-1/2)b)-F((k+1/2)b))$
+2588,$K''(0) = \kappa''(\theta) = \tau'(\theta)$
+2589,$1/x^2$
+2590,$\sigma^2>0$
+2591,$\approx 10^{-1}$
+2592,$V(m)=m^2$
+2593,"$[0, \epsilon_2]$"
+2594,$P(P(\omega))$
+2595,$\sigma(\A\otimes \B)$
+2596,$Y = \operatorname{frac}(2\omega)=\{2x\}=x -\lfloor x\rfloor$
+2597,$N_i$
+2598,$G_i'$
+2599,$\sup(X)$
+2600,$\Gamma(z + 1) = z\Gamma(z)$
+2601,$A \subseteq \mathbb{R}$
+2602,$j_n(x)=j(x)$
+2603,$(\hat f(l/P))_l$
+2604,$l(t)=\lambda_t \Omega$
+2605,$X=Y$
+2606,$N \mid G$
+2607,$\kappa'(\theta)$
+2608,$\beta=\alpha/\mu$
+2609,$\P(A\cap B)=0$
+2610,$\mathrm{Re}(a)>0$
+2611,$A_t = T$
+2612,$(\alpha+1)/\alpha\to 1$
+2613,"$P^T_S(\cdot\mid\cdot):\A\times M\to [0,1]$"
+2614,$r_1 = 44594.593127378765$
+2615,$\px=\P(B\cap \bigcup A_i)$
+2616,$\tau = \inf\{t \geq 1 : M_t = t \}$
+2617,"$i=1,\dots, M$"
+2618,"$X:(\Omega,\F)\to(S,\S)$"
+2619,$s(x;\mu) = \partial l/\partial \mu$
+2620,$1 < \alpha < 2$
+2621,"$\mathcal{W}(\mathrm{fuzzy}, W)$"
+2622,$1-\alpha$
+2623,$n=4$
+2624,$96\le x \le 103$
+2625,"$F:\Omega\times \mathbb{R}\to[0,1]$"
+2626,$X_1+\cdots +X_n$
+2627,$t \wedge \tau_n$
+2628,$L^2$
+2629,$q(p)$
+2630,$G_\delta$
+2631,$\alpha_i(x):=\mathsf{E}\left[\dfrac{X_i}{X}\mid X > x\right]$
+2632,$E$
+2633,"$x_1,\dots,x_{k+1}$"
+2634,$X_0=1$
+2635,"$[9750, 10550]$"
+2636,$S$
+2637,"$1,2,\dots, 11$"
+2638,$w(z)=zg(w(z))$
+2639,$P(z)=\sum_n p_nz^n$
+2640,$\mathcal{F}_t$
+2641,$p=1$
+2642,"$\forall A\in\F,\ \omega\to P(A, \omega)$"
+2643,"$P(·, \omega)$"
+2644,$\hat f$
+2645,$x_0=a/2\pi$
+2646,$0<x<1$
+2647,$. The value $
+2648,$\exp(\beta X_t-\lambda t)$
+2649,$g(t)l(t)=0$
+2650,$\alpha=-1$
+2651,$\beta_1$
+2652,$x \sim y$
+2653,$\chi^2$
+2654,$p\approx -\log(1-p)$
+2655,$\{X_i\}_{i \in I}$
+2656,$t<\tau$
+2657,$F$
+2658,"$\forall\ E,F\in R$"
+2659,$>x$
+2660,$x^2$
+2661,$q_\beta$
+2662,$10^6A_{40}=121059.21$
+2663,$f:S\times T\to \mathbb{R}$
+2664,$b=0.3$
+2665,$q(s)$
+2666,$5.184 \times 10^{19}$
+2667,$\\alpha=2$
+2668,$g(x)=e^{2\pi i x\theta}$
+2669,$\epsilon\mu(A\cap B)\le \nu_0(A\cap B)$
+2670,$A \in\F$
+2671,$A=A_1\cup\cdots\cup A_n$
+2672,${}_{dt}q_{x+t}\approx dt\mu_{x+t}$
+2673,$(6.022 \times 10^{23} \text{ molecules/mol})$
+2674,"$\psi(s,t)=\mathsf{E}[\psi(S,T) \mid S=s,T=t]$"
+2675,$p=29$
+2676,$f_{\max{}}=1/b$
+2677,$\sum_x x p_x$
+2678,$g(x)=0$
+2679,"$\{0,1,2,\dots\}$"
+2680,$\sigma^2=1/\nu$
+2681,$-\theta - \lambda(e^{-\theta}-1)=y$
+2682,"$\Delta_\omega=\{w \mid (\omega,w)\in\Delta\}$"
+2683,$x^{-1/2}$
+2684,$q$
+2685,$0.99999$
+2686,$C=2\mathbb Z + 1 + \xi\mathbb Z$
+2687,$1<\alpha<\omega_c$
+2688,$d(d-1)\approx d^2$
+2689,$D(F)$
+2690,$P_S$
+2691,$SiO_4^{4-}$
+2692,$\cos\arctan(\mu)=1/\sqrt{1+\mu^2}$
+2693,$\mathsf{E}[X\mid T]=\mathsf{var}phi(T)$
+2694,$=p$
+2695,$\P H\xi=\P HX$
+2696,"$P(\omega, \cdot)$"
+2697,$g_1$
+2698,$e^{\theta_1 y}$
+2699,$=$
+2700,"$E, F$"
+2701,$2.09 \times 10^{14}$
+2702,$c$
+2703,$L=\sum_s l_s B_s$
+2704,$s_0$
+2705,$ because it has a cusp). In the case $
+2706,$f:L\to M$
+2707,$R_t$
+2708,$q_\alpha\in B'\cap F_\alpha$
+2709,$\frac{1}{2}1_\Gamma(\omega)$
+2710,$F_\sigma$
+2711,$1 \times 10^{18}$
+2712,$I$
+2713,$B=\bigcap_i G_i$
+2714,$10^{18}$
+2715,$ and gamma severity. Distributions with $
+2716,"$(\Omega, \mathcal{F})$"
+2717,$F(x_{\max{}})-F(x_{\min{}})$
+2718,$\kappa(\theta(\mu))$
+2719,$\mathcal{F}$
+2720,$A\cap B\subset B$
+2721,$\lim_s\inf m_X(s)\ge \mathsf E[X]$
+2722,$C_p = \frac{5}{2}R$
+2723,$c\ge 0$
+2724,$|X_t|$
+2725,$1_{T^{-1}(B)}$
+2726,"$G(t, 1/\nu)$"
+2727,$4\times 10^{19}$
+2728,$R^S=g^mA^R$
+2729,"$ which is the cumulant function for the normal distribution. As expected, $"
+2730,$\nu\{0\}=0$
+2731,$(y-\mu)/V(\mu)$
+2732,$G_\delta\subset\R$
+2733,"$(0,\infty)$"
+2734,$\tilde x$
+2735,$\alpha_Y + 2 > \alpha_X > \alpha_Y+1$
+2736,$(\lambda)$
+2737,$10^{-18}$
+2738,$a = \omega^2 r = v^2 / r$
+2739,$n=16$
+2740,$(1-p)(1-\alpha)=(p-1)(\alpha-1)=-1$
+2741,$X_n(\omega)\to X(\omega)$
+2742,$\mu_x$
+2743,$y^*$
+2744,$B\in\F$
+2745,"$D = \{ω : P(N, ω) = 1\}$"
+2746,$0\le \hat \theta\le 1$
+2747,$u$
+2748,$A_t = t$
+2749,$2\times 10^{30}$
+2750,$N_t - A_t = -t$
+2751,$\P(A\cap G)=\P(A)\P(G)$
+2752,$|e^{isy}|=1$
+2753,$\hat\theta_s<0.5$
+2754,$\Omega\times \F$
+2755,$P^T(F\mid t)=\P(F)$
+2756,$(X)$
+2757,"$x_i, y_i$"
+2758,$c(z; \nu)$
+2759,$f(\mathsf{VaR}_p(X))$
+2760,$\{\mathcal{F}_t\}$
+2761,$A=1$
+2762,$p\to 2$
+2763,"$\alpha_X\in(\alpha_Y, \alpha_Y+1/3)$"
+2764,$T = 20°C + 273.15 = 293.15 K$
+2765,"$i=1,2,\dots,10000$"
+2766,$\forall x\ [\exists y\ (y\in x)\rightarrow \exists y\ (y\in x \wedge \neg\exists z(z\in x \wedge z\in y))]$
+2767,$\alpha + F_1/a$
+2768,"$(y_1, y_2)$"
+2769,$t\ge T$
+2770,$\tau'(\theta)=\kappa''(\theta)=\mathsf{Var}(Y_\theta)>0$
+2771,$A = \{ω\}$
+2772,$\alpha_i(x)S(x)$
+2773,$\int_1^\infty j(x)dx<\infty$
+2774,$\lambda_2/\lambda$
+2775,$T(X) = \sum_{i=1}^{n} X_i$
+2776,$X = \sum_i X_i$
+2777,$-1/2$
+2778,$(X_n)$
+2779,$\P(A \cap B)$
+2780,$h_1\le w$
+2781,$\hat p_s$
+2782,"$10,280$"
+2783,$D ∪ C^c ⊃ N$
+2784,$\P[\cdot\mid Y]$
+2785,$R_x:=T_x-x$
+2786,$K(t; \theta)$
+2787,$\leq$
+2788,$X(x)=1/x$
+2789,"$r \approx 384{,}400 \ \text{km}$"
+2790,$Z\cap J\not=Z\cap (J\setminus\{\omega\})$
+2791,$\P(A\mid\G)=P(A)$
+2792,"$\mathsf{CP}(\lambda, B)$"
+2793,$d(y;\mu)>0$
+2794,$\mathsf Q$
+2795,$1<p<2$
+2796,$E[X_\tau] \neq E[X_0] = 0$
+2797,$g(S(x)) / S(x)$
+2798,$\mathsf{Pr}(X ≥ x_0) = p$
+2799,$\exists c>0: \left\Vert K_\delta\right\Vert_{L^1}\le c\ \forall \delta>0$
+2800,$\mathsf{E}[X\mid X \ge x]\ge x$
+2801,$0.01 \text{ kWh}$
+2802,$\bar a_{75}=9.81$
+2803,$\sum_n 1/n$
+2804,$x_1+y_1 \le x_1+y_2\le x_2+y_2$
+2805,$\mathsf{E}[XY\mid\G]=X\mathsf{E}[Y\mid \G]$
+2806,$(T\lambda)k = \mu kl < \infty$
+2807,$\P_T$
+2808,$g'(s)$
+2809,$X_1 = aX + b$
+2810,$10^{-15} - 10^{-18}$
+2811,$m^2(1+m)$
+2812,$n=2^5=32$
+2813,$ and also that $
+2814,$m/s^2$
+2815,$k(\theta)>0$
+2816,$N\sim\mathrm{Po}(\lambda)$
+2817,$. The distribution is very thick tailed and does not have a mean ($
+2818,$x/c$
+2819,$\mathsf E[X_i \mid X]$
+2820,$10^{21}$
+2821,$R=L^*+R^*$
+2822,$kT$
+2823,$(y-\mu)/\sqrt{V(\mu)}$
+2824,$T$
+2825,$D_s = X_s - X_{s-1}$
+2826,$\mathsf E[|X_1|]<\infty$
+2827,$\ln(10)=2.302585$
+2828,$m_l$
+2829,$-k$
+2830,$F\subset A$
+2831,$L \propto M^{3.5}$
+2832,"$, resulting in a distribution with support on $"
+2833,$K$
+2834,$\mathsf{Pr}(N>32)=7.37\times 10^{-9}$
+2835,$S\mid \B$
+2836,$\mu=\tau(\theta)=\dfrac{ne^\theta}{1-e^\theta}$
+2837,$D_t = Y_t - Y_{t-1}$
+2838,"$(-\mu(U)/2, \mu(U)/2)$"
+2839,$\lambda_1/\lambda$
+2840,$(1+\rho)\mathsf{E}[C]$
+2841,$0\le t\le 1$
+2842,$f=0$
+2843,$\mathsf{E}[X]=\infty$
+2844,$\mathsf{E}[X]=\mathsf{Var}(X)=1$
+2845,$Y_\nu=X_\nu/\nu$
+2846,$f(\cdot;\theta)$
+2847,$u=0$
+2848,$\{T=t\}$
+2849,$\times$
+2850,$\sigma^2=1$
+2851,$\alpha_Y = \alpha_X=\alpha$
+2852,$A\leftrightarrow 1_A$
+2853,$\theta^2/2$
+2854,$\mu=T\P$
+2855,"$\px=\sum_i\int_B X_i\,d\P$"
+2856,$N'/2w - Mg - \alpha a> 0$
+2857,$\mathsf{Var}(Y)=npq=\mu(1-p)=\mu(1-\mu/n)$
+2858,$\beta\to (\alpha+1)/\mu$
+2859,$x \urcorner$
+2860,$D_t = (X_t^2 - t) - (X_{t-1}^2 - (t-1)) = X_t^2 - X_{t-1}^2 - 1$
+2861,"$\mathsf{E}[X\mid T=t] = \displaystyle\int_L \mathsf{E}[X\mid S=s,T=t]P^T_S(ds$"
+2862,"$(S,d)$"
+2863,$10^{-35}$
+2864,"$X = (X_1, X_2, \ldots, X_n)$"
+2865,$ for integer $
+2866,$K_\theta(t)=\kappa(\theta+t)-\kappa(\theta)$
+2867,$g(s) = \Phi(\Phi^{-1}(s) +\lambda)$
+2868,$\A=\{\Omega\}$
+2869,$10^{-8} - 10^{-11}$
+2870,$T\lambda=\mu$
+2871,$p=1/2$
+2872,$s\to\infty$
+2873,$\sum_i x_i^2$
+2874,$\nu\ll\P$
+2875,$\int_{-\infty}^\infty$
+2876,$y_s$
+2877,$aggfft$
+2878,$\mu_0$
+2879,$f:\Omega\to\mathbb{R}$
+2880,$\theta_1=\theta_2$
+2881,$B\subset\R$
+2882,$> 0.98$
+2883,$f_{\max{}} = 1 / b$
+2884,$g(t)=0$
+2885,$\mathsf{E}[h(T)X]=\mathsf{E}[h(t)\mathsf{E}[X\mid T]]$
+2886,$X_{t\wedge T}$
+2887,$\mathbb{E}[|X_i|]$
+2888,$a \ge 1$
+2889,$x_2:=\mathsf{E}[X^2]$
+2890,$\int_0^1 \frac{dx}{x}=\infty$
+2891,"$I=[x_{\min{}}, x_{\max{}}]\subset\mathbb R$"
+2892,$\pm 3\sigma$
+2893,$\mathbb Q$
+2894,$C_p - C_v = R$
+2895,"$p_1,p_2$"
+2896,$λ^*(N)=1$
+2897,$p_2$
+2898,$f(y;\theta)=c(y)e^{y\theta-\kappa(\theta)}$
+2899,$\nu>1$
+2900,"$H:(\Omega,\G)\to(\mathbb{R},\BB(\mathbb{R}))$"
+2901,$\P_S(A\mid T)$
+2902,$x^2 - 2 = 0$
+2903,$\Gamma=\Phi^{-1}(D)$
+2904,$Y=Y_l+Y_s$
+2905,$\{\F_t\}_{t \geq 0}$
+2906,$\hat \theta<\theta_r$
+2907,$E[M_0]=0$
+2908,$\approx 0.999999999$
+2909,$J(x)=x^{-\alpha}$
+2910,$d=r/(1+r)$
+2911,$I_2$
+2912,$-\alpha >0)$
+2913,$-N_a<0$
+2914,$V_1(m)=m^3V(m)=\sigma^2m^3$
+2915,$V(m)=1-m$
+2916,$250$
+2917,$(-t)^a=|t|^a$
+2918,"$\omega\mapsto (\omega, T\omega)\in \Omega\times M$"
+2919,"$Z\sim\mathrm{ED}^*(\theta,\lambda)$"
+2920,$\bar A_x$
+2921,$g(s) = 1 - (1 -s)^\beta$
+2922,"$b\in (-1,1)$"
+2923,$\alpha/\beta=\mu\alpha/(\alpha+1)$
+2924,$0.26$
+2925,$X=(x_{ij})$
+2926,"$\Delta m_{21}^2 \approx 7.53 \times 10^{-5} \, \text{eV}^2$"
+2927,$1-X$
+2928,$\mathsf{E}[Y^n]$
+2929,$\approx 10^{-3}$
+2930,$\mathsf{Pr}(L\ge l)$
+2931,$h>0$
+2932,$1_G(ω)$
+2933,"$\{1,2,\dots,10000\}$"
+2934,$(Z)$
+2935,$\xi$
+2936,"$\mathsf{CP}(\lambda, B) \sim \mathrm{Poisson}(\lambda p)$"
+2937,$P_T$
+2938,$K_0(t)=\kappa(t)$
+2939,$G_1$
+2940,$J_n$
+2941,$1/CV^2$
+2942,$t\in\Omega$
+2943,"$\forall B\in\BB(\mathbb{R}),\ \int_B \mathsf{E}[X\mid T=t]\P_T(dt)=\int_{T^{-1}}(B) X\,d\P$"
+2944,$V(0)=0$
+2945,$f(\mu) = 2 / \mu$
+2946,"$p:E\times \S\to [0,1]$"
+2947,"$\px=\int_B \sum_i X_i\,d\P$"
+2948,$T_x\ge x$
+2949,"$T:(M,\B)\to ??$"
+2950,$l(y;\mu)=-y/\mu - \log\mu$
+2951,"$(x)^- = \max(-x, 0)$"
+2952,"$\forall x\ \forall p\ \exists y[\forall u(u\in y\leftrightarrow(u\in x\wedge \phi(u,p)))]$"
+2953,$s<t$
+2954,$p=e^\theta/(1+e^\theta)$
+2955,$\xi(A\mid\G)$
+2956,$\P(N) = 1/2$
+2957,$Y_\theta$
+2958,$\mu=\tau(\theta)=-\dfrac{\alpha}{\theta}$
+2959,$1/x^3$
+2960,$0.05$
+2961,$I_1 =t^ae^{ia\pi/2}\Gamma(-a)$
+2962,$\mathsf{E}[X_1\mid X=a]$
+2963,$5 \times 10^{19}$
+2964,$\int c=1$
+2965,$\alpha=(p-2)/(p-1)$
+2966,$-l$
+2967,$\Theta$
+2968,$d(y;\mu)=d^*(y-\mu)$
+2969,$\nu(B)=\P(B\cap A)$
+2970,$\mu\to\infty$
+2971,$0.98$
+2972,$\mu\in\mathbf R$
+2973,"$Y_i\sim N(\mu, \sigma^2 / w_i)$"
+2974,$\Q(A)=0$
+2975,$-1\le \beta\le 1$
+2976,$f_0(x) = \lim_n g_n(x)$
+2977,$m_X(s)=\mathsf E[X\mid S=s]$
+2978,$-5$
+2979,$x+b$
+2980,"$(\omega^{kl})_{k,l}$"
+2981,$\mathsf{Var}(L(\nu))=\nu\mathsf{Var}(L(1))$
+2982,"$P(A, ω)$"
+2983,"$\mathrm{Tw}_p(\mu, \sigma^2)$"
+2984,$\B\subset\F$
+2985,"$\mathrm{rcd}(\P_S,\sigma(T))$"
+2986,$nu(B)=$
+2987,$\sum_{i=1}^{k} x_i$
+2988,$m^3$
+2989,$a=100$
+2990,$\mathsf{E}[X_t X_s] - \mathsf{E}[X_t X_{s-1}] - \mathsf{E}[X_{t-1} X_s] + \mathsf{E}[X_{t-1} X_{s-1}]$
+2991,$y\not=\mu$
+2992,$e^{- \kappa(\theta)}>0$
+2993,$X(\omega)$
+2994,$\P(\cdot\mid X)$
+2995,"$X^{\tau_n} = \{X_{t \wedge \tau_n}, t \geq 0\}$"
+2996,$A = \bigcap_{n=1}^{\infty} A_n$
+2997,$A_j$
+2998,$P_t$
+2999,$T(y)=y$
+3000,$ROL = EL + \lambda  (\mathit{EL}  (1 - \mathit{EL})/w)^{1/2}$
+3001,"$\Gamma(T)=\{ (\omega, T\omega) \mid \omega\in\Omega \}$"
+3002,$\log(\sqrt{2\pi})=0.399090$
+3003,$\lambda = 1 / \sigma$
+3004,"$n_{\text{water, initial}} = \frac{P_{\text{water}}V}{RT} = \frac{4240 \times 1}{8.314 \times 303.15}$"
+3005,$\{Y=y\}$
+3006,$f(x)=(x-d)^+1_{\{x \le m \}}$
+3007,$e^{\theta_2 y}$
+3008,$\beta_2$
+3009,"$\displaystyle\int HX \,d\P$"
+3010,$\bar a_{b\!\urcorner}=(1-v^b)/\delta$
+3011,$\kappa'(\tau^{-1}(\mu))=\mu$
+3012,$L^1$
+3013,$x+\tau$
+3014,"$(\Omega, \F, \P)$"
+3015,$S(x)$
+3016,$\alpha > 0$
+3017,$n\to\infty$
+3018,$\mathsf{Pr}(L'\ge 270)=65.1\%$
+3019,"$50 of the amount allowed on each claim in the classes under subs. (3) to (6), except for claims of the federal government under subs. (3) and (3c), shall be deducted from the claim and included in the class under sub. (8). Claims may not be cumulated by assignment to avoid application of the $"
+3020,$f \mapsto e^{\theta X} f$
+3021,$\forall X\ \exists P\ \forall z\ [z\subset X\rightarrow z\in P]$
+3022,"$(V,\Theta)$"
+3023,"$X_0, X_1, ..., X_t$"
+3024,$\rho=\min_x\{x + \mathcal V(X-s\}$
+3025,$E\triangle F=(E\setminus F)\cup (F\setminus E)$
+3026,$10^{-13}$
+3027,$\alpha(\alpha+1)/\beta^2$
+3028,$\mathbb{Q}(\sqrt{2})$
+3029,"$P(\Gamma\cap Z, \omega)$"
+3030,$\G\subset\F$
+3031,$\mu_*(E_0)=0$
+3032,$2aw$
+3033,$n^2$
+3034,"$[0,1]\times \{y\}$"
+3035,"$\displaystyle\int_0^a \alpha_i(x)\,dx$"
+3036,$t-\delta t$
+3037,$\{X=a\}$
+3038,$\theta_s>0.5$
+3039,$\mathsf{E}[X_t]=\lambda t$
+3040,$K_{X+Y} =\log M_{X+Y}=\log (M_{X}M_Y)=\log (M_{X}) + \log(M_Y)=K_X+K_Y$
+3041,"$\forall x\forall p\exists y[\forall u(u\in y\leftrightarrow(u\in x\wedge \phi(u,p)))]$"
+3042,$p \leq q$
+3043,"$x_0, x_1, x_2$"
+3044,$\kappa(\theta)=\theta^2/2$
+3045,$\alpha_X > \alpha_Y + 1$
+3046,$1_B$
+3047,$1 \times 10^9$
+3048,$f_0(x) = \sup_n f_n(x)$
+3049,$|X_n - X_{n-1}| \le K$
+3050,$A_x=\bigcap \{A\in\F\mid x\in A\}\in\F$
+3051,$iR$
+3052,$\bar A_{x+b} - \bar P_{x+b}\bar a_{x+b}=0$
+3053,$\mathrm{CV}(Z_1)/\sqrt{\nu}$
+3054,$(1/2x_0)\mathbb Z$
+3055,"$g(\omega_1,\omega_2)=(f(\omega_1), f(\omega_2))$"
+3056,$\mathsf{E}[XM]$
+3057,$\xi(A\mid \G)(\omega)$
+3058,$\mathsf{E}[X_t \mid \F_{t-1}] = X_{t-1}$
+3059,$s_1$
+3060,$N=2^{256}=10^{77}$
+3061,$P(1-e)$
+3062,$p_0$
+3063,$\mathbb{R}^\infty$
+3064,"$[0,1]^\infty$"
+3065,$\mathsf{E}[X]=\lambda<r$
+3066,$S(x) = \mathsf{Pr}(X>x)$
+3067,$G\in\G$
+3068,$\mathsf{E}[\cdot\mid Y]$
+3069,"$\G=\{\emptyset, \Omega\}$"
+3070,$\P(A\mid\G)$
+3071,$\mathsf{Pr}(X)$
+3072,$e^x=\sum_{n\ge 0} x^n/n!$
+3073,$\theta_s<0.5$
+3074,$a=1/2$
+3075,$2X_{t-1}\epsilon_t$
+3076,$W(0)\neq 0$
+3077,"$(L,\A, \mu)$"
+3078,"$[-k, \epsilon] \succeq [0, \epsilon - k]$"
+3079,$0.9$
+3080,$v+d=1$
+3081,$\eta=0.49$
+3082,"$(M,\B, \nu)$"
+3083,$\ell(I_k)$
+3084,$\theta=0\in\Theta_p$
+3085,$g(0)=0$
+3086,$\alpha_Y \le \alpha_X$
+3087,"$\forall\,\omega,t\in M$"
+3088,$\alpha\to 0$
+3089,$\A_y\supset \A$
+3090,$ and so $
+3091,"$(0,t_2]$"
+3092,$Mg+F_2>Mg$
+3093,$\P(A\mid\G) = 1_A$
+3094,$x_0$
+3095,$S\P$
+3096,$\mathsf E[X_i \mid X](\omega) = \mathsf E[X_i \mid X=X(ω)]$
+3097,$\theta-\log(1+\theta))=y$
+3098,$O$
+3099,$d=iv=1-v$
+3100,"$I_x=[x, x+dx]$"
+3101,$x=1$
+3102,$y_{i}$
+3103,"$642 billion of gross written premium in 2017, and, after reinsurance, net earned premium was $"
+3104,$Y_t$
+3105,$\mathcal X$
+3106,"$\Q(F)=\R(X\times F),\ \forall F\in\B$"
+3107,$M_F$
+3108,$V_1(m)=m^3V(1/m)$
+3109,$q_2$
+3110,"$f:(L,\A)\to(M, \B)$"
+3111,$\mathsf{E}[1_B\mid \G]$
+3112,"$p(\cdot, y)$"
+3113,$\mathcal{F}_k$
+3114,$\mathsf{Pr}(L\ge 270)=77.1\%$
+3115,$\tilde\Theta$
+3116,"$(-\infty,\infty)$"
+3117,$1-1/2 + 1/3-1/4+\cdots$
+3118,$\forall t\in M$
+3119,$\emptyset = \forall x(x!=x)$
+3120,"$P(\omega, B)$"
+3121,$p_1=3-p$
+3122,"$\mathrm{ED}^*(\theta, \lambda)$"
+3123,"$\alpha,\beta$"
+3124,$-br$
+3125,$\Delta G = \Delta H - T\Delta S$
+3126,"$\mathrm N(0, \sigma_n^2)$"
+3127,$\P(A\mid\sigma(T))$
+3128,$g(S(x)) > S(x)$
+3129,$\kappa_p(\theta)$
+3130,$T(x)=\{2x\}$
+3131,$T'$
+3132,$\{\F_t\}$
+3133,$p-1$
+3134,$T_n = \sum_{i=1}^{n} T(X_i)$
+3135,"$ Finally, since we are interested in the left-shift $"
+3136,$f_{\max{}}$
+3137,$E_0+A$
+3138,$D(F)\cap A$
+3139,$\sqrt{x_2/\lambda}$
+3140,$p=0.7$
+3141,$r \leq q$
+3142,$f_0 * f= f$
+3143,"$\ddot{a}_{x, n\!\urcorner}$"
+3144,"$p\not=1,2$"
+3145,$3^{-n}$
+3146,$\{A_n\}$
+3147,$E[X_\tau] = E[X_0]$
+3148,$I_2=t^ae^{-ia\pi/2}\Gamma(-a) \ge 0$
+3149,$\mathsf{Pr}(N\in I + kP)$
+3150,$V(\mu)\propto \mu^p$
+3151,$\mathbb R^+$
+3152,$d(y;y)=0$
+3153,$\kappa(\theta)=-\log(-\theta)$
+3154,$s(X)=s(X;\mu)$
+3155,"$\displaystyle\int_B  X \,d\P$"
+3156,$f_P$
+3157,$9 = 2^3 + 1 = 2^{(2^1 + 1)} + 1$
+3158,$ROL = a + b\ \mathit{EL} + c \ C(t)$
+3159,$A=g^a$
+3160,$X_t \neq \mathbb{E}[0 \mid \mathcal{F}_t]$
+3161,$1<\alpha<2$
+3162,$1< \alpha<2$
+3163,$\partial L/\partial \mu$
+3164,$X_t=ct + \sigma B_t$
+3165,$\mathcal{G}$
+3166,$b \urcorner$
+3167,$T=t$
+3168,$a=\mathsf{E}[X\mid X\ge a^*] =\mathsf{E}[X_1\mid X\ge a^*] + \mathsf{E}[X_2\mid X\ge a^*]$
+3169,$a=b^c$
+3170,$N-A$
+3171,$b + v_i / r$
+3172,$X:\Omega\to\mathbb{R}$
+3173,$X_n=1/n$
+3174,"$\omega\mapsto p(\omega, A)$"
+3175,$A^c \in \mathcal{M}$
+3176,$R^2$
+3177,$B_t\le x$
+3178,$\bar\theta_s>0.5$
+3179,$λ_*(N)=0$
+3180,$\mathsf{Var}(X)=1$
+3181,$\sup_t \mathbb{E}[|X_t|^p] < \infty$
+3182,$\sigma(\C)$
+3183,$g:\Omega\times\Omega\to\mathbb{R}^2$
+3184,$x_{\min{}}\not=0$
+3185,$c=\mathsf{Var}(G)=\nu^2$
+3186,$\mathsf{E}[X\mid \G](\omega)$
+3187,$V(\mu)=\kappa''(\tau^{-1}(\mu))=1/(\tau^{-1})'(\mu)$
+3188,$\text{Maximum number of electrons in a shell} = 2n^2$
+3189,$X^T$
+3190,$A\in\F$
+3191,"$[0, P)$"
+3192,$\mu=\lim_{\alpha\to-\infty} (2-\alpha)/(-\theta)$
+3193,$(T\lambda)\{\lambda_t\Omega=0\}=0$
+3194,"$(\Omega, \mathscr F, \mathsf P)$"
+3195,"$(X_1, \dots, X_d)$"
+3196,$V(\phi)$
+3197,$a=(1-f)^2/\nu^2=(1-f)^2/c$
+3198,$-10$
+3199,$N'/aw$
+3200,$B_n$
+3201,$\Gamma=\mu\otimes\Lambda$
+3202,$\mathsf{E}(G^r)=\theta^r\Gamma(a+r)/\Gamma(a)$
+3203,$\rho\ge 0$
+3204,$E_0+a_2$
+3205,$\mathit{LGD}$
+3206,$V_2$
+3207,$T_n=T\wedge n$
+3208,$\delta\downarrow 0$
+3209,$G'$
+3210,$f(A)=B\cap f(L)$
+3211,$\times T^4 \propto 4\pi R^2T^4$
+3212,$\mu\{ l<1\}=0$
+3213,$t=1$
+3214,$h$
+3215,$t\to\infty$
+3216,$2^1\rightarrow 3^1-1=2 \rightarrow 1 \rightarrow 0$
+3217,"$f(\cdot, t)$"
+3218,"$A\mapsto p(t, A)$"
+3219,"$L=\min(\max(X-a, 0), y)$"
+3220,$-1<-\alpha<0$
+3221,$T_{x/n}$
+3222,$-t^2/2$
+3223,$C_v = \frac{3}{2}R$
+3224,$p=(\alpha-2)/(\alpha-1)$
+3225,$\mathsf E[X_i \mid X](\omega) = \mathsf E[X)i \mid X=X(ω)]$
+3226,$M_G(\zeta)  = (1-\theta\zeta)^{-a}$
+3227,$52.6 \times 10^6$
+3228,$\F_s$
+3229,"$\mathrm{rcdf}(\P,\G)$"
+3230,$\lim_{\mu\to 0} V'(\mu)=\delta$
+3231,"$k=6,7,8,9$"
+3232,$\Theta_p$
+3233,"$j=1,\dots, d$"
+3234,$e^{\theta y}$
+3235,$M_1$
+3236,$7.35 \times 10^{22}$
+3237,$ω$
+3238,$\lambda_i$
+3239,$\mathsf{CP}_n$
+3240,$-br-v_i<0$
+3241,$X<a$
+3242,$0.999$
+3243,$\delta_0$
+3244,$BM^2-t$
+3245,$E \subseteq \mathbb{R}$
+3246,$V(m)=m(1+m)$
+3247,$s=1-p$
+3248,$X(\omega) = \omega$
+3249,$t>0$
+3250,"$[1,\infty)$"
+3251,$B(b)<0$
+3252,"$\int_0^1 j(x)\,dx=\infty$"
+3253,$d(y;\mu)$
+3254,$P^T_S(\cdot\mid t)$
+3255,"$\P,\mu,P^T_S(\cdot\mid\cdot)$"
+3256,$\beta_0$
+3257,"$([0, 1], \tF,\P)$"
+3258,$\lambda=\mu^{2-p}(\alpha+1)/\alpha\to \mu(\alpha+1)/\alpha$
+3259,$g(x)=1$
+3260,"$p:\Omega\times\mathsf{E}E\to [0,1]$"
+3261,"$(\B,Y\setminus N)$"
+3262,$t\in M$
+3263,$\tau^{-1}(\mu)=-\mu^{-1}$
+3264,"$S, T$"
+3265,$h(0.05) = 1-g(1-0.95) = 0.0203$
+3266,$\mathsf{skew}(G)=\mathsf{skew}(G')$
+3267,$\alpha \uparrow 2$
+3268,$n=5$
+3269,$P_t\{T=t\}=1$
+3270,$q_\alpha$
+3271,$\lambda_{\text{max}}$
+3272,$X \mapsto bX$
+3273,"$p\not=1,2,\infty$"
+3274,$f=f_0$
+3275,$10^{-10}$
+3276,$ rather than 1. Since $
+3277,$E[\tau] < \infty$
+3278,"$\int_1^\infty xj(x)\,dx$"
+3279,$\nu\ll T\P$
+3280,$1 + \mu^2 + \sqrt{1+\mu^2}$
+3281,$0.8\times 1.2 = 24/25$
+3282,$f(kb)b$
+3283,$\theta_r=0.40$
+3284,$\mathsf{E}[M_t | \mathcal{F}_s] = M_s$
+3285,$5.186592 \times 10^{19}$
+3286,$1 \le p \le 2$
+3287,$\lambda F$
+3288,$\bar\alpha+1=1/(p-1)$
+3289,"$\P(A\mid \G):\Omega\to [0,1]$"
+3290,"$\nu(B)=\int_B X\,d\P=\mathsf{E}[X1_B]$"
+3291,"$(-\\infty, \\infty)$"
+3292,$\bar\theta=0.5$
+3293,$^{128}$
+3294,$\exp(4t^2\sigma^2/2)$
+3295,$T_1$
+3296,$n=2^4=16$
+3297,"$g = 9.81 \, \text{m/s}^2$"
+3298,$A=G\triangle P$
+3299,$\P(A\cap B)=\P(A)$
+3300,"$\mathrm{ED}(\mu, \sigma^2)$"
+3301,$8.617 \times 10^{5}$
+3302,$\mu=1/c$
+3303,$\mathsf{E}[X_1]\ge 0$
+3304,$ah_1$
+3305,$\mathsf{Pr}(X_i=0)>0$
+3306,"$b, -b$"
+3307,$r\times$
+3308,$x_{i0}$
+3309,$G_t$
+3310,$A\subset B$
+3311,$T_2$
+3312,$A=A(J)$
+3313,$U_n$
+3314,$\G_Y=\sigma(Y)$
+3315,$K'(0)=\kappa'(\theta)=\mu$
+3316,"$Mg,Fe)_2SiO_4$"
+3317,$P^T_S$
+3318,$L(t)=S(T^{-1}(t))=\{ S(\omega)\mid T(\omega)=t \}$
+3319,$Y=-X$
+3320,$a = v^2 / r$
+3321,"$\mathsf{E}[X\mid\G](\omega)=\int X(\nu)\,p(\omega, d\nu)$"
+3322,$\mathcal{F}_{t-1}$
+3323,$X_T = \mathsf{E}[X_\infty\mid\F]$
+3324,$(1-p + pe^t)^n$
+3325,$(-2N\log(1-p))^{1/2}=22.49$
+3326,$3.8\times 10^{26}$
+3327,$\mathbb R/A$
+3328,"$\nu(B)=\int_B P(A\mid\G)\,d\P$"
+3329,$\int f(-x)dx=-\int f(y)dy=-F(y)=-F(-x)$
+3330,$2(2l+1)$
+3331,"$S:(\Omega,\F)\to(L,\A)$"
+3332,$r=0.05$
+3333,$\ge$
+3334,$\P(D) = 1$
+3335,$Y_{s+t}-Y_s$
+3336,$ the net effect of this transformation is to shift left by $
+3337,$c(y;\nu)$
+3338,$3.40 per $
+3339,$-18$
+3340,$\ge x$
+3341,$P_t B$
+3342,"$(\Omega, \G)$"
+3343,"$C = \{ω:P(\{ω\}, ω) = 1\}$"
+3344,$V_{G_\nu}$
+3345,$(\theta)$
+3346,$\{\omega\}\in\G\ \forall\omega\in\Omega$
+3347,$chi^2$
+3348,$+1$
+3349,$k+1$
+3350,$E(G-E(G))^3 = 2a\theta^3$
+3351,$b\!\!\urcorner$
+3352,$ It is the reciprocal of $

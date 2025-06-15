@@ -14,11 +14,8 @@ Welcome to greater_tables's documentation!
    greater_tables.data
 
 
-Introduction
-============
-
-.. mdinclude:: ../README.md
-
+.. include:: ../README.md
+    :parser: myst_parser.sphinx_
 
 Other
 =======

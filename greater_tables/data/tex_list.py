@@ -19,12 +19,15 @@ class TeXMacros():
     from great2.blog
     """
 
-    _macros = r"""
-\def\AA{\mathcal{A}}
+    _macros = r"""\def\AA{\mathcal{A}}
 \def\atan{\mathrm{atan}}
+\def\A{\mathcal{A}}
+\def\B{\mathcal{B}}
+\def\BB{\mathbb{B}}
 \def\AVaR{\mathsf{AVaR}}
 \def\bbeta{\mathbf{\beta}}
 \def\bb{\mathbf b}
+\def\bfx{\mathbf x}
 \def\bm{\mathbf }
 \def\biTVaR{\mathsf{biTVaR}}
 \def\corr{\mathsf{Corr}}
@@ -38,9 +41,12 @@ class TeXMacros():
 \def\ecirc{\accentset{\circ} e}
 \def\EPD{\mathsf{EPD}}
 \def\ES{\mathsf{ES}}
+\def\esssup{\mathrm{ess\,sup}}
 \def\E{\mathsf{E}}
+\def\F{\mathscr{F}}
 \def\FFF{\mathscr{F}}
 \def\FF{\mathcal{F}}
+\def\G{\mathscr{G}}
 \def\HH{\mathbf{H}}
 \def\kpx{{{}_kp_x}}
 \def\MM{\mathcal{M}}
@@ -50,10 +56,13 @@ class TeXMacros():
 \def\OO{\mathscr{O}}
 \def\PPP{\mathscr{P}}
 \def\PP{\mathsf{P}}
+\def\P{\mathsf{Pr}}
 \def\Pr{\mathsf{Pr}}
 \def\QQ{\mathsf{Q}}
+\def\Q{\mathbb{Q}}
 \def\RR{\mathbb{R}}
 \def\SD{\mathsf{SD}}
+\def\spcer{\ }
 \def\TCE{\mathsf{TCE}}
 \def\TVaR{\mathsf{TVaR}}
 \def\Var{\mathsf{Var}}
@@ -66,8 +75,7 @@ class TeXMacros():
 \def\XX{\mathbf{X}}
 \def\yy{\mathbf{y}}
 \def\ZZZ{\mathcal{Z}}
-\def\ZZ{\mathbb{Z}}
-"""
+\def\ZZ{\mathbb{Z}}"""
 
     @staticmethod
     def process_tex_macros(text):
@@ -96,22 +104,37 @@ class TeXMacros():
         i = x.find('{')
         return x[:i], x[i + 1:-1]
 
-def find_tex_snippeets(in_dir='\\S\\TELOS\\PIR\\docs',
+
+def find_tex_snippets(in_dir='\\S\\TELOS\\PIR\\docs',
                        out_file='tex_list.csv'):
     """Ripgrep / TeX macro expand list of TeX snippets."""
+    # prod run with \\s\\telos\\ (!)
+    in_dir = str(Path(in_dir))
+    cmd = ['rg', '-N', '-o', '--no-filename',
+         '-g', '*.md',
+         '-g', '*.qmd',
+         r'\$.+?\$',
+         in_dir]
     result = subprocess.run(
-        ['rg', '-N', '-o', '--no-filename', '-g', '*.md', r'\$.+?\$', in_dir],
+        cmd,
         capture_output=True,
         text=True,
-        check=True
+        check=True,
+        encoding='utf-8'
     )
     output_text = result.stdout
     tm = TeXMacros()
     txt = tm.process_tex_macros(output_text)
     tex = txt.split('\n')
     stex = set(tex)
-    stext = [i for i in stex if len(i) and i.find('\\PP') < 0 and i.find('$$') < 0]
+    stext = [i for i in stex if len(i)
+    and i.find('$$') < 0
+    and i.find('lcroof') < 0
+    and i.find('#') < 0
+    and i.find(r'\\') < 0
+    ]
     df = pd.DataFrame({'expr': stext})
+    print(f'Found {len(df)} snippets!')
     if out_file != '':
         p = Path(__file__).parent / out_file
         print(p)
