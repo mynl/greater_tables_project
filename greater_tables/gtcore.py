@@ -608,6 +608,7 @@ class GT(object):
         self._clean_html = ''
         self._clean_tex = ''
         self._rich_table = None
+        self._string = ''
         # finally config.sparsify and then apply formaters
         # this radically alters the df, so keep a copy for now...
         self.df_pre_applying_formatters = self.df.copy()
@@ -627,7 +628,7 @@ class GT(object):
 
     def __str__(self):
         """String representation, for print()."""
-        return self.to_string_custom()
+        return self.make_string()
 
     def _repr_html_(self):
         """
@@ -696,6 +697,46 @@ class GT(object):
     def default_raw_formatter(self, x):
         """Formatter for columns flagged as raw."""
         return str(x)
+
+    @staticmethod
+    def default_float_format(x, neng=3):
+        """
+        the endless quest for the perfect float formatter...
+        NOT USED AT THE MINUTE.
+
+        tester::
+
+            for x in 1.123123982398324723947 * 10.**np.arange(-23, 23):
+                print(default_float_format(x))
+
+        :param x:
+        :return:
+        """
+        ef = pd.io.formats.format.EngFormatter(neng, True)  # noqa
+        try:
+            if x == 0:
+                ans = '0'
+            elif 1e-3 <= abs(x) < 1e6:
+                if abs(x) <= 10:
+                    ans = f'{x:.3g}'
+                elif abs(x) < 100:
+                    ans = f'{x:,.2f}'
+                elif abs(x) < 1000:
+                    ans = f'{x:,.1f}'
+                else:
+                    ans = f'{x:,.0f}'
+            else:
+                ans = ef(x)
+            return ans
+        except ValueError as e:
+            logger.debug(f'ValueError {e}')
+            return str(x)
+        except TypeError as e:
+            logger.debug(f'TypeError {e}')
+            return str(x)
+        except AttributeError as e:
+            logger.debug(f'AttributeError {e}')
+            return str(x)
 
     def default_formatter(self, x):
         """Default universal formatter for other types (GTP re-write of above cluster)."""
@@ -844,6 +885,77 @@ class GT(object):
                 raise ValueError(
                     f'Something wrong: {len(self._df_formatters)=} != {self.df.shape=}')
         return self._df_formatters
+
+    @staticmethod
+    def apply_formatters_work(df, formatters):
+        """Apply formatters to a DataFrame."""
+        try:
+            new_df = pd.DataFrame({i: map(f, df.iloc[:, i])
+                                   for i, f in enumerate(formatters)})
+        except TypeError:
+            print('NASTY TYPE ERROR')
+            raise
+        new_df.columns = df.columns
+        return new_df
+
+    def apply_formatters(self, df, mode='adjusted'):
+        """
+        Replace df (the raw df) with formatted df, including the index.
+
+        If mode is 'adjusted' operates on columns only, does not touch the
+        index. Otherwise, called from tikz and operating on raw_df
+        """
+        if mode == 'adjusted':
+            # apply to df where the index has been reset
+            # number of columns = len(self.df_formatters)
+            return GT.apply_formatters_work(df, self.df_formatters)
+        elif mode == 'raw':
+            # work on raw_df where the index has not been reset
+            # because of non-unique indexes, index by position not name
+            # create the df and the index separately
+            data_formatters = self.df_formatters[self.nindex:]
+            new_body = GT.apply_formatters_work(df, data_formatters)
+            if not self.show_index:
+                return new_body
+            # else have to handle the index
+            index_formatters = self.df_formatters[:self.nindex]
+            df_index = df.reset_index(
+                drop=False, col_level=self.df.columns.nlevels - 1).iloc[:, :self.nindex]
+            new_index = GT.apply_formatters_work(df_index, index_formatters)
+            # put them back together
+            new_df = pd.concat([new_index, new_body], axis=1)
+            new_df = new_df.set_index(list(df_index.columns))
+            new_df.index.names = df.index.names
+            return new_df
+        else:
+            raise ValueError(f'unknown mode {mode}')
+
+    @staticmethod
+    def changed_column(bit):
+        """Return the column that changes with each row."""
+        tf = bit.ne(bit.shift())
+        tf = tf.loc[tf.any(axis=1)]
+        return tf.idxmax(axis=1)
+
+    @staticmethod
+    def changed_level(idx):
+        """
+        Return the level of index that changes with each row.
+
+        Very ingenious GTP code with some SM enhancements.
+        """
+        # otherwise you alter the actual index
+        idx = idx.copy()
+        idx.names = [i for i in range(idx.nlevels)]
+        # Determine at which level the index changes
+        # Convert MultiIndex to a DataFrame
+        index_df = idx.to_frame(index=False)
+        # true / false match last row
+        tf = index_df.ne(index_df.shift())
+        # changes need at least one true
+        tf = tf.loc[tf.any(axis=1)]
+        level_changes = tf.idxmax(axis=1)
+        return level_changes
 
     def make_column_width_df(self):
         """
@@ -1353,33 +1465,160 @@ class GT(object):
 
         return optimal_max_lines, best_allocation
 
-    def to_string_custom(self):
-        """Print to string using new functionality."""
-        if self.df.empty:
-            return ""
+    @staticmethod
+    def estimate_column_widths(df, target_width, nc_index, scale, equal=False):
+        """
+        Estimate sensible column widths for the dataframe [in what units?]
 
-        cw_df = self.make_column_width_df()
-        cw = cw_df['recommended']
-        aligners = cw_df['alignment']
-        txt = GT.to_text_table(self.df, cw, aligners, index_levels=self.nindex)
-        return txt
+        Internal variables:
+            mxmn   affects alignment: are all columns the same width?
 
-    def to_string_tabulate(self):
-        """(Old) string representation using tabulate but with new col widther."""
-        if self.df.empty:
-            return ""
+        TODO: de-TeX-ification will mess up how the tex table is printed...
+            but one rarely looks at that.
 
-        cw_df = self.make_column_width_df()
-        cw = list(cw_df['recommended'])
-        aligners = list(cw_df['alignment'])
-        txt = self.df.to_markdown(
-            index=False,  # NEVER show index; it's subsumed into self.df
-            colalign=aligners,
-            tablefmt=self.str_table_fmt,
-            maxcolwidths=cw,
-            maxheadercolwidths=cw,
-        )
-        return txt
+        :param df:
+        :param nc_index: number of columns in the index...these are not counted as "data columns"
+        :param config.equal:  if True, try to make all data columns the same width (hint can be rejected)
+        :return:
+            colw   affects how the tex is printed to ensure it "looks neat" (actual width of data elements)
+            tabs   affects the actual output
+        """
+        # this
+        # tabs from _tabs, an estimate column widths, determines the size of the table columns as displayed
+        # print(f'{nc_index=}, {scale=}, {config.equal=}')
+        colw = dict.fromkeys(df.columns, 0)
+        headw = dict.fromkeys(df.columns, 0)
+        tabs = []
+        mxmn = {}
+        if df.empty:
+            return colw, tabs
+        nl = nc_index
+        for i, c in enumerate(df.columns):
+            # figure width of the column labels; if index c= str, if MI then c = tuple
+            # cw is the width of the column header/title
+            if type(c) == str:
+                if i < nl:
+                    cw = GT.text_display_len(c)
+                else:
+                    # for data columns look at words rather than whole phrase
+                    cw = max(map(GT.text_display_len, c.split(' ')))
+                    # logger.info(f'leng col = {len(c)}, longest word = {cw}')
+            else:
+                # column name could be float etc. or if multi index a tuple
+                try:
+                    if isinstance(c, tuple):
+                        # multiindex: join and split into words and take length of each word
+                        words = ' '.join(c).split(' ')
+                        cw = max(
+                            map(lambda x: GT.text_display_len(str(x)), words))
+                    else:
+                        cw = max(map(lambda x: GT.text_display_len(str(x)), c))
+                    # print(f'{c}: {cw=} no error')
+                except TypeError:
+                    # not a MI, float or something
+                    cw = GT.text_display_len(str(c))
+                    # print(f'{c}: {cw=} WITH error')
+            headw[c] = cw
+            # now figure the width of the elements in the column
+            # mxmn is used to determine whether to center the column (if all the same size)
+            if df.dtypes.iloc[i] == object:
+                # weirdness here were some objects actually contain floats, str evaluates to NaN
+                # and picks up width zero
+                try:
+                    lens = df.iloc[:, i].map(
+                        lambda x: GT.text_display_len(str(x)))
+                    colw[c] = lens.max()
+                    mxmn[c] = (lens.max(), lens.min())
+                except Exception as e:
+                    logger.error(
+                        f'{c} error {e} DO SOMETHING ABOUT THIS...if it never occurs dont need the if')
+                    colw[c] = df[c].str.len().max()
+                    mxmn[c] = (df[c].str.len().max(), df[c].str.len().min())
+            else:
+                lens = df.iloc[:, i].map(lambda x: GT.text_display_len(str(x)))
+                colw[c] = lens.max()
+                mxmn[c] = (lens.max(), lens.min())
+            # print(f'{headw[c]=}, {colw[c]=}, {mxmn[c]=}, {c=}')
+        # now know all column widths...decide what to do
+        # are all the data columns about the same width?
+        data_cols = np.array([colw[k] for k in df.columns[nl:]])
+        same_size = (data_cols.std() <= 0.1 * data_cols.mean())
+        # print(f'same size test requires {data_cols.std()} <= {0.1 * data_cols.mean()}')
+        common_size = 0
+        if same_size:
+            common_size = int(data_cols.mean() + data_cols.std())
+            logger.info(f'data cols appear same size = {common_size}')
+            # print(f'data cols appear same size = {common_size}')
+        for i, c in enumerate(df.columns):
+            if i < nl or not same_size:
+                # index columns
+                tabs.append(int(max(colw[c], headw[c])))
+            else:
+                # data all seems about the same width
+                tabs.append(common_size)
+        logger.info(f'Determined tab config.spacing: {tabs}')
+        if equal:
+            # see if config.equal widths makes sense
+            dt = tabs[nl:]
+            if max(dt) / sum(dt) < 4 / 3:
+                tabs = tabs[:nl] + [max(dt)] * (len(tabs) - nl)
+                logger.info(f'Taking config.equal width hint: {tabs}')
+                # print(f'Taking config.equal width hint: {tabs}')
+            else:
+                logger.info(f'Rejecting config.equal width hint')
+                # print(f'Rejecting config.equal width hint')
+        # look to rescale, shoot for width of 150 on 100 scale basis
+        data_width = sum(tabs[nl:])
+        index_width = sum(tabs[:nl])
+        target_width = target_width * scale - index_width
+        if data_width and data_width / target_width < 0.9:
+            # don't rescale above 1:1 - don't want too large
+            rescale = min(1 / scale, target_width / data_width)
+            tabs = [w if i < nl else w * rescale for i, w in enumerate(tabs)]
+            logger.info(f'Rescale {rescale} applied; tabs = {tabs}')
+            # print(f'Rescale {rescale} applied; tabs = {tabs}')
+        # print(f'{colw.values()=}\n{tabs=}')
+        return colw, tabs
+
+    @staticmethod
+    def text_display_len(s: str) -> int:
+        """Estimate text display length of a string allowing for TeX constructs."""
+        # note you DO WANT SPACES! So, no strip applied ever.
+        if s.find('$') < 0:
+            return len(s)
+        parts = re.split(r'(\$\$.*?\$\$)|(\$.*?\$)', s)
+        total = 0
+        for part in parts:
+            if part is None:
+                continue
+            if part.startswith('$$') and part.endswith('$$'):
+                total += GT._estimate_math_width(part[2:-2])
+            elif part.startswith('$') and part.endswith('$'):
+                total += GT._estimate_math_width(part[1:-1])
+            else:
+                total += len(part)
+        return total
+
+    @staticmethod
+    def _estimate_math_width(tex: str) -> int:
+        tokens = re.findall(r'\\[a-zA-Z]+|[a-zA-Z0-9]|.', tex)
+        width = 0
+        for tok in tokens:
+            if tok.startswith('\\'):
+                name = tok[1:]
+                if name in GT.TEX_SIMPLE_GLYPHS:
+                    width += 1
+                elif name in GT.TEX_WIDE:
+                    width += 3
+                elif name in GT.TEX_SPACING:
+                    width += 1
+                else:
+                    width += 2  # unknown control sequences
+            elif tok in '{}^_':
+                continue  # grouping, sub/superscripts: ignore
+            else:
+                width += 1
+        return width
 
     def make_style(self, tabs):
         """Write out custom CSS for the table."""
@@ -1714,77 +1953,6 @@ class GT(object):
             self._clean_html = str(soup)  # .prettify() -> too many newlines
             logger.info('CREATED HTML')
         return self._clean_html
-
-    @staticmethod
-    def changed_column(bit):
-        """Return the column that changes with each row."""
-        tf = bit.ne(bit.shift())
-        tf = tf.loc[tf.any(axis=1)]
-        return tf.idxmax(axis=1)
-
-    @staticmethod
-    def changed_level(idx):
-        """
-        Return the level of index that changes with each row.
-
-        Very ingenious GTP code with some SM enhancements.
-        """
-        # otherwise you alter the actual index
-        idx = idx.copy()
-        idx.names = [i for i in range(idx.nlevels)]
-        # Determine at which level the index changes
-        # Convert MultiIndex to a DataFrame
-        index_df = idx.to_frame(index=False)
-        # true / false match last row
-        tf = index_df.ne(index_df.shift())
-        # changes need at least one true
-        tf = tf.loc[tf.any(axis=1)]
-        level_changes = tf.idxmax(axis=1)
-        return level_changes
-
-    @staticmethod
-    def apply_formatters_work(df, formatters):
-        """Apply formatters to a DataFrame."""
-        try:
-            new_df = pd.DataFrame({i: map(f, df.iloc[:, i])
-                                   for i, f in enumerate(formatters)})
-        except TypeError:
-            print('NASTY TYPE ERROR')
-            raise
-        new_df.columns = df.columns
-        return new_df
-
-    def apply_formatters(self, df, mode='adjusted'):
-        """
-        Replace df (the raw df) with formatted df, including the index.
-
-        If mode is 'adjusted' operates on columns only, does not touch the
-        index. Otherwise, called from tikz and operating on raw_df
-        """
-        if mode == 'adjusted':
-            # apply to df where the index has been reset
-            # number of columns = len(self.df_formatters)
-            return GT.apply_formatters_work(df, self.df_formatters)
-        elif mode == 'raw':
-            # work on raw_df where the index has not been reset
-            # because of non-unique indexes, index by position not name
-            # create the df and the index separately
-            data_formatters = self.df_formatters[self.nindex:]
-            new_body = GT.apply_formatters_work(df, data_formatters)
-            if not self.show_index:
-                return new_body
-            # else have to handle the index
-            index_formatters = self.df_formatters[:self.nindex]
-            df_index = df.reset_index(
-                drop=False, col_level=self.df.columns.nlevels - 1).iloc[:, :self.nindex]
-            new_index = GT.apply_formatters_work(df_index, index_formatters)
-            # put them back together
-            new_df = pd.concat([new_index, new_body], axis=1)
-            new_df = new_df.set_index(list(df_index.columns))
-            new_df.index.names = df.index.names
-            return new_df
-        else:
-            raise ValueError(f'unknown mode {mode}')
 
     def make_tikz(self,
                   column_sep=4 / 8,   # was 3/8
@@ -2177,121 +2345,6 @@ class GT(object):
         return sio.getvalue()
 
     @staticmethod
-    def estimate_column_widths(df, target_width, nc_index, scale, equal=False):
-        """
-        Estimate sensible column widths for the dataframe [in what units?]
-
-        Internal variables:
-            mxmn   affects alignment: are all columns the same width?
-
-        TODO: de-TeX-ification will mess up how the tex table is printed...
-            but one rarely looks at that.
-
-        :param df:
-        :param nc_index: number of columns in the index...these are not counted as "data columns"
-        :param config.equal:  if True, try to make all data columns the same width (hint can be rejected)
-        :return:
-            colw   affects how the tex is printed to ensure it "looks neat" (actual width of data elements)
-            tabs   affects the actual output
-        """
-        # this
-        # tabs from _tabs, an estimate column widths, determines the size of the table columns as displayed
-        # print(f'{nc_index=}, {scale=}, {config.equal=}')
-        colw = dict.fromkeys(df.columns, 0)
-        headw = dict.fromkeys(df.columns, 0)
-        tabs = []
-        mxmn = {}
-        if df.empty:
-            return colw, tabs
-        nl = nc_index
-        for i, c in enumerate(df.columns):
-            # figure width of the column labels; if index c= str, if MI then c = tuple
-            # cw is the width of the column header/title
-            if type(c) == str:
-                if i < nl:
-                    cw = GT.text_display_len(c)
-                else:
-                    # for data columns look at words rather than whole phrase
-                    cw = max(map(GT.text_display_len, c.split(' ')))
-                    # logger.info(f'leng col = {len(c)}, longest word = {cw}')
-            else:
-                # column name could be float etc. or if multi index a tuple
-                try:
-                    if isinstance(c, tuple):
-                        # multiindex: join and split into words and take length of each word
-                        words = ' '.join(c).split(' ')
-                        cw = max(
-                            map(lambda x: GT.text_display_len(str(x)), words))
-                    else:
-                        cw = max(map(lambda x: GT.text_display_len(str(x)), c))
-                    # print(f'{c}: {cw=} no error')
-                except TypeError:
-                    # not a MI, float or something
-                    cw = GT.text_display_len(str(c))
-                    # print(f'{c}: {cw=} WITH error')
-            headw[c] = cw
-            # now figure the width of the elements in the column
-            # mxmn is used to determine whether to center the column (if all the same size)
-            if df.dtypes.iloc[i] == object:
-                # weirdness here were some objects actually contain floats, str evaluates to NaN
-                # and picks up width zero
-                try:
-                    lens = df.iloc[:, i].map(
-                        lambda x: GT.text_display_len(str(x)))
-                    colw[c] = lens.max()
-                    mxmn[c] = (lens.max(), lens.min())
-                except Exception as e:
-                    logger.error(
-                        f'{c} error {e} DO SOMETHING ABOUT THIS...if it never occurs dont need the if')
-                    colw[c] = df[c].str.len().max()
-                    mxmn[c] = (df[c].str.len().max(), df[c].str.len().min())
-            else:
-                lens = df.iloc[:, i].map(lambda x: GT.text_display_len(str(x)))
-                colw[c] = lens.max()
-                mxmn[c] = (lens.max(), lens.min())
-            # print(f'{headw[c]=}, {colw[c]=}, {mxmn[c]=}, {c=}')
-        # now know all column widths...decide what to do
-        # are all the data columns about the same width?
-        data_cols = np.array([colw[k] for k in df.columns[nl:]])
-        same_size = (data_cols.std() <= 0.1 * data_cols.mean())
-        # print(f'same size test requires {data_cols.std()} <= {0.1 * data_cols.mean()}')
-        common_size = 0
-        if same_size:
-            common_size = int(data_cols.mean() + data_cols.std())
-            logger.info(f'data cols appear same size = {common_size}')
-            # print(f'data cols appear same size = {common_size}')
-        for i, c in enumerate(df.columns):
-            if i < nl or not same_size:
-                # index columns
-                tabs.append(int(max(colw[c], headw[c])))
-            else:
-                # data all seems about the same width
-                tabs.append(common_size)
-        logger.info(f'Determined tab config.spacing: {tabs}')
-        if equal:
-            # see if config.equal widths makes sense
-            dt = tabs[nl:]
-            if max(dt) / sum(dt) < 4 / 3:
-                tabs = tabs[:nl] + [max(dt)] * (len(tabs) - nl)
-                logger.info(f'Taking config.equal width hint: {tabs}')
-                # print(f'Taking config.equal width hint: {tabs}')
-            else:
-                logger.info(f'Rejecting config.equal width hint')
-                # print(f'Rejecting config.equal width hint')
-        # look to rescale, shoot for width of 150 on 100 scale basis
-        data_width = sum(tabs[nl:])
-        index_width = sum(tabs[:nl])
-        target_width = target_width * scale - index_width
-        if data_width and data_width / target_width < 0.9:
-            # don't rescale above 1:1 - don't want too large
-            rescale = min(1 / scale, target_width / data_width)
-            tabs = [w if i < nl else w * rescale for i, w in enumerate(tabs)]
-            logger.info(f'Rescale {rescale} applied; tabs = {tabs}')
-            # print(f'Rescale {rescale} applied; tabs = {tabs}')
-        # print(f'{colw.values()=}\n{tabs=}')
-        return colw, tabs
-
-    @staticmethod
     def sparsify(df, cs):
         out = df.copy()
         for i, c in enumerate(cs):
@@ -2398,76 +2451,6 @@ class GT(object):
         return df.rename(index=GT.clean_name, columns=GT.clean_name)
 
     @staticmethod
-    def default_float_format(x, neng=3):
-        """
-        the endless quest for the perfect float formatter...
-        NOT USED AT THE MINUTE.
-
-        tester::
-
-            for x in 1.123123982398324723947 * 10.**np.arange(-23, 23):
-                print(default_float_format(x))
-
-        :param x:
-        :return:
-        """
-        ef = pd.io.formats.format.EngFormatter(neng, True)  # noqa
-        try:
-            if x == 0:
-                ans = '0'
-            elif 1e-3 <= abs(x) < 1e6:
-                if abs(x) <= 10:
-                    ans = f'{x:.3g}'
-                elif abs(x) < 100:
-                    ans = f'{x:,.2f}'
-                elif abs(x) < 1000:
-                    ans = f'{x:,.1f}'
-                else:
-                    ans = f'{x:,.0f}'
-            else:
-                ans = ef(x)
-            return ans
-        except ValueError as e:
-            logger.debug(f'ValueError {e}')
-            return str(x)
-        except TypeError as e:
-            logger.debug(f'TypeError {e}')
-            return str(x)
-        except AttributeError as e:
-            logger.debug(f'AttributeError {e}')
-            return str(x)
-
-    def save_html(self, fn):
-        """Save HTML to file."""
-        p = Path(fn)
-        p.parent.mkdir(parents=True, exist_ok=True)
-        p = p.with_suffix('.html')
-        soup = BeautifulSoup(self.html, 'html.parser')
-        p.write_text(soup.prettify(), encoding='utf-8')
-        logger.info(f'Saved to {p}')
-
-    @staticmethod
-    def parse_markdown_table_and_caption(txt: str) -> tuple[str, str | None]:
-        """
-        Parses a Markdown table and an optional caption from a given string,
-        handling cases where only the caption is present.
-
-        Args:
-            txt: The input string.
-
-        Returns:
-            A tuple containing the table string (empty if not found) and the caption string (or None if no caption).
-        """
-        table_match = re.search(r"((?:\|.*\|\s*(?:\n|$))+)", txt, re.DOTALL)
-        caption_match = re.search(
-            r"^(?:table)?:\s*(.+)", txt, re.MULTILINE + re.IGNORECASE)
-
-        table_part = table_match.group(1).strip() if table_match else ""
-        caption_part = caption_match.group(1) if caption_match else ""
-
-        return table_part.strip(), caption_part.strip()
-
-    @staticmethod
     def md_to_df(txt):
         """Convert markdown text string table to DataFrame."""
         # extract table and optional caption part
@@ -2515,7 +2498,40 @@ class GT(object):
         return df, aligners, caption, label
 
     @staticmethod
-    def to_text_table(
+    def parse_markdown_table_and_caption(txt: str) -> tuple[str, str | None]:
+        """
+        Parses a Markdown table and an optional caption from a given string,
+        handling cases where only the caption is present.
+
+        Args:
+            txt: The input string.
+
+        Returns:
+            A tuple containing the table string (empty if not found) and the caption string (or None if no caption).
+        """
+        table_match = re.search(r"((?:\|.*\|\s*(?:\n|$))+)", txt, re.DOTALL)
+        caption_match = re.search(
+            r"^(?:table)?:\s*(.+)", txt, re.MULTILINE + re.IGNORECASE)
+
+        table_part = table_match.group(1).strip() if table_match else ""
+        caption_part = caption_match.group(1) if caption_match else ""
+
+        return table_part.strip(), caption_part.strip()
+
+    def make_string(self):
+        """Print to string using custom (i.e., not Tabulate) functionality."""
+        if self.df.empty:
+            return ""
+        if self._string == "":
+            cw_df = self.make_column_width_df()
+            cw = cw_df['recommended']
+            aligners = cw_df['alignment']
+            self._string = GT.make_text_table(
+                self.df, cw, aligners, index_levels=self.nindex)
+        return self._string
+
+    @staticmethod
+    def make_text_table(
         df: pd.DataFrame,
         data_col_widths: list[int],
         data_col_aligns: list[str],
@@ -2647,46 +2663,6 @@ class GT(object):
         return buf.getvalue()
 
     @staticmethod
-    def _estimate_math_width(tex: str) -> int:
-        tokens = re.findall(r'\\[a-zA-Z]+|[a-zA-Z0-9]|.', tex)
-        width = 0
-        for tok in tokens:
-            if tok.startswith('\\'):
-                name = tok[1:]
-                if name in GT.TEX_SIMPLE_GLYPHS:
-                    width += 1
-                elif name in GT.TEX_WIDE:
-                    width += 3
-                elif name in GT.TEX_SPACING:
-                    width += 1
-                else:
-                    width += 2  # unknown control sequences
-            elif tok in '{}^_':
-                continue  # grouping, sub/superscripts: ignore
-            else:
-                width += 1
-        return width
-
-    @staticmethod
-    def text_display_len(s: str) -> int:
-        """Estimate text display length of a string allowing for TeX constructs."""
-        # note you DO WANT SPACES! So, no strip applied ever.
-        if s.find('$') < 0:
-            return len(s)
-        parts = re.split(r'(\$\$.*?\$\$)|(\$.*?\$)', s)
-        total = 0
-        for part in parts:
-            if part is None:
-                continue
-            if part.startswith('$$') and part.endswith('$$'):
-                total += GT._estimate_math_width(part[2:-2])
-            elif part.startswith('$') and part.endswith('$'):
-                total += GT._estimate_math_width(part[1:-1])
-            else:
-                total += len(part)
-        return total
-
-    @staticmethod
     def make_rich_table(
         df,
         column_widths,
@@ -2769,7 +2745,7 @@ class GT(object):
         self.config.table_width_mode = tw_mode
         return table
 
-    def as_svg(self):
+    def make_svg(self):
         """Render tikz into svg text."""
         tz = TikzProcessor(self._repr_latex_(), file_name=self.df_id)
         p = tz.file_path.with_suffix('.svg')
@@ -2777,3 +2753,12 @@ class GT(object):
             tz.process_tikz(verbose=False)
         txt = p.read_text()
         return txt
+
+    def save_html(self, fn):
+        """Save HTML to file."""
+        p = Path(fn)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p = p.with_suffix('.html')
+        soup = BeautifulSoup(self.html, 'html.parser')
+        p.write_text(soup.prettify(), encoding='utf-8')
+        logger.info(f'Saved to {p}')

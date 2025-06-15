@@ -17,8 +17,7 @@ Welcome to greater_tables's documentation!
 Introduction
 ============
 
-.. include:: ../README.md
-    :parser: myst_parser.sphinx_
+.. mdinclude:: ../README.md
 
 
 Other
