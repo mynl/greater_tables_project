@@ -35,8 +35,11 @@ class GTConfigModel(BaseModel):
     :see also: ``GTConfig`` for loading from YAML with overrides.
               ``gt write-template`` CLI command to generate a default config file.
     """
-    # immutable
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(
+        # make model immutable (no attribute reassignment)
+        frozen=True,
+        extra="forbid"        # raise error on unexpected/extra fields
+    )
     default_integer_str: str = Field(
         "{x:,d}", description="Format f-string for integers. Example: '{x:,d}'"
     )
@@ -125,10 +128,6 @@ class GTConfigModel(BaseModel):
     caption_align: str = Field(
         "center", description="Alignment of the caption text"
     )
-    large_ok: bool = Field(
-        False, description="If True, allow full rendering of large tables without truncation"
-    )
-
     max_str_length: int = Field(
         -1, description="Maximum length for stringified objects (e.g. nested DataFrames); -1 = unlimited"
     )
@@ -152,7 +151,40 @@ class GTConfigModel(BaseModel):
     table_width_header_relax: float = Field(
         10.0, description="Extra characters allowed per column heading to help header wrapping"
     )
-    debug: bool = Field(False, description="Run in debug mode with more reporting, include internal ID in caption and use colored output lines")
+
+    # tikz specific options
+    tikz_column_sep: float = Field(
+        0.5, description="Separation between columns")
+    tikz_row_sep: float = Field(
+        0.125, description="Separation between rows")
+    tikz_container_env: Literal["table", "figure", "sidewaysfigure"] = Field(
+        default="table",
+        description="Type of element: 'table', 'figure', or 'sidewaysfigure'"
+    )
+    tikz_extra_defs: str = Field(
+        '', description="TeX defintions and commands put at top of table, eg \\centering.")
+    tikz_hrule: Optional[list[int]] = Field(
+        default=None,
+        description="Optional, list of (0-based) integers for horizontal rules below each value; None means no lines."
+    )
+    tikz_vrule: Optional[list[int]] = Field(
+        default=None,
+        description="Optional, list of integers for vertical rules right of each value; None means no lines."
+    )
+    tikz_post_process: str = Field(
+        '', description="non-line commands put at bottom of table")
+    tikz_latex: Optional[str] = Field(
+        None, description="arguments at top of table \\begin{table}[tikz_latex]")
+
+    # meta
+    debug: bool = Field(
+        False, description="Run in debug mode with more reporting, include internal ID in caption and use colored output lines")
+    large_ok: bool = Field(
+        False, description="If True, allow full rendering of large tables without truncation"
+    )
+    large_warning: int = Field(
+        50, description="Warn for dataframes longer then large_warning unless large_ok==True"
+    )
 
     def write_template(self, path: Path):
         """Generate a clean default config file at the given path."""

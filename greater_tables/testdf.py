@@ -251,7 +251,8 @@ class TestDataFrameFactory:
             return pd.Series(self.rng.normal(loc=0.5, scale=0.35, size=n))
         if dtype == 'l':
             # log float (greater range)
-            return pd.Series(np.exp(self.rng.normal(loc=-4 / 2 + 4, scale=4, size=n)))
+            scale = 10.
+            return pd.Series(np.exp(self.rng.normal(loc=-scale**2 / 2 + 15, scale=scale, size=n)))
         if dtype == 'v':
             # log float (greater range)
             sc = 5

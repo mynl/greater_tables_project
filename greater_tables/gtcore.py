@@ -264,7 +264,8 @@ class GT(object):
 
         # access through config
         # update and validate; need to merge to avoid repeated args
-        merged = dict(base_config.model_dump(), **overrides)
+        # merged = dict(base_config.model_dump(), **overrides)
+        merged = base_config.model_dump() | overrides
         self.config = GTConfigModel(**merged)
         # no validation
         # self.config = base_config.model_copy(update=overrides)
@@ -298,7 +299,7 @@ class GT(object):
             raise ValueError(
                 'df must be a DataFrame, a list of lists, or a markdown table string')
 
-        if len(df) > 50 and not config.large_ok:
+        if len(df) > self.config.large_warning and not config.large_ok:
             raise ValueError(
                 'Large dataframe (>50 rows) and config.large_ok not set to true...do you know what you are doing?')
 
@@ -657,8 +658,21 @@ class GT(object):
         return self._clean_tex
 
     def cols_from_regex(self, regex):
-        """Return columns of self.df matching regex"""
-        return [col for col in self.df.columns if isinstance(col, str) and re.search(regex, col)]
+        """
+        Return columns matching a regex.
+
+        For Index and MultiIndex. Operates on ``self.df`` and includes
+        index (if ``show_index``) and columns of input dataframe. Search
+        applies to any level of the index. Case sensitive.
+        """
+        pattern = re.compile(regex)
+        matching_cols = [
+            col for col in self.df.columns
+            if any(pattern.search(str(level))
+                for level in (col if isinstance(col, tuple) else (col,)))
+        ]
+        return matching_cols
+        # return [col for col in self.df.columns if isinstance(col, str) and re.search(regex, col)]
 
     def cache_get(self, key):
         """Retrieve item from cache."""
@@ -977,6 +991,7 @@ class GT(object):
             self._column_width_df = self.make_column_width_df()
             tikz_colw, tabs, scaled_tabs = self.estimate_column_widths()
             self._column_width_df['tikz_colw'] = tikz_colw
+            self._column_width_df['tikz_colw'] += 2   # for \I spacer!
             self._column_width_df['estimated_tabs'] = tabs
             self._column_width_df['estimated_scaled_tabs'] = scaled_tabs
             if self.tabs is not None:
@@ -1535,6 +1550,7 @@ class GT(object):
         # with tex adjustment
         tex_colw = dict.fromkeys(df.columns, 0)
         headw = dict.fromkeys(df.columns, 0)
+        tikz_headw = dict.fromkeys(df.columns, 0)
         tabs = []
         scaled_tabs = []
         mxmn = {}
@@ -1544,12 +1560,15 @@ class GT(object):
         for i, c in enumerate(df.columns):
             # figure width of the column labels; if index c= str, if MI then c = tuple
             # cw is the width of the column header/title
+            # tzcw is for tikz - no wrapping and no tex adjustment
             if type(c) == str:
                 if i < nl:
                     cw = GT.text_display_len(c)
+                    tzcw = len(c)
                 else:
                     # for data columns look at words rather than whole phrase
                     cw = max(map(GT.text_display_len, c.split(' ')))
+                    tzcw = len(c)
                     # logger.info(f'leng col = {len(c)}, longest word = {cw}')
             else:
                 # column name could be float etc. or if multi index a tuple
@@ -1559,14 +1578,18 @@ class GT(object):
                         words = ' '.join(c).split(' ')
                         cw = max(
                             map(lambda x: GT.text_display_len(str(x)), words))
+                        tzcw = max(map(len, words))
                     else:
                         cw = max(map(lambda x: GT.text_display_len(str(x)), c))
+                        tzcw = max(map(len, c))
                     # print(f'{c}: {cw=} no error')
                 except TypeError:
                     # not a MI, float or something
                     cw = GT.text_display_len(str(c))
+                    tzcw = len(str(c))
                     # print(f'{c}: {cw=} WITH error')
             headw[c] = cw
+            tikz_headw[c] = tzcw
             # now figure the width of the elements in the column
             # mxmn is used to determine whether to center the column (if all the same size)
             if df.dtypes.iloc[i] == object:
@@ -1591,6 +1614,9 @@ class GT(object):
                 mxmn[c] = (lens.max(), lens.min())
                 raw_lens = df.iloc[:, i].map(len)
                 tikz_colw[c] = raw_lens.max()
+        # pick up long headers too
+        for c in df.columns:
+            tikz_colw[c] = max(tikz_colw[c], tikz_headw[c])
         # print(tikz_colw)
         # now know all column widths...decide what to do
         # are all the data columns about the same width?
@@ -2008,16 +2034,15 @@ class GT(object):
         return self._clean_html
 
     def make_tikz(self,
-                  column_sep=4 / 8,   # was 3/8
-                  row_sep=1 / 8,
-                  container_env='table',
-                  extra_defs='',
-                  hrule=None,
-                  vrule=None,
-                  post_process='',
-                  label='',
-                  latex=None,
-                  sparsify=1):
+                  # column_sep=4 / 8,   # was 3/8
+                  # row_sep=1 / 8,
+                  # container_env='table',
+                  # extra_defs='',
+                  # hrule=None,
+                  # vrule=None,
+                  # post_process='',
+                  # latex=None,
+                  ):
         """
         Write DataFrame to custom tikz matrix.
 
@@ -2050,8 +2075,6 @@ class GT(object):
           never be a rule to the far right...it looks plebby; remember you must
           include the index columns!
 
-        config.sparsify  number of cols of multi index to config.sparsify
-
         Issue: column with floats and spaces or missing causes problems (VaR,
         TVaR, EPD, mean and CV table)
 
@@ -2071,7 +2094,7 @@ class GT(object):
             lines           lines below these rows, -1 for next to last row
                             etc.; list of ints
             post_process    e.g., non-line commands put at bottom of table
-            latex           arguments after \begin{table}[latex]
+            latex           arguments after \\begin{table}[latex]
             caption         text for caption
 
         Previous version see great.pres_maker
@@ -2085,6 +2108,16 @@ class GT(object):
         :param label:
         :return:
         """
+        # pull out arguments (convert to local vars - these used to be arguments)
+        column_sep = self.config.tikz_column_sep
+        row_sep = self.config.tikz_row_sep
+        container_env = self.config.tikz_container_env
+        extra_defs = self.config.tikz_extra_defs
+        hrule = self.config.tikz_hrule
+        vrule = self.config.tikz_vrule
+        post_process = self.config.tikz_post_process
+        latex = self.config.tikz_latex
+
         # local variable - with all formatters already applied
         df = self.df.copy()  # self.apply_formatters(self.raw_df.copy(), mode='raw')
         caption = self.caption
@@ -2217,8 +2250,16 @@ class GT(object):
             f'\trow {i}/.style={{nodes={{text=black, anchor=north, inner ysep=0, text height=0, text depth=0}}}},\n')
         for i in range(2, nr_columns + 2):
             sio.write(
-                f'\trow {i}/.style={{nodes={{text=black, anchor=south, inner ysep=.2em, minimum height=1.3em, font=\\bfseries}}}},\n')
+                f'\trow {i}/.style={{nodes={{text=black, anchor=south, inner ysep=.2em, minimum height=1.3em, font=\\bfseries, align=center}}}},\n')
 
+        # override for index columns headers
+        # probably ony need for the bottom row with a multiindex?
+        for i in range(2, nr_columns + 2):
+            for j in range(1, 1+nc_index):
+                sio.write(
+                    f'\trow {i} column {j}/.style='
+                    '{nodes={font=\\bfseries\\itshape, align=left}},\n'
+                )
         # write column spec
         for i, w, al in zip(range(1, len(align) + 1), tabs, align):
             # average char is only 0.48 of M
@@ -2235,7 +2276,7 @@ class GT(object):
                           f'nodes={{align={ad[al]:<6s}}}, nosep, text width={max(2, 0.6 * w):.2f}em}},\n')
         # extra col to right which enforces row height
         sio.write(
-            f'\tcolumn {i+1:>2d}/.style={{text height=0.9em, text depth=0.2em, nosep, text width=0em}}')
+            f'\tcolumn {i+1:>2d}/.style={{text height=0.9em, text depth=0.2em, nosep, text width=0em}}\n')
         sio.write('\t}]\n')
 
         sio.write("\\matrix ({matrix_name}) [table, ampersand replacement=\\&]{{\n".format(
@@ -2262,7 +2303,7 @@ class GT(object):
                     # c = wfloat_format(c)
                     s = f'{nl} {{cell:{ad2[al]}{colw[cn]}s}} '
                     nl = '\\&'
-                    sio.write(s.format(cell=c + '\\grtspacer'))
+                    sio.write(s.format(cell=c + '\\I'))
                 # include the blank extra last column
                 sio.write('\\& \\\\\n')
         else:
@@ -2271,7 +2312,7 @@ class GT(object):
                 # c = wfloat_format(c)
                 s = f'{nl} {{cell:{ad2[al]}{colw[c]}s}} '
                 nl = '\\&'
-                sio.write(s.format(cell=c + '\\grtspacer'))
+                sio.write(s.format(cell=c + '\\I'))
             sio.write('\\& \\\\\n')
 
         # write table entries
@@ -2379,389 +2420,6 @@ class GT(object):
                   post_process=post_process))
 
         return sio.getvalue()
-
-#     def make_tikz_original(self,
-#                            column_sep=4 / 8,   # was 3/8
-#                            row_sep=1 / 8,
-#                            container_env='table',
-#                            extra_defs='',
-#                            hrule=None,
-#                            vrule=None,
-#                            post_process='',
-#                            label='',
-#                            latex=None,
-#                            sparsify=1):
-#         """
-#         Write DataFrame to custom tikz matrix to allow greater control of
-#         formatting and insertion of horizontal and vertical divider lines
-
-#         Estimates tabs from text width of fields (not so great if includes
-#         a lot of TeX macros) with a manual override available. Tabs gives
-#         the widths of each field in em (width of M)
-
-#         Standard row height = 1.5em seems to work - set in meta.
-
-#         first and last thick rules
-#         others below (Python, zero-based) row number, excluding title row
-
-#         keyword arguments : value (no newlines in value) escape back slashes!
-#         ``#keyword...`` rows ignored
-#         passed in as a string to facilitate using them with %%pmt?
-
-#         **Rules**
-
-#         * hrule at i means below row i of the table. (1-based) Top, bottom and
-#           below index lines are inserted automatically. Top and bottom lines
-#           are thicker.
-#         * vrule at i means to the left of table column i (1-based); there will
-#           never be a rule to the far right...it looks plebby; remember you must
-#           include the index columns!
-
-#         config.sparsify  number of cols of multi index to config.sparsify
-
-#         Issue: column with floats and spaces or missing causes problems (VaR,
-#         TVaR, EPD, mean and CV table)
-
-#         From great.pres_maker.df_to_tikz
-
-#         keyword args:
-
-#             scale           picks up self.config.tikz_scale; scale applied to whole
-#                             table - default 0.717
-#             height          row height, rec. 1 (em)
-#             column_sep      col sep in em
-#             row_sep         row sep in em
-#             container_env   table, figure or sidewaysfigure
-#             color           color for text boxes (helps config.debugging)
-#             extra_defs      TeX defintions and commands put at top of table,
-#                             e.g., \\centering
-#             lines           lines below these rows, -1 for next to last row
-#                             etc.; list of ints
-#             post_process    e.g., non-line commands put at bottom of table
-#             latex           arguments after \begin{table}[latex]
-#             caption         text for caption
-
-#         Previous version see great.pres_maker
-#         Original version see: C:\\S\\TELOS\\CAS\\AR_Min_Bias\\cvs_to_md.py
-
-#         :param column_sep:
-#         :param row_sep:
-#         :param figure:
-#         :param extra_defs:
-#         :param post_process:
-#         :param label:
-#         :return:
-#         """
-#         # local variable - with all formatters already applied
-#         df = self.apply_formatters(self.raw_df.copy(), mode='raw')
-#         caption = self.caption
-#         label = self.label
-#         # prepare label and caption
-#         if label == '':
-#             lt = ''
-#             label = ''
-#         else:
-#             lt = label
-#             label = f'\\label{{{label}}}'
-#         if caption == '':
-#             if lt != '':
-#                 logger.info(
-#                     f'You have a label but no caption; the label {label} will be ignored.')
-#             caption = '% caption placeholder'
-#         else:
-#             caption = f'\\caption{{{self.caption}}}\n{label}'
-
-#         if not df.columns.is_unique:
-#             # possible index/body column interaction
-#             raise ValueError('tikz routine requires unique column names')
-# # {extra_defs}
-#         # centering handled by quarto
-#         header = """
-# \\begin{{{container_env}}}{latex}
-# {caption}
-# \\centering{{
-# \\begin{{tikzpicture}}[
-#     auto,
-#     transform shape,
-#     nosep/.style={{inner sep=0}},
-#     table/.style={{
-#         matrix of nodes,
-#         row sep={row_sep}em,
-#         column sep={column_sep}em,
-#         nodes in empty cells,
-#         nodes={{rectangle, scale={scale}, text badly ragged {debug}}},
-# """
-#         # put draw=blue!10 or so in nodes to see the node
-
-#         footer = """
-# {post_process}
-
-# \\end{{tikzpicture}}
-# }}   % close centering
-# \\end{{{container_env}}}
-# """
-
-#         # always a good idea to do this...need to deal with underscores, %
-#         # and it handles index types that are not strings
-#         df = GT.clean_index(df)
-#         if not np.all([i == 'object' for i in df.dtypes]) and not df.empty:
-#             logger.warning('cols of df not all objects (expect all obs at this '
-#                            'point): ', df.dtypes, sep='\n')
-#         # make sure percents are escaped, but not if already escaped
-#         df = df.replace(r"(?<!\\)%", r"\%", regex=True)
-
-#         # pres_maker.df_to_tikz code line 1931
-#         if self.show_index:
-#             nc_index = df.index.nlevels
-#             with warnings.catch_warnings():
-#                 warnings.simplefilter(
-#                     "ignore", category=pd.errors.PerformanceWarning)
-#                 df = df.reset_index(
-#                     drop=False, col_level=df.columns.nlevels - 1)
-#             if sparsify:
-#                 if hrule is None:
-#                     hrule = set()
-#             for i in range(sparsify):
-#                 # TODO update to new sparsify!!
-#                 df.iloc[:, i], rules = GT.sparsify_old(df.iloc[:, i])
-#                 # don't want lines everywhere
-#                 if len(rules) < len(df) - 1:
-#                     hrule = set(hrule).union(rules)
-#         else:
-#             nc_index = 0
-
-#         if vrule is None:
-#             vrule = set()
-#         else:
-#             vrule = set(vrule)
-#         # to the left of... +1
-#         vrule.add(nc_index + 1)
-
-#         nr_columns = df.columns.nlevels
-#         logger.info(
-#             f'rows in columns {nr_columns}, columns in index {nc_index}')
-
-#         # internal TeX code (same as HTML code)
-#         matrix_name = self.df_id
-
-#         # note this happens AFTER you have reset the index...need to pass
-#         # number of index columns
-#         # have also converted everything to formatted strings
-#         # estimate... originally called guess_column_widths, with more parameters
-
-#         colw, tabs = GT.estimate_column_widths(df, self.config.max_table_width, nc_index=nc_index, scale=self.config.tikz_scale, equal=self.config.equal)  # noqa
-
-#         if self.config.debug:
-#             print(f'Make TikZ Input {self.tabs=}\nComputed {tabs=}')
-#         # print('TIKZ ' + ', '.join([f'{c:,.2f}' for c in tabs]))
-#         # print(f'TIKZ {colw=}, {tabs=}')
-#         logger.info(f'tabs: {tabs}')
-#         logger.info(f'colw: {colw}')
-
-#         # alignment dictionaries - these are still used below
-#         ad = {'l': 'left', 'r': 'right', 'c': 'center'}
-#         ad2 = {'l': '<', 'r': '>', 'c': '^'}
-#         #  use df_aligners, at this point the index has been reset
-#         align = []
-#         for n, i in zip(df.columns, self.df_aligners):
-#             if i == 'grt-left':
-#                 align.append('l')
-#             elif i == 'grt-right':
-#                 align.append('r')
-#             elif i == 'grt-center':
-#                 align.append('c')
-#             else:
-#                 align.append('l')
-
-#         # start writing
-#         sio = StringIO()
-#         if latex is None:
-#             latex = ''
-#         else:
-#             latex = f'[{latex}]'
-#         debug = ''
-#         if self.config.debug:
-#             # color all boxes
-#             debug = ', draw=blue!10'
-#         else:
-#             debug = ''
-#         sio.write(header.format(container_env=container_env,
-#                                 caption=caption,
-#                                 extra_defs=extra_defs,
-#                                 scale=self.config.tikz_scale,
-#                                 column_sep=column_sep,
-#                                 row_sep=row_sep,
-#                                 latex=latex,
-#                                 debug=debug))
-
-#         # table header
-#         # title rows, start with the empty spacer row
-#         i = 1
-#         sio.write(
-#             f'\trow {i}/.style={{nodes={{text=black, anchor=north, inner ysep=0, text height=0, text depth=0}}}},\n')
-#         for i in range(2, nr_columns + 2):
-#             sio.write(
-#                 f'\trow {i}/.style={{nodes={{text=black, anchor=south, inner ysep=.2em, minimum height=1.3em, font=\\bfseries}}}},\n')
-
-#         # write column spec
-#         for i, w, al in zip(range(1, len(align) + 1), tabs, align):
-#             # average char is only 0.48 of M
-#             # https://en.wikipedia.org/wiki/Em_(gtypography)
-#             if i == 1:
-#                 # first column sets row height for entire row
-#                 sio.write(f'\tcolumn {i:>2d}/.style={{'
-#                           f'nodes={{align={ad[al]:<6s}}}, '
-#                           'text height=0.9em, text depth=0.2em, '
-#                           f'inner xsep={column_sep}em, inner ysep=0, '
-#                           f'text width={max(2, 0.6 * w):.2f}em}},\n')
-#             else:
-#                 sio.write(f'\tcolumn {i:>2d}/.style={{'
-#                           f'nodes={{align={ad[al]:<6s}}}, nosep, text width={max(2, 0.6 * w):.2f}em}},\n')
-#         # extra col to right which enforces row height
-#         sio.write(
-#             f'\tcolumn {i+1:>2d}/.style={{text height=0.9em, text depth=0.2em, nosep, text width=0em}}')
-#         sio.write('\t}]\n')
-
-#         sio.write("\\matrix ({matrix_name}) [table, ampersand replacement=\\&]{{\n".format(
-#             matrix_name=matrix_name))
-
-#         # body of table, starting with the column headers
-#         # spacer row
-#         nl = ''
-#         for cn, al in zip(df.columns, align):
-#             s = f'{nl} {{cell:{ad2[al]}{colw[cn]}s}} '
-#             nl = '\\&'
-#             sio.write(s.format(cell=' '))
-#         # include the blank extra last column
-#         sio.write('\\& \\\\\n')
-#         # write header rows  (again, issues with multi index)
-#         mi_vrules = {}
-#         sparse_columns = {}
-#         if isinstance(df.columns, pd.MultiIndex):
-#             for lvl in range(len(df.columns.levels)):
-#                 nl = ''
-#                 sparse_columns[lvl], mi_vrules[lvl] = GT.sparsify_mi(df.columns.get_level_values(lvl),
-#                                                                      lvl == len(df.columns.levels) - 1)
-#                 for cn, c, al in zip(df.columns, sparse_columns[lvl], align):
-#                     # c = wfloat_format(c)
-#                     s = f'{nl} {{cell:{ad2[al]}{colw[cn]}s}} '
-#                     nl = '\\&'
-#                     sio.write(s.format(cell=c + '\\grtspacer'))
-#                 # include the blank extra last column
-#                 sio.write('\\& \\\\\n')
-#         else:
-#             nl = ''
-#             for c, al in zip(df.columns, align):
-#                 # c = wfloat_format(c)
-#                 s = f'{nl} {{cell:{ad2[al]}{colw[c]}s}} '
-#                 nl = '\\&'
-#                 sio.write(s.format(cell=c + '\\grtspacer'))
-#             sio.write('\\& \\\\\n')
-
-#         # write table entries
-#         for idx, row in df.iterrows():
-#             nl = ''
-#             for c, cell, al in zip(df.columns, row, align):
-#                 # cell = wfloat_format(cell)
-#                 s = f'{nl} {{cell:{ad2[al]}{colw[c]}s}} '
-#                 nl = '\\&'
-#                 sio.write(s.format(cell=cell))
-#                 # if c=='p':
-#                 #     print('COLp', cell, type(cell), s, s.format(cell=cell))
-#             sio.write('\\& \\\\\n')
-#         sio.write(f'}};\n\n')
-
-#         # decorations and post processing - horizontal and vertical lines
-#         nr, nc = df.shape
-#         # add for the index and the last row plus 1 for the added spacer row at the top
-#         nr += nr_columns + 1
-#         # always include top and bottom
-#         # you input a table row number and get a line below it; it is implemented as a line ABOVE the next row
-#         # function to convert row numbers to TeX table format (edge case on last row -1 is nr and is caught, -2
-#         # is below second to last row = above last row)
-#         # shift down extra 1 for the spacer row at the top
-#         def python_2_tex(x): return x + nr_columns + \
-#             2 if x >= 0 else nr + x + 3
-#         tb_rules = [nr_columns + 1, python_2_tex(-1)]
-#         if hrule:
-#             hrule = set(map(python_2_tex, hrule)).union(tb_rules)
-#         else:
-#             hrule = list(tb_rules)
-#         logger.debug(f'hlines: {hrule}')
-
-#         # why
-#         yshift = row_sep / 2
-#         xshift = -column_sep / 2
-#         descender_proportion = 0.25
-
-#         # top rule is special
-#         ls = 'thick'
-#         ln = 1
-#         sio.write(
-#             f'\\path[draw, {ls}] ({matrix_name}-{ln}-1.south west)  -- ({matrix_name}-{ln}-{nc+1}.south east);\n')
-
-#         for ln in hrule:
-#             ls = 'thick' if ln == nr + nr_columns + \
-#                 1 else ('semithick' if ln == 1 + nr_columns else 'very thin')
-#             if ln < nr:
-#                 # line above TeX row ln+1 that exists
-#                 sio.write(f'\\path[draw, {ls}] ([yshift={-yshift}em]{matrix_name}-{ln}-1.south west)  -- '
-#                           f'([yshift={-yshift}em]{matrix_name}-{ln}-{nc+1}.south east);\n')
-#             else:
-#                 # line above row below bottom = line below last row
-#                 # descenders are 200 to 300 below baseline
-#                 ln = nr
-#                 sio.write(f'\\path[draw, thick] ([yshift={-descender_proportion-yshift}em]{matrix_name}-{ln}-1.base west)  -- '
-#                           f'([yshift={-descender_proportion-yshift}em]{matrix_name}-{ln}-{nc+1}.base east);\n')
-
-#         # if multi index put in lines within the index TODO make this better!
-#         if nr_columns > 1:
-#             for ln in range(2, nr_columns + 1):
-#                 sio.write(f'\\path[draw, very thin] ([xshift={xshift}em, yshift={-yshift}em]'
-#                           f'{matrix_name}-{ln}-{nc_index+1}.south west)  -- '
-#                           f'([yshift={-yshift}em]{matrix_name}-{ln}-{nc+1}.south east);\n')
-
-#         written = set(range(1, nc_index + 1))
-#         if vrule and self.show_index:
-#             # to left of col, 1 based, includes index
-#             # write these first
-#             # TODO fix madness vrule is to the left, mi_vrules are to the right...
-#             ls = 'very thin'
-#             for cn in vrule:
-#                 if cn not in written:
-#                     sio.write(f'\\path[draw, {ls}] ([xshift={xshift}em]{matrix_name}-1-{cn}.south west)  -- '
-#                               f'([yshift={-descender_proportion-yshift}em, xshift={xshift}em]{matrix_name}-{nr}-{cn}.base west);\n')
-#                     written.add(cn - 1)
-
-#         if len(mi_vrules) > 0:
-#             logger.debug(
-#                 f'Generated vlines {mi_vrules}; already written {written}')
-#             # vertical rules for the multi index
-#             # these go to the RIGHT of the relevant column and reflect the index columns already
-#             # mi_vrules = {level of index: [list of vrule columns]
-#             # written keeps track of which vrules have been done already; start by cutting out the index columns
-#             ls = 'ultra thin'
-#             for k, cols in mi_vrules.items():
-#                 # don't write the lowest level
-#                 if k == len(mi_vrules) - 1:
-#                     break
-#                 for cn in cols:
-#                     if cn in written:
-#                         pass
-#                     else:
-#                         written.add(cn)
-#                         top = k + 1
-#                         if top == 0:
-#                             sio.write(f'\\path[draw, {ls}] ([xshift={-xshift}em]{matrix_name}-{top}-{cn}.south east)  -- '
-#                                       f'([yshift={-descender_proportion-yshift}em, xshift={-xshift}em]{matrix_name}-{nr}-{cn}.base east);\n')
-#                         else:
-#                             sio.write(f'\\path[draw, {ls}] ([xshift={-xshift}em, yshift={-yshift}em]{matrix_name}-{top}-{cn}.south east)  -- '
-#                                       f'([yshift={-descender_proportion-yshift}em, xshift={-xshift}em]{matrix_name}-{nr}-{cn}.base east);\n')
-
-#         sio.write(footer.format(container_env=container_env,
-#                   post_process=post_process))
-
-#         return sio.getvalue()
 
     @staticmethod
     def sparsify(df, cs):

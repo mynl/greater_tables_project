@@ -19,6 +19,8 @@ class TikzProcessor:
     # Full TeX preamble to generate a .fmt if needed
     _tex_template_full = r"""\documentclass[10pt, border=5mm]{standalone}
 \usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{mathrsfs}
 \usepackage{url}
 \usepackage{tikz}
 \usepackage{color}
@@ -33,7 +35,7 @@ class TikzProcessor:
 
     # Minimal template to embed user tikz
     _tex_template = r"""
-\newcommand{{\grtspacer}}{{\vphantom{{lp}}}}
+\newcommand{{\I}}{{\vphantom{{lp}}}}   % fka grtspacer
 \def\dfrac{{\displaystyle\frac}}
 \def\dint{{\displaystyle\int}}
 \begin{{document}}
@@ -65,13 +67,17 @@ class TikzProcessor:
         print('TikzProcessor: building TeX format fmt file...', end ='')
         tmp = self.out_path / 'tikz_format.tex'
         tmp.write_text(self._tex_template_full, encoding='utf-8')
-        self.run_command([
+        cmd = [
             'pdflatex',
             f'-ini',
             f'-jobname={self.format_file.stem}',
             '&pdflatex',
             tmp.name,
-            ], raise_on_error=True, cwd=self.out_path)
+            ]
+        print(f'Running {" ".join(cmd)} to build format file...')
+        (self.file_path.parent / 'make_format.bat').write_text(" ".join(cmd), encoding='utf-8')
+        self.run_command(cmd, raise_on_error=True, cwd=self.out_path)
+        # tidy up ... to some extent
         # tmp.unlink()
         (self.out_path / f'{self.format_file.stem}.log').unlink()
         print('...success...format file built', self.format_file.resolve())
@@ -100,14 +106,12 @@ class TikzProcessor:
         ]
         if self.debug:
             print("Running:", " ".join(tex_cmd))
+            (tex_path.parent / 'make_tikz.bat').write_text(" ".join(tex_cmd), encoding='utf-8')
         if self.run_command(tex_cmd):
             raise ValueError('TeX failed to compile, not pdf or svg output.')
             # no tidying up
         else:
-            # continue
-
-            (tex_path.parent / 'make_tikz.bat').write_text(" ".join(tex_cmd), encoding='utf-8')
-
+            # no error: continue
             svg_cmd = [
                 # 'C:\\temp\\pdf2svg-windows\\dist-64bits\\pdf2svg',
                 'pdf2svg',
