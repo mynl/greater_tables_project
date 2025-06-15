@@ -96,7 +96,8 @@ class TestDataFrameFactory:
         with data_path.open('r', encoding='utf-8') as f:
             tex_list = pd.read_csv(f, index_col=0)['expr'].to_list()
         # trim down slightly
-        tex_list = [i for i in tex_list if len(i) < 50]
+        pat = re.compile(r'(?<!\\)\b[a-z]{4,}\b')
+        tex_list = [i for i in tex_list if not pat.search(i) and len(i)<=50]
         random.shuffle(tex_list)
         self._tex_gen = cycle(tex_list)
 

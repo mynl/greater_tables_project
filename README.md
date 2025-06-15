@@ -48,8 +48,6 @@ MIT.
 
 ## Examples
 
-The following example shows a tricky hard table.  
-
 ```python
 import pandas as pd
 import numpy as np

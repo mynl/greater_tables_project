@@ -18,6 +18,8 @@ class TikzProcessor:
     """Create PDF and SVG files from Tikz blocks."""
     # Full TeX preamble to generate a .fmt if needed
     _tex_template_full = r"""\documentclass[10pt, border=5mm]{standalone}
+\usepackage{newtxtext,newtxmath}  % gpt recommended like STIX
+%\usepackage{mathptmx}             % gpt like times roman
 \usepackage{amsfonts}
 \usepackage{amsmath}
 \usepackage{mathrsfs}
@@ -100,13 +102,14 @@ class TikzProcessor:
 
         tex_cmd = [
             'pdflatex',
+            "-interaction=nonstopmode",
             f'--fmt={self.format_file.stem}',
             f'--output-directory={str(tex_path.parent)}',
             str(tex_path)
         ]
+        (tex_path.parent / 'make_tikz.bat').write_text(" ".join(tex_cmd), encoding='utf-8')
         if self.debug:
             print("Running:", " ".join(tex_cmd))
-            (tex_path.parent / 'make_tikz.bat').write_text(" ".join(tex_cmd), encoding='utf-8')
         if self.run_command(tex_cmd):
             raise ValueError('TeX failed to compile, not pdf or svg output.')
             # no tidying up

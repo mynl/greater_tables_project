@@ -299,7 +299,7 @@ class GT(object):
             raise ValueError(
                 'df must be a DataFrame, a list of lists, or a markdown table string')
 
-        if len(df) > self.config.large_warning and not config.large_ok:
+        if len(df) > self.config.large_warning and not self.config.large_ok:
             raise ValueError(
                 'Large dataframe (>50 rows) and config.large_ok not set to true...do you know what you are doing?')
 

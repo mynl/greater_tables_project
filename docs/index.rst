@@ -66,7 +66,6 @@ MIT.
 Examples
 --------
 
-The following example shows a tricky hard table.
 
 .. code:: python
 
