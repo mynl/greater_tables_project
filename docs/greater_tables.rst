@@ -52,7 +52,7 @@ greater\_tables.gtformats module
    :undoc-members:
    :show-inheritance:
 
-greater\_tables.hasher module
+greater\_tables.gthasher module
 -----------------------------
 
 .. automodule:: greater_tables.hasher
@@ -60,18 +60,18 @@ greater\_tables.hasher module
    :undoc-members:
    :show-inheritance:
 
-greater\_tables.testdf module
------------------------------
+greater\_tables.gtfabrications module
+----------------------------------------
 
-.. automodule:: greater_tables.testdf
+.. automodule:: greater_tables.gtfabrications
    :members:
    :undoc-members:
    :show-inheritance:
 
-greater\_tables.tex\_svg module
+greater\_tables.gtetcher module
 -------------------------------
 
-.. automodule:: greater_tables.tex_svg
+.. automodule:: greater_tables.gtetcher
    :members:
    :undoc-members:
    :show-inheritance:

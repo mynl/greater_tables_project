@@ -44,6 +44,7 @@ version  = { attr = "greater_tables.__version__" }
 dev = [
     "docutils<0.17",
     "jupyter-sphinx",
+    "myst_parser",
     "nbsphinx",
     "pickleshare",
     "recommonmark>=0.7.1",

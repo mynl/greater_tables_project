@@ -8,38 +8,32 @@ Welcome to greater_tables's documentation!
 
 |image1| |image2| |image3|
 
-Greater Tables
---------------
+.. toctree::
+   :maxdepth: 1
+   :caption: Contents:
 
-Creating presentation quality tables is difficult. ``greater_tables``
-provides a flexible way to create consistent tables in HTML, LaTeX
-(PDF), and terminal text outputs from Pandas dataframes. It has many
-options but sensible defaults. It is designed for use in Jupyter Lab and
-Quarto and will seamlessly return the correct format for each output
-type. The basic usage is simply:
+   homepage
+   versions
+   greater_tables
+   greater_tables.data
 
-.. code:: python
 
-   from greater_tables import GT
-   # ...create dataframe df...
-   GT(df)
+**Greater Tables** is a Python tool for producing high-quality, static display tables—intended for use in journal articles, books, formal reports, and printed financial statements. It turns your pandas DataFrame into a clean, black-and-white table—ready for print, PDF, or web. It produces consistent, typographically sound output in HTML, LaTeX (via TikZ), and plain text.
 
-or ``display(GT(df))`` if called within a Jupyter or Quarto code block.
-Once created ``GT(df)`` is immutable; to change options re-create.
-Presentation tables are small! They fit on one or two pages and, while
-``GT`` does a lot of work to determine formating options, it still runs
-very quickly.
+It’s opinionated but flexible, with many options and sensible defaults. Designed for use in **Jupyter Lab**, **Quarto**, and scripting environments, it auto-detects the output format and renders accordingly. Display tables are small and focused—the end result of your analysis, after selecting rows and columns, ordering, and labeling. Greater Tables helps you get those raw materials onto the page, cleanly and consistently.
 
-``greater_tables`` provides similar functionality to pandas ``to_html``,
-``to_latex`` and ``to_markdown`` methods, without relying on them, and
-improves them in various ways. LaTeX output uses Tikz tables for very
-tight control over layout and grid lines. Arguments can be passed
-directly or set via a YAML configuration file. Validation is handled by
-``pydantic``.
+```python
+from greater_tables import GT
+GT(df)
+```
 
-The package is tailored to more austere, black-and-white tables: no
-sparklines, colors or background shading. Tables can include a simple
-caption, but not more elaborate headers and footers.
+Or use `display(GT(df))` in notebooks and Quarto documents. Once created, a `GT(df)` object is immutable; re-create it to apply new options. Arguments can be passed directly or loaded from a YAML config file—validated using `pydantic`.
+
+Greater Tables offers similar functionality to `pandas.DataFrame.to_html`, `to_latex`, and `to_markdown`, but with tighter control, better defaults, and no reliance on `pandas` internals. The LaTeX backend uses TikZ for precise control over layout and grid lines.
+
+This is a tool for serious tables—no sparklines, colors, or shading. Just your data, rendered cleanly.
+
+Also included: **Fabricator**, a flexible test DataFrame generator—specify row count, index and column hierarchies, data types, missing values, and more.
 
 Installation
 ------------
@@ -126,12 +120,6 @@ reusable, extensible actuarial tools) in VBA and Python since the late
 1990s, and call all my macro packages *GREAT*.
 
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
-
-   greater_tables
-   greater_tables.data
 
 
 Indices and tables

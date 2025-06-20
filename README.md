@@ -7,25 +7,22 @@
 
 ## Greater Tables
 
-Creating presentation quality tables is difficult. `greater_tables` provides
-a flexible way to create consistent tables in HTML, LaTeX (PDF), and terminal
-text outputs from Pandas dataframes. 
-It has many options but sensible defaults. It is designed
-for use in Jupyter Lab and Quarto and will seamlessly return the correct format
-for each output type. The basic usage is simply:
+**Greater Tables** is a Python tool for producing high-quality, static display tables—intended for use in journal articles, books, formal reports, and printed financial statements. It turns your pandas DataFrame into a clean, black-and-white table—ready for print, PDF, or web. It produces consistent, typographically sound output in HTML, LaTeX (via TikZ), and plain text.
+
+It’s opinionated but flexible, with many options and sensible defaults. Designed for use in **Jupyter Lab**, **Quarto**, and scripting environments, it auto-detects the output format and renders accordingly. Display tables are small and focused—the end result of your analysis, after selecting rows and columns, ordering, and labeling. Greater Tables helps you get those raw materials onto the page, cleanly and consistently.
 
 ```python
-from greater_tables import GT 
-# ...create dataframe df...
+from greater_tables import GT
 GT(df)
 ```
 
-or `display(GT(df))` if called within a Jupyter or Quarto code block. Once created `GT(df)` is immutable; to change options re-create. Presentation tables are small! They fit on one or two pages and, while `GT` does a lot of work to determine formating options, it still runs very quickly. 
+Or use `display(GT(df))` in notebooks and Quarto documents. Once created, a `GT(df)` object is immutable; re-create it to apply new options. Arguments can be passed directly or loaded from a YAML config file—validated using `pydantic`.
 
-`greater_tables`  provides similar functionality to pandas `to_html`, `to_latex` and `to_markdown` 
-methods, without relying on them, and improves them in various ways. LaTeX output uses Tikz tables for very tight control over layout and grid lines.  Arguments can be passed directly or set via a YAML configuration file. Validation is handled by `pydantic`.
+Greater Tables offers similar functionality to `pandas.DataFrame.to_html`, `to_latex`, and `to_markdown`, but with tighter control, better defaults, and no reliance on `pandas` internals. The LaTeX backend uses TikZ for precise control over layout and grid lines.
 
-The package is tailored to more austere, black-and-white tables: no sparklines, colors or background shading. Tables can include a simple caption, but not more elaborate headers and footers. 
+This is a tool for serious tables—no sparklines, colors, or shading. Just your data, rendered cleanly.
+
+Also included: **Fabricator**, a flexible test DataFrame generator—specify row count, index and column hierarchies, data types, missing values, and more.
 
 
 ## Installation
@@ -100,77 +97,6 @@ been maintaining a set of macros called
 reusable, extensible actuarial tools) in VBA and Python since the late
 1990s, and call all my macro packages *GREAT*.
 
-
-## History
-
-3.3.0
--------
-* Added `tikz_` series of options to config: column and row separation,  
-  container_env (for e.g., sidewaystable), hrule and vrule indices.
-
-3.2.0
--------
-* Added more tex snippets!
-* Refactored tikz and column width behavior
-
-3.1.0
--------
-* adjustments for auto format
-* rearranged gtcore order of methods
-
-3.0.0
--------
-
-* config files / pydantic config input 
-* unified col width and info dataframe
-* de-texing
-* cli for config and writeout a csv etc.
-
-* testdf suite
-* Automated TeX to SVG 
-
-2.0.0
-------
-
-* **v2.0.0** solid release old-style, all-argument GT
-* Better column widths
-* Custom text output 
-* Rich table output 
-
-1.1.1
--------
-* Added logo, updated docs.
-
-1.1.0
-------
-
-* added ``formatters`` argument to pass in column specific formatters by name as a number (``n`` converts to ``{x:.nf}``, format string, or function
-* Added ```tabs`` argument to provide column widths
-* Added ``equal`` argument to provide hint that column widths should all be equal
-* Added ``caption_align='center'`` argument to set the caption alignment
-* Added ``large_ok=False`` argument, if ``False`` providing a dataframe with more than 100 rows throws an error. This function is expensive and is designed for small frames.
-
-1.0.0
-------
-
-* Allow input via list of lists, or markdown table
-* Specify overall float format for whole table
-* Specify column alingment with 'llrc' style string
-* ``show_index`` option
-* Added more tests
-* Docs updated
-* Set tabs for width; use of width in HTML format.
-
-0.6.0
-------
-
-* Initial release
-
-Early development
--------------------
-
-* 0.1.0 - 0.5.0: Early development
-* tikz code from great.pres_manager
 
 
 ## 📁 Project Layout

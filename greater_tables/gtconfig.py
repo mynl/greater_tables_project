@@ -1,7 +1,7 @@
 """
 Configuration model and utilities for GreaterTables.
 
-Defines the `GTConfigModel` schema using Pydantic, which acts as the single
+Defines the `Configurator` schema using Pydantic, which acts as the single
 source of truth for default values, validation, and structure of all table-rendering options.
 
 Also includes functions for writing editable config templates and loading from YAML.
@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field, ValidationError, ConfigDict
 import yaml
 
 
-class GTConfigModel(BaseModel):
+class Configurator(BaseModel):
     """
     Configuration model for GreaterTables.
 
@@ -29,8 +29,8 @@ class GTConfigModel(BaseModel):
 
     :Usage:
 
-        >>> from greater_tables.gtconfig import GTConfigModel
-        >>> cfg = GTConfigModel(font_size="1.2em", caption_align="left")
+        >>> from greater_tables.gtconfig import Configurator
+        >>> cfg = Configurator(font_size="1.2em", caption_align="left")
 
     :see also: ``GTConfig`` for loading from YAML with overrides.
               ``gt write-template`` CLI command to generate a default config file.
@@ -197,7 +197,7 @@ class GTConfigModel(BaseModel):
 def write_template(path: Path):
     """Generate a clean default config file at the given path."""
     path = Path(path)
-    cfg = GTConfigModel()
+    cfg = Configurator()
     yaml_str = yaml.dump(cfg.model_dump(), sort_keys=False)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(yaml_str, encoding="utf-8")

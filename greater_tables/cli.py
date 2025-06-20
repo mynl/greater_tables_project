@@ -1,7 +1,7 @@
 import click
 import pandas as pd
 from pathlib import Path
-from .gtconfig import GTConfigModel, write_template
+from .gtconfig import Configurator, write_template
 from .gtcore import GT
 
 
@@ -30,7 +30,7 @@ def render(input_file, output, format, config):
     else:
         raise click.UsageError(f"Unsupported extension: {ext}")
 
-    cfg = GTConfigModel(Path(config) if config else None).get()
+    cfg = Configurator(Path(config) if config else None).get()
     gt = GT(df, config=cfg)
 
     rendered = (

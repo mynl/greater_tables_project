@@ -11,10 +11,10 @@ from pathlib import Path
 from subprocess import run, Popen, PIPE
 from IPython.display import SVG, display
 
-from .hasher import txt_short_hash
+from .gthasher import txt_short_hash
 
 
-class TikzProcessor:
+class Etcher:
     """Create PDF and SVG files from Tikz blocks."""
     # Full TeX preamble to generate a .fmt if needed
     _tex_template_full = r"""\documentclass[10pt, border=5mm]{standalone}
@@ -66,7 +66,7 @@ class TikzProcessor:
         """Create format file for faster compilation if missing."""
         if self.format_file.exists():
             return
-        print('TikzProcessor: building TeX format fmt file...', end ='')
+        print('Etcher: building TeX format fmt file...', end ='')
         tmp = self.out_path / 'tikz_format.tex'
         tmp.write_text(self._tex_template_full, encoding='utf-8')
         cmd = [

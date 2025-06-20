@@ -34,9 +34,9 @@ from IPython.display import display, SVG
 
 from . gtenums import Breakability, Alignment
 from . gtformats import GT_Format, TableFormat, Line, DataRow
-from . gtconfig import GTConfigModel
-from . hasher import df_short_hash
-from . tex_svg import TikzProcessor
+from . gtconfig import Configurator
+from . gthasher import df_short_hash
+from . gtetcher import Etcher
 
 # turn this fuck-fest off
 pd.set_option('future.no_silent_downcasting', True)
@@ -242,7 +242,7 @@ class GT(object):
         raw_cols=None,
         show_index=True,
         #
-        config: GTConfigModel | None = None,
+        config: Configurator | None = None,
         config_path: Path | None = None,
         **overrides,
     ):
@@ -255,18 +255,18 @@ class GT(object):
         elif config_path:
             try:
                 raw = yaml.safe_load(config_path.read_text(encoding="utf-8"))
-                base_config = GTConfigModel.model_validate(raw)
+                base_config = Configurator.model_validate(raw)
             except (ValidationError, OSError) as e:
                 raise ValueError(
                     f"Failed to load config from {config_path}") from e
         else:
-            base_config = GTConfigModel()
+            base_config = Configurator()
 
         # access through config
         # update and validate; need to merge to avoid repeated args
         # merged = dict(base_config.model_dump(), **overrides)
         merged = base_config.model_dump() | overrides
-        self.config = GTConfigModel(**merged)
+        self.config = Configurator(**merged)
         # no validation
         # self.config = base_config.model_copy(update=overrides)
 
@@ -2812,7 +2812,7 @@ class GT(object):
 
     def make_svg(self):
         """Render tikz into svg text."""
-        tz = TikzProcessor(self._repr_latex_(),
+        tz = Etcher(self._repr_latex_(),
                            file_name=self.df_id, debug=self.config.debug)
         p = tz.file_path.with_suffix('.svg')
         if not p.exists():
