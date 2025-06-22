@@ -9,7 +9,7 @@ Also includes functions for writing editable config templates and loading from Y
 
 
 from pathlib import Path
-from typing import Optional, Union, Literal
+from typing import Optional, Union, Literal, Callable, Any
 import yaml
 
 from pydantic import BaseModel, Field, ValidationError, ConfigDict
@@ -56,8 +56,8 @@ class Configurator(BaseModel):
         None, description="Optional fallback formatter f-string"
     )
 
-    table_float_format: Optional[str] = Field(
-        None, description="Float format string for the entire table; overrides column-specific formats"
+    table_float_format: Optional[Union[str, Callable[[Any, str], str]]] = Field(
+        None, description="Float format function or format string for the entire table; overrides column-specific formats"
     )
     table_hrule_width: int = Field(
         1, description="Width of top, bottom, and header horizontal rules"

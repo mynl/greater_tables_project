@@ -2459,12 +2459,12 @@ class GT(object):
         def escape_index(idx):
             if isinstance(idx, pd.MultiIndex):
                 return pd.MultiIndex.from_tuples(
-                    [tuple(escape_tex_outside_math(x) for x in tup) for tup in idx],
-                    names=[escape_tex_outside_math(n) if n else n for n in idx.names]
+                    [tuple(GT.escape_tex_outside_math(x) for x in tup) for tup in idx],
+                    names=[GT.escape_tex_outside_math(n) if n else n for n in idx.names]
                 )
             else:
-                return pd.Index([escape_tex_outside_math(x) for x in idx],
-                             name=escape_tex_outside_math(idx.name) if idx.name else None)
+                return pd.Index([GT.escape_tex_outside_math(x) for x in idx],
+                             name=GT.escape_tex_outside_math(idx.name) if idx.name else None)
 
         df.index = escape_index(df.index)
         df.columns = escape_index(df.columns)
