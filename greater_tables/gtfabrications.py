@@ -28,17 +28,18 @@ class Fabricator:
 
     metric_suffix = ["", "rate", "score", "amount", "index", "ratio", "factor", "value"]
 
-    def __init__(self, seed: Optional[int] = None):
+    def __init__(self, decorate=False, seed: Optional[int] = None):
         """
         Fabricate small synthetic pandas DataFrames for testing.
 
         Attributes:
             seed: Optional random seed. If None, one is generated.
+            decorate: decorate column names with some type information (add date, time, ratio, year etc.)
         """
         self._last_args = {}
         self.seed = int(
             seed if seed is not None else np.random.SeedSequence().entropy)
-
+        self.decorate = decorate
         # rng
         self.rng = np.random.default_rng(self.seed)
 
@@ -95,9 +96,26 @@ class Fabricator:
         df = df.sort_index(axis=1)
         return df
 
-    def uber(self, rows, data_spec, *, index_levels=1, index_names=None, column_groups=1, column_levels=1, column_names=None, decorate=False, simplify=True, oversample=1):
+    @staticmethod
+    def drop_singleton_levels(df):
+        if isinstance(df.index, pd.MultiIndex):
+            # mustn't drop all the levels!
+            drop_levels = [i for i, lvl in enumerate(df.index.levels)
+                               if len(lvl) == 1]
+            if len(drop_levels) == df.index.nlevels:
+                drop_levels.pop()
+            df = df.droplevel(drop_levels)
+        if isinstance(df.columns, pd.MultiIndex):
+            drop_levels = [i for i, lvl in enumerate(df.columns.levels) if len(lvl) == 1]
+            if len(drop_levels) == df.columns.nlevels:
+                drop_levels.pop()
+            # df.columns = df.columns.droplevel()
+            df = df.droplevel(drop_levels, axis=1)
+        return df
+
+    def make(self, rows, data_spec, *, index_levels=1, index_names=None, column_groups=1, column_levels=1, column_names=None, decorate=False, simplify=True, oversample=1):
         """
-        Fabricate a dataframe.
+        Fabricate a dataframe with the given specification.
 
         Data types
 
@@ -118,11 +136,25 @@ class Fabricator:
 
         metrics
         total num cols = metrics x column_groups
+
+        Args:
+            rows: Number of rows.
+            columns: Column type spec (int for all float cols, or string type codes).
+            index: Index level types (int for RangeIndex or string like 'ti').
+            col_index: Column index levels (same format as `index`).
+            missing: Proportion of missing data in each column.
+
+        Returns:
+            DataFrame
         """
         # validate args
-        assert column_levels <= column_groups, 'Column levels must be <= groups'
+        assert column_groups == 0 or column_levels <= column_groups, 'Column levels must be <= groups'
         assert index_names is None or len(index_names) == index_levels, 'Index names must have length index_levels'
         assert column_names is None or len(column_names) == column_levels, 'Column names must have length column_levels'
+
+        self._last_args = dict(rows=rows, data_spec=data_spec, index_levels=index_levels,
+            index_names=index_names, column_groups=column_groups, column_levels=column_levels,
+            column_names=column_names, decorate=decorate, simplify=simplify, oversample=oversample)
 
         # figure data_spec and hence (important) number of metrics
         data_spec = self._parse_colspec(data_spec)
@@ -139,24 +171,32 @@ class Fabricator:
         index = pd.MultiIndex.from_tuples(islice(product(*(self._generate_column('s', v) for v in self.primes_for_product(rows, index_levels))), rows), names=inames)
 
         # create with col groups and drop later if needed
-        cnames = (column_names or [f'c_{i}' for i in range(column_levels)]) + ['metric']
-        columns_pfp = self.primes_for_product(column_groups, column_levels)
-        cgroup_product = product(*(self._generate_column('s', v) for v in columns_pfp))
-        # take first column_groups entries - islice works without creating the full iterable
-        cgroup_product = islice(cgroup_product, column_groups)
-        # add metrics
-        metric_names = [self.metric_name for _ in range(metrics)]
-        cgroup_product = product(cgroup_product, metric_names)
-        # flatten
-        cgroup_product = [(*x, y) for x, y in cgroup_product]
-        columns = pd.MultiIndex.from_tuples(cgroup_product, names=cnames)
+        metric_names = [self.metric_name(t) for t in data_spec]
+        if column_groups > 0:
+            cnames = (column_names or [f'c_{i}' for i in range(column_levels)]) + ['metric']
+            columns_pfp = self.primes_for_product(column_groups, column_levels)
+            cgroup_product = product(*(self._generate_column('s', v) for v in columns_pfp))
+            # take first column_groups entries - islice works without creating the full iterable
+            cgroup_product = islice(cgroup_product, column_groups)
+            # add metrics
+            cgroup_product = product(cgroup_product, metric_names)
+            # flatten
+            cgroup_product = [(*x, y) for x, y in cgroup_product]
+            columns = pd.MultiIndex.from_tuples(cgroup_product, names=cnames)
+        else:
+            # just metrics ... not actually clear this is worth it?
+            columns_pfp = [metrics]
+            # will be used below when setting data
+            column_groups = 1
+            columns = pd.Index(metric_names, name='metric')
 
         # create empty df
         df = pd.DataFrame(index=index, columns=columns)
 
-        if df.shape[1] != prod(columns_pfp):
-            print("Incomplete column...won't unstack")
-            print(df.shape[1], prod(columns_pfp ))
+        # if df.shape[1] != prod(columns_pfp):
+        #     pass
+        #     print("Incomplete column...won't unstack")
+        #     print(df.shape[1], prod(columns_pfp ))
 
         # fill in the data, data_spec x column_groups groups
         for c, dt in zip(df.columns, data_spec * column_groups):
@@ -165,87 +205,52 @@ class Fabricator:
         if simplify:
             df = self.drop_singleton_levels(df)
 
+        self.cache.appendleft(df)
         return df
 
-    @staticmethod
-    def drop_singleton_levels(df):
-        if isinstance(df.index, pd.MultiIndex):
-            df = df.droplevel([i for i, lvl in enumerate(df.index.levels)
-                               if len(lvl) == 1])
-        if isinstance(df.columns, pd.MultiIndex):
-            df.columns = df.columns.droplevel([i for i, lvl in enumerate(df.columns.levels)
-                                               if len(lvl) == 1])
-        return df
+    def another(self) -> pd.DataFrame:
+        """
+        Generate another DataFrame with the last parameters.
 
-    # def make(self, rows: int, columns: Union[int, str], index: Union[int, str] = 0,
-    #          col_index: Union[int, str] = 0, missing: float = 0.0) -> pd.DataFrame:
-    #     """
-    #         Generate a test DataFrame with the given specification.
+        Returns:
+            DataFrame
+        """
+        return self.make(**self._last_args)
 
+    def random(self, rows: int = 0, columns: int = 0, omit: str = '') -> pd.DataFrame:
+        """
+        Generate a DataFrame with randomly chosen settings.
 
-    #         Args:
-    #         rows: Number of rows.
-    #         columns: Column type spec (int for all float cols, or string type codes).
-    #         index: Index level types (int for RangeIndex or string like 'ti').
-    #         col_index: Column index levels (same format as `index`).
-    #         missing: Proportion of missing data in each column.
+        Args:
+            omit: omit column datatypes in omit
+        Returns:
+            DataFrame
+        """
+        if columns == 0:
+            metrics = self.rng.integers(1, 11)
+            if metrics > 5:
+                column_groups = 1
+                column_levels = 1
+            else:
+                # integers from low to high exclusi e
+                column_groups = self.rng.integers(1, 6 + 1)
+                column_levels = self.rng.integers(1, column_groups + 1)
+        else:
+            column_groups = column_levels = 1
+            metrics = columns
+        index_levels = self.rng.integers(1, 3 + 1)
+        if rows == 0:
+            rows = self.rng.integers(5 * (column_groups + index_levels), 10 * (column_groups + index_levels) + 1)
 
-    #     Returns:
-    #         DataFrame
-    #     """
-    #     self._last_args = dict(rows=rows, columns=columns,
-    #                            index=index, col_index=col_index, missing=missing)
-    #     return self._generate(**self._last_args)
-
-    # def another(self) -> pd.DataFrame:
-    #     """
-    #     Generate another DataFrame with the last parameters.
-
-    #     Returns:
-    #         DataFrame
-    #     """
-    #     return self._generate(**self._last_args)
-
-    # def random(self, index_levels: int = 0, column_levels: int = 0, omit: str = 'p') -> pd.DataFrame:
-    #     """
-    #     Generate a DataFrame with randomly chosen settings.
-
-    #     Args:
-    #         index_levels: Number of index levels to use.
-    #         column_levels: Number of column MultiIndex levels.
-    #         omit: omit column datatypes in omit
-    #     Returns:
-    #         DataFrame
-    #     """
-    #     if index_levels == 0:
-    #         index_levels = int(self.choice([1, 2, 3], p=(.6, .3, .1)))
-    #     if column_levels == 0:
-    #         column_levels =  int(self.choice([1, 2, 3], p=(.5, .3, .2)))
-    #     rows = self.rng.integers(5 * index_levels, 10 * index_levels)
-    #     valid_types = [i for i in ['d', 'f', 'i', 's3', 'l', 'h', 't', 'p', 'x', 'r', 'y'] if i not in omit]
-    #     col_types = self.rng.choice(
-    #         valid_types, size=self.rng.integers(3, 7))
-    #     missing = round(float(self.rng.uniform(0, 0.15)), 2)
-    #     index = ''.join(self.rng.choice(
-    #         ['t', 'd', 'y', 'i', 's2'], size=index_levels))
-    #     col_index = ''.join(self.rng.choice(
-    #         ['s', 's2', 's2', 's3'], size=column_levels))
-    #     return self.make(rows=rows, columns=''.join(col_types), index=index, col_index=col_index, missing=missing)
+        valid_types = [i for i in ['f', 's2', 's' 'i', 'l', 'f', 'f', 'd', 'f', 'i', 's3', 'l', 'h', 't', 'p', 'x', 'r', 'y'] if i not in omit]
+        data_spec = ''.join(self.rng.choice(valid_types, size=metrics))
+        missing = round(float(self.rng.uniform(0, 0.15)), 2)
+        return self.make(rows=rows, data_spec=data_spec, index_levels=index_levels,
+            column_groups=column_groups, column_levels=column_levels,
+            decorate=False, simplify=True, oversample=1)
 
     def _parse_colspec(self, spec: str) -> list[str]:
         return re.findall(r's\d+|[a-z]', spec)
-
-    # def _generate_column_ex(self, dtype: str, n: int, d: int = 0, r: int = 0) -> pd.Series:
-    #     """
-    #     Generate a sample of n values from d distinct values of dtype repeated r times
-
-    #     If d == 0 generate unique values.
-    #     """
-    #     if d == 0:
-    #         return self._generate_column(dtype, n)
-    #     assert d > 0
-    #     base = self._generate_column(dtype, d)
-    #     return pd.Series(np.repeat(base.values, r)[:n])
 
     def _generate_column(self, dtype: str, n: int) -> pd.Series:
         """Generate a sample of n distinct values of dtype."""
@@ -291,28 +296,19 @@ class Fabricator:
             return pd.Series([self.tex() for i in range(n)])
         raise ValueError(f"Unknown dtype: {dtype}")
 
-    # def _make_index(self, desc: Union[int, str, list[str]], n: int) -> pd.Index:
-    #     if isinstance(desc, int):
-    #         return pd.RangeIndex(n, name=self.index_name())
-    #     if isinstance(desc, str):
-    #         desc = self._parse_colspec(desc)
-    #     if len(desc) == 1:
-    #         if desc[0] == 'i':
-    #             return pd.RangeIndex(n, name=self.index_name())
-    #         elif desc[0] in ('d', 't', 'x', 'y'):
-    #             vals = self._generate_column(desc[0], n)
-    #             return pd.Index(vals, name=self.index_name())
-    #         elif not all(i[0] == 's' for i in desc):
-    #             raise ValueError(
-    #                 f'Inadmissible index spec: only string, int, and date types allowed, not {desc}.')
-    #     level_value_lengths = [1 if len(i) == 1 else int(i[1:]) for i in desc]
-    #     return self.make_index(rows=n, levels=len(desc), level_value_lengths=level_value_lengths,
-    #                            p0=1, padding=2)
-
-    @property
-    def metric_name(self):
+    def metric_name(self, type_hint):
         """Return a one-word metric name."""
-        return next(self._metric_namer)
+        nm =  next(self._metric_namer)
+        if self.decorate:
+            if type_hint == 'y':
+                nm += ' year'
+            elif type_hint == 'r':
+                nm += ' ratio'
+            elif type_hint == 'd':
+                nm += ' date'
+            elif type_hint == 't':
+                nm += ' time'
+        return nm
 
     def word(self):
         """Return a random word (cycles eventually)."""
@@ -385,33 +381,3 @@ class Fabricator:
         if shuffle:
             self.rng.shuffle(primes)
         return primes
-
-    # def make_index(self, rows: int, levels: int,
-    #                level_value_lengths: Union[list[int], None] = None,
-    #                p0: int = 1,
-    #                padding: int = 2):
-    #     """
-    #     Make an Index with unique values, rows x len(level_value_lengths) cols.
-
-    #     level_velue_lengths shows how many words long each value should be.
-    #     padding = over-sample by padding and select sample.
-    #     """
-    #     if level_value_lengths is None:
-    #         level_value_lengths = random.sample(
-    #             self.index_value_lengths, levels)
-    #     else:
-    #         assert levels == len(
-    #             level_value_lengths), 'levels must equal len(level_value_lengths)'
-    #     level_choices = self.primes_for_product(rows * padding, levels, p0=p0)
-    #     r = [cycle([' '.join([self.word() for _ in range(w)]) for _ in range(k)])
-    #          for w, k in zip(level_value_lengths, level_choices)]
-    #     x = [[next(j) for j in r] for i in range(rows)]
-    #     names = random.sample(name_word_list, levels)
-    #     if levels == 1:
-    #         idx = pd.Index(
-    #             list(chain.from_iterable(random.sample(x, rows))), name=names[0]).sort_values()
-    #     else:
-    #         idx = pd.MultiIndex.from_tuples(
-    #             random.sample(x, rows), names=names).sort_values()
-    #     assert idx.is_unique
-    #     return idx

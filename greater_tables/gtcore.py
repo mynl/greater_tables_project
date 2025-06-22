@@ -2033,16 +2033,7 @@ class GT(object):
             logger.info('CREATED HTML')
         return self._clean_html
 
-    def make_tikz(self,
-                  # column_sep=4 / 8,   # was 3/8
-                  # row_sep=1 / 8,
-                  # container_env='table',
-                  # extra_defs='',
-                  # hrule=None,
-                  # vrule=None,
-                  # post_process='',
-                  # latex=None,
-                  ):
+    def make_tikz(self):
         """
         Write DataFrame to custom tikz matrix.
 
@@ -2079,6 +2070,18 @@ class GT(object):
         TVaR, EPD, mean and CV table)
 
         From great.pres_maker.df_to_tikz
+
+        Arguments moved into config:
+
+          column_sep=4 / 8,   # was 3/8
+          row_sep=1 / 8,
+          container_env='table',
+          extra_defs='',
+          hrule=None,
+          vrule=None,
+          post_process='',
+          latex=None,
+
 
         keyword args:
 
@@ -2119,7 +2122,7 @@ class GT(object):
         latex = self.config.tikz_latex
 
         # local variable - with all formatters already applied
-        df = self.df.copy()  # self.apply_formatters(self.raw_df.copy(), mode='raw')
+        df = GT.escape_df_tex(self.df) # .copy()  # self.apply_formatters(self.raw_df.copy(), mode='raw')
         caption = self.caption
         label = self.label
         # prepare label and caption
@@ -2167,11 +2170,12 @@ class GT(object):
 \\end{{{container_env}}}
 """
 
+    # TODO TIDY
         # always a good idea to do this...need to deal with underscores, %
         # and it handles index types that are not strings
-        df = GT.clean_index(df)
+        # df = GT.clean_index(df)
         # make sure percents are escaped, but not if already escaped
-        df = df.replace(r"(?<!\\)%", r"\%", regex=True)
+        # df = df.replace(r"(?<!\\)%", r"\%", regex=True)
 
         # set in init
         # self.nindex = self.df.index.nlevels if self.show_index else 0
@@ -2338,8 +2342,9 @@ class GT(object):
         # is below second to last row = above last row)
         # shift down extra 1 for the spacer row at the top
 
-        def python_2_tex(x): return x + nr_columns + \
-            2 if x >= 0 else nr + x + 3
+        def python_2_tex(x):
+            return x + nr_columns + 2 if x >= 0 else nr + x + 3
+
         tb_rules = [nr_columns + 1, python_2_tex(-1)]
         if hrule:
             hrule = set(map(python_2_tex, hrule)).union(tb_rules)
@@ -2420,6 +2425,51 @@ class GT(object):
                   post_process=post_process))
 
         return sio.getvalue()
+
+    @staticmethod
+    def escape_tex_outside_math(text):
+        # Pattern to match math environments: $...$, $$...$$, \[...\]
+        if not isinstance(text, str):
+            return text
+        math_pattern = re.compile(r'(\$\$.*?\$\$|\$.*?\$|\\\[.*?\\\])', re.DOTALL)
+
+        # def escape_non_math(s):
+        #     return s.replace('\\', r'\\').replace('%', r'\%')
+        # because of use within tikz tables
+        def escape_non_math(s):
+            return s.replace('\\', r'\textbackslash{}').replace('%', r'\%').replace('_', r'\_')
+
+        parts = []
+        last_end = 0
+        for m in math_pattern.finditer(text):
+            start, end = m.span()
+            parts.append(escape_non_math(text[last_end:start]))
+            parts.append(m.group())  # math part, unescaped
+            last_end = end
+        parts.append(escape_non_math(text[last_end:]))
+
+        return ''.join(parts)
+
+    @staticmethod
+    def escape_df_tex(df):
+        # Escape data elements
+        df = df.map(GT.escape_tex_outside_math)
+
+        # Escape index and column values
+        def escape_index(idx):
+            if isinstance(idx, pd.MultiIndex):
+                return pd.MultiIndex.from_tuples(
+                    [tuple(escape_tex_outside_math(x) for x in tup) for tup in idx],
+                    names=[escape_tex_outside_math(n) if n else n for n in idx.names]
+                )
+            else:
+                return pd.Index([escape_tex_outside_math(x) for x in idx],
+                             name=escape_tex_outside_math(idx.name) if idx.name else None)
+
+        df.index = escape_index(df.index)
+        df.columns = escape_index(df.columns)
+
+        return df
 
     @staticmethod
     def sparsify(df, cs):
