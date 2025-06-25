@@ -52,6 +52,14 @@ greater\_tables.gtformats module
    :undoc-members:
    :show-inheritance:
 
+greater\_tables.gtutilities module
+------------------------------------
+
+.. automodule:: greater_tables.gtutilities
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 greater\_tables.gthasher module
 -----------------------------
 

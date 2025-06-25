@@ -9,12 +9,12 @@ Versions
 * Delete rich table output format?
 * Moved logging setup to separate file, called from cli but optional for use in other situation. GPT recommended approach.
 
-* test cases
+.. * test cases
     * tex and or html in data, index, columns, escaped/unescaped
     * long cols
     * text with multiindex columns
 
-* TODO
+.. * TODO
     * self.padl and r / 12 in make html width adj s/b elsewhere
 
 4.0.0
