@@ -34,7 +34,7 @@ classifiers = [
 [tool.setuptools_scm]
 write_to = "greater_tables/_version.py"
 version_scheme = "post-release"
-local_scheme = "no-local-version"
+local_scheme = "node-and-date"  # "no-local-version"
 
 [tool.setuptools.packages.find]
 include = ["greater_tables", "greater_tables.data"]
