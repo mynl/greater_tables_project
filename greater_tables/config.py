@@ -10,7 +10,6 @@ Also includes functions for writing editable config templates and loading from Y
 
 from pathlib import Path
 from typing import Optional, Union, Literal, Callable, Any
-import yaml
 
 from pydantic import BaseModel, Field, ValidationError, ConfigDict
 import yaml
@@ -29,7 +28,7 @@ class Configurator(BaseModel):
 
     :Usage:
 
-        >>> from greater_tables.gtconfig import Configurator
+        >>> from greater_tables.config import Configurator
         >>> cfg = Configurator(font_size="1.2em", caption_align="left")
 
     :see also: ``GTConfig`` for loading from YAML with overrides.
@@ -134,14 +133,17 @@ class Configurator(BaseModel):
     header_alignment: Literal["few", "center"] = Field(
         default='few', description="NYI!! TOOD Alignment of header cells, few=follow column, center=center." )
 
-    max_table_width: int = Field(
-        200, description="Maximum table width for markdown/text output mode"
+    table_font_pt_size: float = Field(
+        default=11, description="Font size for table text in points, 12 points/inch; 85 char/6.5 inch page"
+    )
+    max_table_inch_width: float = Field(
+        8.0, description="Maximum/target table width in inches"
     )
     table_width_mode: Literal["explicit", "natural", "breakable", "minimum"] = Field(
         "explicit",
         description=(
             "Mode for determining table width. "
-            "'explicit': fixed width using max_table_width; "
+            "'explicit': fixed width using max_table_width_em; "
             "'natural': each cell fits its full content; "
             "'breakable': wrap breakable strings; "
             "'minimum': also wraps dates or float-like cells"

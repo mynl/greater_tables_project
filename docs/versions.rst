@@ -8,6 +8,7 @@ Versions
 * Introduced gtutilities to pull out text width estimation, cleaning and escaping, etc.
 * Delete rich table output format?
 * Moved logging setup to separate file, called from cli but optional for use in other situation. GPT recommended approach.
+* Removed ``gt`` prefix from module file names, except logging.
 
 .. * test cases
     * tex and or html in data, index, columns, escaped/unescaped

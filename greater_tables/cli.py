@@ -10,8 +10,8 @@ from . gtlogging import setup_logging
 
 setup_logging()  # <-- must come before using your package
 
-from .gtconfig import Configurator, write_template
-from .gtcore import GT
+from . config import Configurator, write_template
+from . core import GT
 
 
 @click.group()

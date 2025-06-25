@@ -12,7 +12,7 @@ from pathlib import Path
 from subprocess import run, Popen, PIPE
 from IPython.display import SVG, display
 
-from .gthasher import txt_short_hash
+from . hasher import txt_short_hash
 
 
 logger = logging.getLogger(__name__)

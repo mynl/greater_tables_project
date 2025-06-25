@@ -30,11 +30,11 @@ from pydantic import ValidationError
 from rich import box
 from IPython.display import display, SVG
 
-from . gtenums import Breakability
-from . gtconfig import Configurator
-from . gthasher import df_short_hash
-from . gtetcher import Etcher
-from . gtutilities import *
+from . enums import Breakability
+from . config import Configurator
+from . hasher import df_short_hash
+from . etcher import Etcher
+from . utilities import *
 
 # turn off this fuck-fest
 pd.set_option('future.no_silent_downcasting', True)
@@ -181,7 +181,7 @@ class GT(object):
     :param str_table_fmt: table border format used for string output
       (markdown), default mixed_grid DEPRECATED??
     :param config.table_width_mode:
-        'explicit': set using config.max_table_width
+        'explicit': set using config.max_table_width_em
         'natural': each cell on one line (can be very wide with long strings)
         'breakable': wrap breakable cells (text strings) at word boundaries
           to fit longest word
@@ -190,9 +190,9 @@ class GT(object):
       used to balance header columns.
     :param config.table_width_header_relax: extra spaces allowed per column heading
       to facilitate better column header wrapping.
-    :param config.max_table_width: max table width used for markdown string output,
+    :param config.max_table_width_em: max table width used for markdown string output,
       default 200; width is never less than minimum width. Padding (3 chars
-      per row plus 1) consumed out of config.max_table_width in string output mode.
+      per row plus 1) consumed out of config.max_table_width_em in string output mode.
     :param config.debug: if True, add id to caption and use colored lines in table,
       default False.
     """
@@ -290,17 +290,7 @@ class GT(object):
         # get rid of column names
         # self.df.columns.names = [None] * self.df.columns.nlevels
         self.df_id = df_short_hash(self.df)
-        # TODO: update / change
-        # self.str_table_fmt = str_table_fmt
-        # TODO: implement
-        # self.table_width_mode = config.table_width_mode.lower()
-        # if config.table_width_mode not in ('explicit', 'natural', 'breakable', 'minimum'):
-        #     raise ValueError(f'Inadmissible options {config.table_width_mode} for config.table_width_mode.')
-        # self.table_width_mode = table_width_mode
-        # self.table_width_header_adjust = table_width_header_adjust
-        # self.table_width_header_relax = table_width_header_relax
-        # self.max_table_width = max_table_width
-        # self.debug = debug
+
         if self.caption != '' and self.config.debug:
             self.caption += f' (id: {self.df_id})'
         # self.max_str_length = max_str_length
@@ -520,34 +510,6 @@ class GT(object):
                     raise ValueError(
                         'formatters must be dict of callables or ints or format strings {x:...}')
 
-        # store defaults
-        # self.default_integer_str = default_integer_str
-        # VERY rarely used; for floats in cols that are not floats
-        # self.default_float_str = default_float_str
-        # self.default_date_str = default_date_str.replace(
-            # '{x:', '').replace('}', '')
-        # self.default_ratio_str = default_ratio_str
-        # self.pef_precision = pef_precision
-        # self.pef_lower = pef_lower
-        # self.pef_upper = pef_upper
-        self._pef = None
-        # self.table_float_format = table_float_format
-        # self.default_float_formatter = None
-        # self.hrule_widths = hrule_widths or (0, 0, 0)
-        # if not isinstance(self.config.hrule_widths, (list, tuple)):
-        # self.config.hrule_widths = (self.config.hrule_widths,)
-        # self.vrule_widths = vrule_widths or (0, 0, 0)
-        # if not isinstance(self.config.hrule_widths, (list, tuple)):
-        # self.config.hrule_widths = (self.config.hrule_widths, )
-        # self.table_hrule_width = table_hrule_width
-        # self.table_vrule_width = table_vrule_width
-        # self.font_body = font_body
-        # self.font_head = font_head
-        # self.font_caption = font_caption
-        # self.tikz_scale = tikz_scale
-        # self.font_bold_index = font_bold_index
-        # self.caption_align = caption_align
-        # self.sparsify_columns = sparsify_columns
         if tabs is None:
             self.tabs = None
         elif isinstance(tabs, (int, float)):
@@ -582,6 +544,8 @@ class GT(object):
 
         # because of the problem of non-unique indexes use a list and
         # not a dict to pass the formatters to to_html
+        self.max_table_width_em = self.config.max_table_inch_width * 72 / self.config.table_font_pt_size
+        self._pef = None
         self._df_formatters = None
         self.df_style = ''
         self.df_html = ''
@@ -968,9 +932,17 @@ class GT(object):
         h = self.html_knowledge_df.recommended.sum()
         tikz = self.tex_knowledge_df['tikz_colw'].sum()
         tex =  self.tex_knowledge_df['scaled_tabs'].sum()
-        mtw = self.config.max_table_width
-        cols = self.df.shape[1]
-        df = pd.Series({
+        mtw = self.max_table_width_em
+        bit = pd.DataFrame({
+                        'text natural': self.text_knowledge_df.natural_width,
+                        'text minimum': self.text_knowledge_df.minimum_width,
+                        'text header tweak': self.text_knowledge_df.header_tweak,
+                        'text recommended': self.text_knowledge_df.recommended,
+                        'html recommended': self.html_knowledge_df.recommended,
+                        'tex recommended': self.tex_knowledge_df['scaled_tabs'],
+                        'tikz recommended': self.tex_knowledge_df['tikz_colw'],
+        }).fillna(0)
+        ser = pd.Series({
                         'text natural': natural,
                         'text minimum': minimum,
                         'text header tweak': ht,
@@ -978,13 +950,13 @@ class GT(object):
                         'html recommended': h,
                         'tex recommended': tex,
                         'tikz recommended': tikz,
-                        'requested': mtw,
-                        'width mode' : self.config.table_width_mode,
-                        'header relax': self.config.table_width_header_adjust,
-                        'header chars': self.config.table_width_header_relax,
-                         }).to_frame('value')
-        df.index.name = 'metric'
-        return df
+        })
+        bit.loc['total', :] = ser
+        print(f"requested width = {mtw}\n"
+              f"width mode      = {self.config.table_width_mode}\n"
+              f"header relax    = {self.config.table_width_header_adjust}\n"
+              f"header chars    = {self.config.table_width_header_relax}")
+        return bit
 
     def estimate_column_widths_by_mode(self, mode):
         """
@@ -1074,9 +1046,9 @@ class GT(object):
         PADDING = 2  # per column TODO enhance
         if self.config.table_width_mode == 'explicit':
             # target width INCLUDES padding and column marks |
-            target_width = self.config.max_table_width - \
-                (PADDING + 1) * n_col - 1
-            logger.info(f'Col padding effect {self.config.max_table_width=}'
+            target_width = self.max_table_width_em - \
+                           (PADDING + 1) * n_col - 1
+            logger.info(f'Col padding effect {self.max_table_width_em=}'
                         f' ==> {target_width=}')
         elif self.config.table_width_mode == 'natural':
             target_width = natural + (PADDING + 1) * n_col + 1
@@ -1177,9 +1149,14 @@ class GT(object):
                             target_width,
                             ans['recommended'].sum() - target_width
                             )
+            else:
+                # avoid a failure blow
+                ans['raw_recommended'] = np.nan
+                ans['header_tweak'] = np.nan
+                ans['natural_w_header'] = np.nan
         else:
             # for html and tex modes: adapts from old estimate_column_widths
-            target_width = self.config.max_table_width
+            target_width = self.max_table_width_em
             nc_index = self.nindex
 
             # without tex adjustment
