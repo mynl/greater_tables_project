@@ -1,6 +1,15 @@
+"""
+Command line interface: convert files to HTML, text, svg or pdf.
+"""
+
 import click
 import pandas as pd
 from pathlib import Path
+
+from . gtlogging import setup_logging
+
+setup_logging()  # <-- must come before using your package
+
 from .gtconfig import Configurator, write_template
 from .gtcore import GT
 

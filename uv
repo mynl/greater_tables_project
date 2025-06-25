@@ -1,0 +1,11 @@
+Obtaining file:///C:/S/TELOS/Python/greater_tables_project
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Checking if build backend supports build_editable: started
+  Checking if build backend supports build_editable: finished with status 'done'
+  Getting requirements to build editable: started
+  Getting requirements to build editable: finished with status 'done'
+  Preparing editable metadata (pyproject.toml): started
+  Preparing editable metadata (pyproject.toml): finished with status 'done'
+Collecting bs4 (from greater_tables==4.0.0)
+  Using cached bs4-0.0.2-py2.py3-none-any.whl.metadata (411 bytes)

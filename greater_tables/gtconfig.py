@@ -85,10 +85,9 @@ class Configurator(BaseModel):
     padding_trbl: Optional[tuple[int, int, int, int]] = Field(
         None, description="Manual padding in the order (top, right, bottom, left)"
     )
+    tex_to_html: Optional[Callable[[str], str]] = Field(
+        default=None, description="Function to map non-math TeX to HTML, eg remap \\textbf{...}")
 
-    tikz_scale: float = Field(
-        1.0, description="Scaling factor applied to LaTeX TikZ tables"
-    )
     font_body: float = Field(
         0.9, description="Font size for body text (in em units)"
     )
@@ -132,6 +131,9 @@ class Configurator(BaseModel):
         -1, description="Maximum length for stringified objects (e.g. nested DataFrames); -1 = unlimited"
     )
 
+    header_alignment: Literal["few", "center"] = Field(
+        default='few', description="NYI!! TOOD Alignment of header cells, few=follow column, center=center." )
+
     max_table_width: int = Field(
         200, description="Maximum table width for markdown/text output mode"
     )
@@ -153,10 +155,13 @@ class Configurator(BaseModel):
     )
 
     # tikz specific options
+    tikz_scale: float = Field(
+        1.0, description="Scaling factor applied to LaTeX TikZ tables"
+    )
     tikz_column_sep: float = Field(
-        0.5, description="Separation between columns")
+        1, description="Separation between columns")
     tikz_row_sep: float = Field(
-        0.125, description="Separation between rows")
+        0.25, description="Separation between rows")
     tikz_container_env: Literal["table", "figure", "sidewaysfigure"] = Field(
         default="table",
         description="Type of element: 'table', 'figure', or 'sidewaysfigure'"
@@ -175,7 +180,8 @@ class Configurator(BaseModel):
         '', description="non-line commands put at bottom of table")
     tikz_latex: Optional[str] = Field(
         None, description="arguments at top of table \\begin{table}[tikz_latex]")
-
+    tikz_escape_tex: Optional[bool] = Field(
+        True, description="If true, escape non-math TeX like %, _ and \\. Default no escaping, allowing \\textbf{...} to work.")
     # meta
     debug: bool = Field(
         False, description="Run in debug mode with more reporting, include internal ID in caption and use colored output lines")

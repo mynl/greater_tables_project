@@ -1,6 +1,22 @@
 Versions
 ==========
 
+5.0.0
+-------
+* Introduced ``knowledge_df`` as source of all formatting instructions
+* ``df_tex`` and ``df_html`` computed before ``knowledge`` applying TeX and HTML specific transformations which are reflected in the estimated widths
+* Introduced gtutilities to pull out text width estimation, cleaning and escaping, etc.
+* Delete rich table output format?
+* Moved logging setup to separate file, called from cli but optional for use in other situation. GPT recommended approach.
+
+* test cases
+    * tex and or html in data, index, columns, escaped/unescaped
+    * long cols
+    * text with multiindex columns
+
+* TODO
+    * self.padl and r / 12 in make html width adj s/b elsewhere
+
 4.0.0
 -------
 * Moved constants out of magic strings and into config

@@ -6,6 +6,7 @@ from collections import deque
 from datetime import datetime, timedelta
 from importlib.resources import files
 from itertools import cycle, chain, count, zip_longest, product, islice
+# import logging
 from math import prod
 from pathlib import Path
 from typing import Optional, Union
@@ -16,7 +17,8 @@ import re
 import numpy as np
 import pandas as pd
 
-from IPython.display import display
+
+# logger = logging.getLogger(__name__)
 
 
 class Fabricator:
@@ -62,7 +64,8 @@ class Fabricator:
         with data_path.open('r', encoding='utf-8') as f:
             tex_list = pd.read_csv(f, index_col=0)['expr'].to_list()
         # trim down slightly
-        pat = re.compile(r'(?<!\\)\b[a-z]{4,}\b')
+        # dont' want | in tex...messes up tables!
+        pat = re.compile(r'(?<!\\)\b[a-z]{4,}\b|\|')
         tex_list = [i for i in tex_list if not pat.search(i) and len(i)<=50]
         self.rng.shuffle(tex_list)
         self._tex_gen = cycle(tex_list)
@@ -113,7 +116,10 @@ class Fabricator:
             df = df.droplevel(drop_levels, axis=1)
         return df
 
-    def make(self, rows, data_spec, *, index_levels=1, index_names=None, column_groups=1, column_levels=1, column_names=None, decorate=False, simplify=True, oversample=1):
+    def make(self, rows, data_spec, *, index_levels=1, index_names=None,
+             column_groups=1, column_levels=1, column_names=None,
+             metric_name_spec='',
+             decorate=False, simplify=True, oversample=1):
         """
         Fabricate a dataframe with the given specification.
 
@@ -171,7 +177,12 @@ class Fabricator:
         index = pd.MultiIndex.from_tuples(islice(product(*(self._generate_column('s', v) for v in self.primes_for_product(rows, index_levels))), rows), names=inames)
 
         # create with col groups and drop later if needed
-        metric_names = [self.metric_name(t) for t in data_spec]
+        if metric_name_spec == '':
+            metric_names = [self.metric_name(t) for t in data_spec]
+        else:
+            metric_name_spec = self._parse_colspec(metric_name_spec)
+            assert len(metric_name_spec) == len(data_spec), "metric name spec not consistent with data spec"
+            metric_names = [self._generate_column(dt, 1).iloc[0] for dt in metric_name_spec]
         if column_groups > 0:
             cnames = (column_names or [f'c_{i}' for i in range(column_levels)]) + ['metric']
             columns_pfp = self.primes_for_product(column_groups, column_levels)

@@ -8,6 +8,7 @@ import time
 import base64
 import pandas as pd
 
+
 def df_short_hash(df, length=12):
     """Generate a short, time-dependent hash for a DataFrame (safe for HTML IDs)."""
     hasher = hashlib.blake2b(digest_size=8)  # Smaller output

@@ -6,12 +6,16 @@ Good for testing. Outputs are cached by hash. PDF→SVG uses pdf2svg.
 GPT re-write of my old great2.blog code.
 """
 
+import logging
 import re
 from pathlib import Path
 from subprocess import run, Popen, PIPE
 from IPython.display import SVG, display
 
 from .gthasher import txt_short_hash
+
+
+logger = logging.getLogger(__name__)
 
 
 class Etcher:
@@ -76,13 +80,13 @@ class Etcher:
             '&pdflatex',
             tmp.name,
             ]
-        print(f'Running {" ".join(cmd)} to build format file...')
+        logger.info(f'Running {" ".join(cmd)} to build format file...')
         (self.file_path.parent / 'make_format.bat').write_text(" ".join(cmd), encoding='utf-8')
         self.run_command(cmd, raise_on_error=True, cwd=self.out_path)
         # tidy up ... to some extent
         # tmp.unlink()
         (self.out_path / f'{self.format_file.stem}.log').unlink()
-        print('...success...format file built', self.format_file.resolve())
+        logger.info('...success...format file built', self.format_file.resolve())
 
     def process_tikz(self):
         """Compile TikZ to PDF and convert to SVG."""
@@ -109,7 +113,7 @@ class Etcher:
         ]
         (tex_path.parent / 'make_tikz.bat').write_text(" ".join(tex_cmd), encoding='utf-8')
         if self.debug:
-            print("Running:", " ".join(tex_cmd))
+            logger.info("Running:", " ".join(tex_cmd))
         if self.run_command(tex_cmd):
             raise ValueError('TeX failed to compile, not pdf or svg output.')
             # no tidying up
@@ -122,7 +126,7 @@ class Etcher:
                 str(svg_path)
             ]
             if self.debug:
-                print("Running:", " ".join(svg_cmd))
+                logger.info("Running:", " ".join(svg_cmd))
             self.run_command(svg_cmd, raise_on_error=True)
 
             if not self.debug:
@@ -140,15 +144,15 @@ class Etcher:
         with Popen(command, cwd=cwd, stdout=PIPE, stderr=PIPE, universal_newlines=True) as p:
             stdout, stderr = p.communicate()
             if stdout and self.debug:
-                print('Run command output ends\n', stdout.strip()[-250:])
+                logger.info('Run command output ends\n', stdout.strip()[-250:])
             if stdout:
                 if stdout.find('no output PDF file produced') > 0:
-                    print("ERROR no pdf output\n"*5)
+                    logger.error("ERROR no pdf output\n"*5)
                     return -1
             if stderr:
                 if raise_on_error:
                     raise RuntimeError(stderr.strip())
                 else:
-                    print(stderr.strip())
+                    logger.error(stderr.strip())
                     return -2
         return 0

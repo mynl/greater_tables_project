@@ -7,15 +7,14 @@ to HTML, plain text, or LaTeX output using a validated configuration model.
 This is the main entry point for rendering logic. See `gtconfig.py` for configuration schema.
 """
 
-from collections import namedtuple
 from decimal import InvalidOperation
 from io import StringIO
 from itertools import groupby
 import logging
+import os
 from pathlib import Path
 import re
-import sys
-from textwrap import wrap
+import tempfile
 from typing import Optional, Union, Literal
 import warnings
 import yaml
@@ -29,16 +28,15 @@ from pandas.api.types import is_datetime64_any_dtype, is_integer_dtype, \
     is_float_dtype   # , is_numeric_dtype
 from pydantic import ValidationError
 from rich import box
-from rich.table import Table
 from IPython.display import display, SVG
 
-from . gtenums import Breakability, Alignment
-from . gtformats import GT_Format, TableFormat, Line, DataRow
+from . gtenums import Breakability
 from . gtconfig import Configurator
 from . gthasher import df_short_hash
 from . gtetcher import Etcher
+from . gtutilities import *
 
-# turn this fuck-fest off
+# turn off this fuck-fest
 pd.set_option('future.no_silent_downcasting', True)
 # pandas complaining about casting columns eg putting object in float column
 warnings.simplefilter(action='ignore', category=FutureWarning)
@@ -46,22 +44,6 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 
 # GPT recommended approach
 logger = logging.getLogger(__name__)
-# Disable log propagation to prevent duplicates
-logger.propagate = False
-if logger.hasHandlers():
-    # Clear existing handlers
-    logger.handlers.clear()
-# SET DEGBUGGER LEVEL
-LEVEL = logging.WARNING    # DEBUG or INFO, WARNING, ERROR, CRITICAL
-logger.setLevel(LEVEL)
-handler = logging.StreamHandler(sys.stderr)
-handler.setLevel(LEVEL)
-formatter = logging.Formatter(
-    '%(asctime)s | %(levelname)s |  %(funcName)-15s | %(message)s')
-handler.setFormatter(formatter)
-logger.addHandler(handler)
-logger.info(f'Logger Setup; {__name__} module recompiled.')
-
 
 class GT(object):
     """
@@ -215,17 +197,6 @@ class GT(object):
       default False.
     """
 
-    # TeX control sequence display widths (heuristic)
-    TEX_SIMPLE_GLYPHS = {
-        'alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta', 'eta', 'theta',
-        'iota', 'kappa', 'lambda', 'mu', 'nu', 'xi', 'omicron', 'pi', 'rho',
-        'sigma', 'tau', 'upsilon', 'phi', 'chi', 'psi', 'omega', 'infty',
-        'sum', 'prod', 'int', 'cup', 'cap', 'vee', 'wedge', 'forall', 'exists',
-        'neg', 'leq', 'geq', 'neq', 'approx', 'to', 'leftarrow', 'rightarrow'
-    }
-    TEX_WIDE = {'frac', 'sqrt', 'sum', 'int', 'prod'}
-    TEX_SPACING = {'quad', 'qquad', ',', ';', ' ', '!'}
-
     def __init__(
         self,
         df,
@@ -293,7 +264,7 @@ class GT(object):
             if df == '':
                 df = pd.DataFrame([])
             else:
-                df, aligners, caption, label = GT.md_to_df(df)
+                df, aligners, caption, label = MD2DF.md_to_df(df)
                 show_index = False
         else:
             raise ValueError(
@@ -349,14 +320,14 @@ class GT(object):
                     drop=False, col_level=self.df.columns.nlevels - 1)
             # want the new index to be ints - that is not default if old was multiindex
             self.df.index = np.arange(self.df.shape[0], dtype=int)
-        self.index_change_level = GT.changed_column(
+        self.index_change_level = Indexing.changed_column(
             self.df.iloc[:, :self.nindex])
         if self.ncolumns > 1:
             # will be empty rows above the index headers
             self.index_change_level = pd.Series(
                 [i[-1] for i in self.index_change_level])
 
-        self.column_change_level = GT.changed_level(self.raw_df.columns)
+        self.column_change_level = Indexing.changed_level(self.raw_df.columns)
 
         # determine ratio columns
         if ratio_cols is not None and not self.df.columns.is_unique:
@@ -618,19 +589,33 @@ class GT(object):
         self._clean_tex = ''
         self._rich_table = None
         self._string = ''
-        self._column_width_df = None
+        self._df_html_text = ""
+        self._df_style_text = ""
+        self._cache = LRUCache(20)
+        self._text_knowledge_df = None
+        self._html_knowledge_df = None
+        self._tex_knowledge_df = None
+
         # finally config.sparsify and then apply formaters
         # this radically alters the df, so keep a copy for now...
         self.df_pre_applying_formatters = self.df.copy()
         self.df = self.apply_formatters(self.df)
-        # cache for various things...
-        self._cache = LRUCache(20)
         # config.sparsify
         if self.config.sparsify and self.nindex > 1:
-            self.df = GT.sparsify(self.df, self.df.columns[:self.nindex])
+            self.df = Sparsify.sparsify(self.df, self.df.columns[:self.nindex])
             # for c in self.df.columns[:self.nindex]:
             #     # config.sparsify returns some other stuff...
             #     self.df[c], _ = GT.config.sparsify(self.df[c])
+        # make final tex and html versions
+        if self.config.tex_to_html is not None:
+            # NEED TO WORK ON INDEXES TOO
+            self.df_html = self.df.map(self.config.tex_to_html)
+        else:
+            self.df_html = self.df
+        if self.config.tikz_escape_tex:
+            self.df_tex = Escaping.escape_df_tex(self.df)
+        else:
+            self.df_tex
 
     def __repr__(self):
         """Basic representation."""
@@ -657,6 +642,14 @@ class GT(object):
             logger.info('CREATED LATEX')
         return self._clean_tex
 
+    def cache_get(self, key):
+        """Retrieve item from cache."""
+        return self._cache.get(key, None)
+
+    def cache_set(self, key, value):
+        """Add item to cache."""
+        self._cache[key] = value
+
     def cols_from_regex(self, regex):
         """
         Return columns matching a regex.
@@ -673,14 +666,6 @@ class GT(object):
         ]
         return matching_cols
         # return [col for col in self.df.columns if isinstance(col, str) and re.search(regex, col)]
-
-    def cache_get(self, key):
-        """Retrieve item from cache."""
-        return self._cache.get(key, None)
-
-    def cache_set(self, key, value):
-        """Add item to cache."""
-        self._cache[key] = value
 
     # define the default and easy formatters ===================================================
     def default_ratio_formatter(self, x):
@@ -953,119 +938,140 @@ class GT(object):
         else:
             raise ValueError(f'unknown mode {mode}')
 
-    @staticmethod
-    def changed_column(bit):
-        """Return the column that changes with each row."""
-        tf = bit.ne(bit.shift())
-        tf = tf.loc[tf.any(axis=1)]
-        return tf.idxmax(axis=1)
-
-    @staticmethod
-    def changed_level(idx):
-        """
-        Return the level of index that changes with each row.
-
-        Very ingenious GTP code with some SM enhancements.
-        """
-        # otherwise you alter the actual index
-        idx = idx.copy()
-        idx.names = [i for i in range(idx.nlevels)]
-        # Determine at which level the index changes
-        # Convert MultiIndex to a DataFrame
-        index_df = idx.to_frame(index=False)
-        # true / false match last row
-        tf = index_df.ne(index_df.shift())
-        # changes need at least one true
-        tf = tf.loc[tf.any(axis=1)]
-        level_changes = tf.idxmax(axis=1)
-        return level_changes
+    @property
+    def text_knowledge_df(self):
+        """Uber source of information for text formatting."""
+        if self._text_knowledge_df is None:
+            self._text_knowledge_df = self.estimate_column_widths_by_mode('text')
+        return self._text_knowledge_df
 
     @property
-    def column_width_df(self):
+    def html_knowledge_df(self):
+        """Uber source of information for html formatting."""
+        if self._html_knowledge_df is None:
+            self._html_knowledge_df = self.estimate_column_widths_by_mode('html')
+        return self._html_knowledge_df
+
+    @property
+    def tex_knowledge_df(self):
+        """Uber source of information for tex formatting."""
+        if self._tex_knowledge_df is None:
+            self._tex_knowledge_df = self.estimate_column_widths_by_mode('tex')
+        return self._tex_knowledge_df
+
+    def width_report(self):
+        """Return a report summarizing the width information."""
+        natural = self.text_knowledge_df.natural_width.sum()
+        minimum = self.text_knowledge_df.minimum_width.sum()
+        ht = self.text_knowledge_df.header_tweak.sum()
+        text = self.text_knowledge_df.recommended.sum()
+        h = self.html_knowledge_df.recommended.sum()
+        tikz = self.tex_knowledge_df['tikz_colw'].sum()
+        tex =  self.tex_knowledge_df['scaled_tabs'].sum()
+        mtw = self.config.max_table_width
+        cols = self.df.shape[1]
+        df = pd.Series({
+                        'text natural': natural,
+                        'text minimum': minimum,
+                        'text header tweak': ht,
+                        'text recommended': text,
+                        'html recommended': h,
+                        'tex recommended': tex,
+                        'tikz recommended': tikz,
+                        'requested': mtw,
+                        'width mode' : self.config.table_width_mode,
+                        'header relax': self.config.table_width_header_adjust,
+                        'header chars': self.config.table_width_header_relax,
+                         }).to_frame('value')
+        df.index.name = 'metric'
+        return df
+
+    def estimate_column_widths_by_mode(self, mode):
         """
-        The single source of truth for all info about column widths.
+        Return dataframe of width information: three modes for text, html, and tex.
 
-        Adds `estimate_column_widths` columns to  `make_column_width_df`.
+        Mode adjusts which df is used and how widths are estimated
+
+        * text -> self.df and len = str.len
+        * html -> self.df_html and len =
+        * tex  -> self.df_tex and len =
+
+        Returned dataframe has columns named mode_xxx, where xxx can be
+
+        * natural: max len by col
+        * minimum width = max length given breaks
+        * acceptable = allowing for break type by column
+
+        * head_natural, head_min, head_acceptable for the heading
+
+        * raw_recommended
+        * header_adjustment
+        * recommended
+
+        pat and iso_date_split regex explanation:
+
+            # re.split(r'(?<=[\s.,:;!?()\[\]{}\-\\/|])\s*', text)
+            # (?<=...) is a lookbehind to preserve the break character with the left-hand fragment.
+            # [\s.,:;!?()\[\]{}\-\\/|] matches common punctuation and separators:
+            # \s = whitespace
+            # . , : ; ! ? = terminal punctuation
+            # () [] {} = brackets
+            # \- = dash
+            # \\/| = slash, backslash, pipe
+
         """
-        if self._column_width_df is None:
-            self._column_width_df = self.make_column_width_df()
-            tikz_colw, tabs, scaled_tabs = self.estimate_column_widths()
-            self._column_width_df['tikz_colw'] = tikz_colw
-            self._column_width_df['tikz_colw'] += 2   # for \I spacer!
-            self._column_width_df['estimated_tabs'] = tabs
-            self._column_width_df['estimated_scaled_tabs'] = scaled_tabs
-            if self.tabs is not None:
-                self._column_width_df['input_tabs'] = self.tabs
-            else:
-                self._column_width_df['input_tabs'] = -1
-            # this column should be used in place of tabs from estimate_column_widths
-            # in make html and make tikz
-            self._column_width_df['tabs'] = np.maximum(self._column_width_df['input_tabs'],
-                                                       self._column_width_df['estimated_tabs'])
-            self._column_width_df['scaled_tabs'] = np.maximum(self._column_width_df['input_tabs'],
-                                                              self._column_width_df['estimated_scaled_tabs'])
+        assert mode in ('text', 'html', 'tex'), 'Only html, text and tex modes valid.'
+        if mode == 'text':
+            df = self.df
+            len_function = len
+        elif mode == 'html':
+            df = self.df_html
+            len_function = TextLength.text_display_len
 
-        return self._column_width_df
+        else: #  mode == 'tex':
+            df = self.df_tex
+            len_function = TextLength.text_display_len
 
-    def make_column_width_df(self):
-        """
-        Return dataframe of width information.
-
-        Returned dataframe has columns for
-
-        * natural width, all on one line = max len by col
-        * min width = max length given breaks
-        * break type of column
-        * alignment of column
-        * index natural width
-        * index min width
-        """
-        df = self.df
         n_row, n_col = df.shape
 
         # The width if content didn't wrap (single line)
         # Series=dict colname->max width of cells in column
-        natural_width = df.map(lambda x: len(x.strip())).max(axis=0).to_dict()
+        natural_width = df.map(lambda x: len_function(x.strip())).max(axis=0).to_dict()
 
-        # re.split(r'(?<=[\s.,:;!?()\[\]{}\-\\/|])\s*', text)
-        # (?<=...) is a lookbehind to preserve the break character with the left-hand fragment.
-        # [\s.,:;!?()\[\]{}\-\\/|] matches common punctuation and separators:
-        # \s = whitespace
-        # . , : ; ! ? = terminal punctuation
-        # () [] {} = brackets
-        # \- = dash
-        # \\/| = slash, backslash, pipe
+        # in text mode: figure out where you can break
         pat = r'(?<=[.,;:!?)\]}\u2014\u2013])\s+|--+\s+|\s+'
         iso_date_split = r'(?<=\b\d{4})-(?=\d{2}-\d{2})'
         pat = f'{pat}|{iso_date_split}'
 
         # Calculate ideal (no wrap) and minimum possible widths for all columns
         # The absolute minimum width each column can take (e.g., longest word for text)
-        min_acceptable_width = {}
+        minimum_width = {}
         for col_name in df.columns:
-            min_acceptable_width[col_name] = (
+            minimum_width[col_name] = (
                 df[col_name].str
                 .split(pat=pat, regex=True, expand=True)
                 .fillna('')
-                .map(len)
+                .map(len_function)
                 .max(axis=1)
                 .max()
             )
-        # ans will be the col_width_df
+
+        # begin to assemble the parts
+        # ans will be the col_width_df;  break_penalties needed by all methods
+
         ans = pd.DataFrame({
             'alignment': [i[4:] for i in self.df_aligners],
             'break_penalties': self.break_penalties,
             'breakability': [x.name for x in self.break_penalties],
             'natural_width': natural_width.values(),
-            'min_acceptable_width': min_acceptable_width.values(),
-        }, index=df.columns)
-        ans['break_acceptable'] = np.where(
-            ans.break_penalties == Breakability.ACCEPTABLE, ans.min_acceptable_width, ans.natural_width)
-        # DUH - this is min_acceptable_width
-        # ans['break_dates'] = np.where(ans.break_penalties==Breakability.DATE, ans.min_acceptable_width, ans.break_acceptable)
+            'minimum_width': minimum_width.values(),
+            }, index=df.columns)
+        ans['acceptable_width'] = np.where(
+            ans.break_penalties == Breakability.ACCEPTABLE, ans.minimum_width, ans.natural_width)
 
-        natural, acceptable, min_acceptable = ans.iloc[:, 3:].sum()
-        PADDING = 2  # per column
+        # adjustments and recommendations
+        natural, acceptable, minimum = ans.iloc[:, 3:].sum()
+        PADDING = 2  # per column TODO enhance
         if self.config.table_width_mode == 'explicit':
             # target width INCLUDES padding and column marks |
             target_width = self.config.max_table_width - \
@@ -1077,7 +1083,7 @@ class GT(object):
         elif self.config.table_width_mode == 'breakable':
             target_width = acceptable + (PADDING + 1) * n_col + 1
         elif self.config.table_width_mode == 'minimum':
-            target_width = min_acceptable + (PADDING + 1) * n_col + 1
+            target_width = minimum + (PADDING + 1) * n_col + 1
 
         # extra space for the headers to relax, if useful
         if self.config.table_width_header_adjust > 0:
@@ -1086,6 +1092,8 @@ class GT(object):
         else:
             max_extra = 0
 
+        logger.info(f'{mode=} {target_width=}, {natural=}, {acceptable=}, {minimum=}')
+
         if target_width > natural:
             # everything gets its natural width
             ans['recommended'] = ans['natural_width']
@@ -1093,614 +1101,234 @@ class GT(object):
             logger.info('Space for NATURAL! Spare space = %s', space)
         elif target_width > acceptable:
             # strings wrap
-            ans['recommended'] = ans['break_acceptable']
+            ans['recommended'] = ans['acceptable_width']
             # use up extra on the ACCEPTABLE cols
             space = target_width - acceptable
             logger.info(
                 'Using breaks acceptable (dates not wrapped), spare space = %s', space)
-        elif target_width > min_acceptable:
+        elif target_width > minimum:
             # strings and dates wrap
-            ans['recommended'] = ans['min_acceptable_width']
+            ans['recommended'] = ans['minimum_width']
             # use up extra on dates first, then strings
-            space = target_width - min_acceptable
+            space = target_width - minimum
             logger.info(
                 'Breaking all breakable (incl dates), spare space = %s', space)
         else:
             # OK severely too small
-            ans['recommended'] = ans['min_acceptable_width']
+            ans['recommended'] = ans['minimum_width']
             logger.info(
                 'Desired width too small for pleasant formatting, table will be too wide.')
-            space = target_width - min_acceptable
+            space = target_width - minimum
 
-        input_df = None
-        if space >= 0:
-            # Allocate the excess ------------------------------
-            # Fancy col headings currently only for 1-d index
-            # TODO NOTE: use config.sparsify logic you have for index applied to df.T
-            # to sort the columns!!
-            if df.columns.nlevels == 1:
-                # Step 1: baseline comes in from code above
-                ans['raw_rec'] = ans['recommended']
+        # this section adjusts for column headers. text has a
+        # more rigorous adjustment than the other two methds (which
+        # will naturally make better decisions about line breaks in the heading).
+        if mode == "text":
+            input_df = None
+            if space >= 0:
+                # Allocate the excess ------------------------------
+                # Fancy col headings currently only for 1-d index
+                # TODO NOTE: use config.sparsify logic you have for index applied to df.T
+                # to sort the columns!!
+                if df.columns.nlevels == 1:
+                    # Step 1: baseline comes in from code above
+                    ans['raw_recommended'] = ans['recommended']
 
-                # Step 2: get rid of intra-line breaks
-                if max_extra > 0:
-                    adj, input_df = self.header_adjustment(
-                        df, ans['recommended'], space, max_extra)
-                    # create new col and populate per GPT
-                    ans['header_tweak'] = pd.Series(adj)
+                    # Step 2: get rid of intra-line breaks
+                    if max_extra > 0:
+                        adj, input_df = Width.header_adjustment(
+                            df, ans['recommended'], space, max_extra)
+                        # create new col and populate per GPT
+                        ans['header_tweak'] = pd.Series(adj)
+                    else:
+                        ans['header_tweak'] = 0
+                    ans['recommended'] = ans['recommended'] + ans['header_tweak']
+                    ans['natural_w_header'] = ans['recommended']
                 else:
-                    ans['header_tweak'] = 0
-                ans['recommended'] = ans['recommended'] + ans['header_tweak']
-                ans['natural_w_header'] = ans['recommended']
-            else:
-                # avoid a failure blow
-                ans['raw_rec'] = np.nan
-                ans['header_tweak'] = np.nan
-                ans['natural_w_header'] = np.nan
-            # Step 3: distribute remaining slack proportionally
-            remaining = target_width - ans['recommended'].sum()
-            if remaining > 0:
-                slack = ans['natural_width'] - ans['recommended']
-                total_slack = slack.clip(lower=0).sum()
-                if total_slack > 0:
-                    fractions = slack.clip(lower=0) / total_slack
-                    ans['recommended'] += np.floor(fractions *
-                                                   remaining).astype(int)
-                    ans['recommended'] = np.maximum(
-                        ans['recommended'], ans['natural_w_header'])
+                    # avoid a failure blow
+                    ans['raw_recommended'] = np.nan
+                    ans['header_tweak'] = np.nan
+                    ans['natural_w_header'] = np.nan
+                # Step 3: distribute remaining slack proportionally
+                remaining = target_width - ans['recommended'].sum()
+                if remaining > 0:
+                    slack = ans['natural_width'] - ans['recommended']
+                    total_slack = slack.clip(lower=0).sum()
+                    if total_slack > 0:
+                        fractions = slack.clip(lower=0) / total_slack
+                        ans['recommended'] += np.floor(fractions *
+                                                       remaining).astype(int)
+                        ans['recommended'] = np.maximum(
+                            ans['recommended'], ans['natural_w_header'])
 
-            # Ensure final constraint
-            try:
-                ans['recommended'] = ans['recommended'].astype(int)
-            except IntCastingNaNError:
-                print('getting error')
-                print(ans['recommended'])
-                ans['recommended'] = pd.to_numeric(
-                    ans['recommended'], errors='coerce').fillna(0).astype(int)
+                # Ensure final constraint
+                try:
+                    ans['recommended'] = ans['recommended'].astype(int)
+                except IntCastingNaNError:
+                    print('getting error')
+                    print(ans['recommended'])
+                    ans['recommended'] = pd.to_numeric(
+                        ans['recommended'], errors='coerce').fillna(0).astype(int)
 
-            logger.info("Raw rec: %s\tTweaks: %s\tActual: %s\tTarget: %s\tOver/(U): %s",
-                        ans['raw_rec'].sum(),
-                        ans['header_tweak'].sum(),
-                        ans['recommended'].sum(),
-                        target_width,
-                        ans['recommended'].sum() - target_width
-                        )
-            ans = ans[[
-                'alignment',
-                'break_penalties',
-                'breakability',
-                'natural_width',
-                'break_acceptable',
-                'min_acceptable_width',
-                'raw_rec',
-                'header_tweak',
-                'natural_w_header',
-                'recommended',
-            ]]
-        # in all cases...
-        # need recommended to be > 0
-        ans['recommended'] = np.maximum(ans['recommended'], 1)
-        self.cache_set('column_width_df', ans)
-        # info about the header adjustment
-        self.cache_set('input_df', input_df)
-
-        return ans
-
-    @staticmethod
-    def header_adjustment(df, min_widths, space, max_extra):
-        """
-        Fine-adjust heading for optimal config.spacing.
-
-        Return a dict with per-column recommended width adjustments to avoid
-        intra-word breaks and reduce overall header height.
-
-        Parameters:
-            df: DataFrame with 1-level string column names
-            min_widths: dict of column name -> minimal acceptable width
-            space: amount of space available to be allocated
-            max_extra: max extra characters to consider allocating per column
-
-        Returns:
-            dict: column -> additional width to allocate
-        """
-        colnames = list(df.columns)
-        adjustments = {col: 0 for col in colnames}
-        num_lines = 0
-
-        def has_intra_word_break(text: str, width: int) -> bool:
-            """
-            Determine if textwrap.wrap breaks any words in the given text.
-
-            Gemini - GPT code did not work, even after seveal iterations.
-            This is a nice approach to the problem.
-
-            Args:
-                text: The input string.
-                width: The maximum width for wrapping.
-
-            Returns:
-                True if any word is broken across lines, False otherwise.
-            """
-            nonlocal num_lines
-            wrapped_lines = wrap(text, width=width)
-            num_lines = len(wrapped_lines)
-            original_words = text.split()
-
-            reconstructed_text_from_wrapped = " ".join(wrapped_lines)
-            reconstructed_words = reconstructed_text_from_wrapped.split()
-
-            # If the number of words differs, it means some words were split.
-            # This catches cases where a word might be split and then later re-joined
-            # due to subsequent wrapping logic, leading to a different number of words.
-            if len(original_words) != len(reconstructed_words):
-                return True
-
-            # Compare word by word. If any word from the original doesn't exactly match
-            # a word from the reconstructed list, it implies a split.
-            for i in range(len(original_words)):
-                if original_words[i] != reconstructed_words[i]:
-                    return True
-
-            return False
-
-        # First pass: avoid ugly intraword breaks
-        # make dict of col -> longest word length
-        min_acceptable = {c: v for c, v in
-                          zip(colnames, map(lambda x: max(len(i) for i in re.split(r'[ \-/]', x)), colnames))}
-        options = []
-        for col in colnames:
-            if not isinstance(col, str):
-                continue
-            base_width = min_widths[col]
-            if not has_intra_word_break(col, base_width):
-                options.append([col, 0, num_lines])
-                # nothing to be gained, move to next col
-                continue
-            extra0 = max(0, min_acceptable[col] - base_width)
-            if extra0 > max_extra:
-                # ok, can't flatten word because it is too long
-                extra0 = 0
-            elif extra0 == max_extra:
-                # go with that
-                adjustments[col] = max_extra
-                continue
-            # see if col can be flattened within max_extra chars, starting
-            # at extra0, which is enough to avoid intraword breaks
-            for extra in range(extra0, max_extra + 1):
-                if not has_intra_word_break(col, base_width + extra):
-                    options.append([col, extra, num_lines])
-                    if adjustments[col] == 0:
-                        # take first, but compute rest...
-                        adjustments[col] = extra
-            # temporary diagnostic DEBUG information - comment in prod
-            # from IPython.display import display
-            # config.debug = pd.Series([col, min_acceptable[col], base_width, has_intra_word_break(col, base_width), extra0, max_extra,
-            #     wrap(col,  base_width), extra],
-            #     index=['col name', 'min acceptable', 'base_width (from data)', 'intra word break', 'extra0', 'max_extra', 'split', 'selected extra']).to_frame('Value')
-            # display(config.debug)
-        # make df[col name, amount of extra space for col, resulting number of lines]
-        # this is needed as input for the optimal heading function (next)
-        input_df = pd.DataFrame(options, columns=['col', 'extra', 'num_lines'])
-        # min amount to avoid intra work breaks
-        avoid_intra = input_df.groupby('col').min().extra.sum()
-        if avoid_intra >= space:
-            # that's all we can do
-            print("NO FURTHER IMPROVEMENTS")
+                logger.info("Raw rec: %s\tTweaks: %s\tActual: %s\tTarget: %s\tOver/(U): %s",
+                            ans['raw_recommended'].sum(),
+                            ans['header_tweak'].sum(),
+                            ans['recommended'].sum(),
+                            target_width,
+                            ans['recommended'].sum() - target_width
+                            )
         else:
-            # can try for a better solution
-            sol = GT.optimal_heading(input_df, space)
-            adjustments.update(sol[1])
-            logger.info('best solution: %s', sol)
-        # global temp
-        # temp = input_df
-        return adjustments, input_df
+            # for html and tex modes: adapts from old estimate_column_widths
+            target_width = self.config.max_table_width
+            nc_index = self.nindex
 
-    @staticmethod
-    def optimal_heading(input_df: pd.DataFrame, total_es_budget: int) -> tuple[int, dict[str, int]]:
-        """
-        Optimize extra config.spacing for best heading.
-
-        Finds the best way to allocate extra space to minimize max_lines in heading.
-
-        Gemini solution.
-
-        Args:
-            input_df: DataFrame with 'col', 'extra', 'num_lines'.
-            total_es_budget: The total extra space to allocate.
-
-        Returns:
-            A tuple: (min_max_lines, optimal_extra_allocation_per_column).
-
-        .. _table_layout_optimization:
-
-        Table Layout Optimization
-        =========================
-
-        This document describes the algorithm implemented in the :py:func:`find_best_layout` function, which aims to optimize the allocation of a fixed amount of extra space (`ES`) among table columns to minimize the overall table height (i.e., the maximum number of lines used by any single column).
-
-        Problem Statement
-        -----------------
-
-        Given a set of table columns, each with a known relationship between allocated "extra space" and the resulting "number of lines" it occupies when wrapped, and a total budget of extra space, the goal is to find an allocation of this extra space to each column such that the maximum number of lines among all columns is minimized.
-
-        For example, a column named "location category (float)" might take 3 lines with 0 extra space, but perhaps only 2 lines with 2 extra space, and 1 line with 5 extra space. The relationship is provided in a Pandas DataFrame with columns `col`, `extra`, and `num_lines`.
-
-        Algorithm: Binary Search on the Answer
-        ----------------------------------------
-
-        The problem exhibits a monotonic property: if a table layout can be achieved with a maximum height of `X` lines, it can also be achieved with any maximum height `Y > X` lines (by simply using the same or more `extra` space). This property makes binary search on the *minimum possible maximum lines* an efficient solution.
-
-        The algorithm proceeds as follows:
-
-        1.  **Preprocessing the Input Data:**
-            The input `pandas.DataFrame` is processed to create a convenient lookup structure. For each unique column, a sorted list of `(extra_space, num_lines)` tuples is created. This allows for quick identification of the minimum `extra` space required for a given `column` to fit within a `target_max_lines`.
-
-            .. code-block:: python
-
-                unique_cols = input_df['col'].unique().tolist()
-                col_extra_num_lines_options = {}
-                for col_name in unique_cols:
-                    col_data = input_df[input_df['col'] == col_name].sort_values(by='extra')
-                    col_extra_num_lines_options[col_name] = list(zip(col_data['extra'], col_data['num_lines']))
-
-        2.  **Defining the Search Space (Bounds for `max_lines`):**
-            The binary search operates on the possible values for the `optimal_max_lines`.
-            * **Lower Bound (`L`):** The absolute minimum number of lines observed across all columns and all `extra` space options in the input data. This represents the theoretical minimum height a column could ever achieve.
-            * **Upper Bound (`R`):** The absolute maximum number of lines observed across all columns and all `extra` space options in the input data. This represents the worst-case height, which is always achievable.
-
-            .. code-block:: python
-
-                all_num_lines = input_df['num_lines'].unique()
-                if len(all_num_lines) == 0:
-                    return 0, {} # Handle empty DataFrame case
-                L = all_num_lines.min()
-                R = all_num_lines.max()
-
-        3.  **The `check(target_max_lines)` Function:**
-            This is the core helper function for the binary search. Given a `target_max_lines` (a candidate for the overall maximum height), it determines if it's *possible* to achieve this height for *all* columns simultaneously, without exceeding the `total_es_budget`.
-
-            For each column:
-            * It iterates through its `(extra_space, num_lines)` options (which are sorted by `extra_space`).
-            * It finds the *smallest* `extra_space` value for which the corresponding `num_lines` is less than or config.equal to `target_max_lines`.
-            * If no such `extra_space` is found for a column (meaning even with the maximum available `extra` for that column, it still exceeds `target_max_lines`), then `target_max_lines` is not achievable, and the function returns `False`.
-            * Otherwise, it sums up these minimum required `extra_space` values across all columns.
-            * If the total `extra_space` required is less than or config.equal to `total_es_budget`, the function returns `True` (meaning `target_max_lines` is achievable). Otherwise, it returns `False`.
-
-            .. code-block:: python
-
-                def check(target_max_lines: int) -> bool:
-                    current_extra_needed = 0
-                    for col_name in unique_cols:
-                        min_extra_for_col = float('inf')
-                        found_suitable_extra = False
-                        for extra_val, num_lines_val in col_extra_num_lines_options[col_name]:
-                            if num_lines_val <= target_max_lines:
-                                min_extra_for_col = extra_val
-                                found_suitable_extra = True
-                                break # Found the minimum extra for this column
-
-                        if not found_suitable_extra:
-                            return False # This target_max_lines is too low for this column
-
-                        current_extra_needed += min_extra_for_col
-
-                    return current_extra_needed <= total_es_budget
-
-        4.  **Binary Search Loop:**
-            The main binary search loop iteratively narrows down the range `[L, R]`.
-            * In each iteration, it calculates the `mid_max_lines = L + (R - L) // 2`.
-            * It then calls the `check(mid_max_lines)` function.
-            * If `check(mid_max_lines)` returns `True` (meaning `mid_max_lines` is achievable):
-                * `mid_max_lines` becomes a candidate for the `optimal_max_lines`. We record the current allocation that achieved it.
-                * We try to achieve an even smaller `max_lines` by setting `R = mid_max_lines - 1`.
-            * If `check(mid_max_lines)` returns `False` (meaning `mid_max_lines` is not achievable):
-                * We need to allow for more lines, so we set `L = mid_max_lines + 1`.
-
-            The loop continues until `L > R`, at which point `optimal_max_lines` will hold the smallest possible maximum height, and `best_allocation` will store the corresponding `extra_space` allocation for each column.
-
-            .. code-block:: python
-
-                optimal_max_lines = R
-                best_allocation = {}
-
-                while L <= R:
-                    mid_max_lines = L + (R - L) // 2
-
-                    # Recalculate allocation within the loop to store the specific 'extra' values
-                    temp_current_extra_needed = 0
-                    temp_current_allocation = {}
-                    possible = True
-                    for col_name in unique_cols:
-                        min_extra_for_col = float('inf')
-                        found_suitable_extra = False
-                        for extra_val, num_lines_val in col_extra_num_lines_options[col_name]:
-                            if num_lines_val <= mid_max_lines:
-                                min_extra_for_col = extra_val
-                                found_suitable_extra = True
-                                break
-
-                        if not found_suitable_extra:
-                            possible = False
-                            break
-
-                        temp_current_extra_needed += min_extra_for_col
-                        temp_current_allocation[col_name] = min_extra_for_col
-
-                    if possible and temp_current_extra_needed <= total_es_budget:
-                        optimal_max_lines = mid_max_lines
-                        best_allocation = temp_current_allocation.copy()
-                        R = mid_max_lines - 1
+            # without tex adjustment
+            tikz_colw = dict.fromkeys(df.columns, 0)
+            # with tex adjustment
+            tex_colw = dict.fromkeys(df.columns, 0)
+            headw = dict.fromkeys(df.columns, 0)
+            tikz_headw = dict.fromkeys(df.columns, 0)
+            tabs = []
+            mxmn = {}
+            for i, c in enumerate(df.columns):
+                # figure width of the column labels; if index c= str, if MI then c = tuple
+                # cw is the width of the column header/title
+                # tzcw is for tikz - no wrapping and no tex adjustment
+                if type(c) == str:
+                    if i < nc_index:
+                        cw = len_function(c)
+                        tzcw = len(c)
                     else:
-                        L = mid_max_lines + 1
-
-            The function returns the `optimal_max_lines` and the `best_allocation` dictionary, mapping each column name to the minimal `extra_space` it needs to achieve that optimal height.
-
-        Why this approach is effective:
-        ---------------------------------
-
-        * **Optimal Solution:** The binary search guarantees finding the absolute minimum possible `max_lines` because it systematically explores the entire solution space.
-        * **Efficiency:** The `check` function runs in time proportional to the number of columns times the average number of `extra` options per column. The binary search itself performs `log(range_of_num_lines)` iterations. This makes the overall complexity efficient for typical table sizes.
-        * **Flexibility:** It does not assume any particular mathematical function relating `extra` space to `num_lines`. It works with arbitrary discrete relationships provided in the input DataFrame, as long as `num_lines` is non-increasing as `extra` increases (which is the natural expectation for this problem).
-
-        """
-        # Pre-processing
-        unique_cols = input_df['col'].unique().tolist()
-
-        col_extra_num_lines_options = {}
-        for col_name in unique_cols:
-            col_data = input_df[input_df['col'] ==
-                                col_name].sort_values(by='extra')
-            col_extra_num_lines_options[col_name] = list(
-                zip(col_data['extra'], col_data['num_lines']))
-
-        def check(target_max_lines: int) -> bool:
-            current_extra_needed = 0
-            for col_name in unique_cols:
-                min_extra_for_col = float('inf')
-                found_suitable_extra = False
-                for extra_val, num_lines_val in col_extra_num_lines_options[col_name]:
-                    if num_lines_val <= target_max_lines:
-                        min_extra_for_col = extra_val
-                        found_suitable_extra = True
-                        break
-
-                if not found_suitable_extra:
-                    return False
-
-                current_extra_needed += min_extra_for_col
-
-            return current_extra_needed <= total_es_budget
-
-        all_num_lines = input_df['num_lines'].unique()
-
-        # Corrected line: Check length of the numpy array
-        if len(all_num_lines) == 0:
-            return 0, {}
-
-        L = all_num_lines.min()
-        R = all_num_lines.max()
-
-        optimal_max_lines = R
-        best_allocation = {}
-
-        while L <= R:
-            mid_max_lines = L + (R - L) // 2
-
-            temp_current_extra_needed = 0
-            temp_current_allocation = {}
-            possible = True
-            for col_name in unique_cols:
-                min_extra_for_col = float('inf')
-                found_suitable_extra = False
-                for extra_val, num_lines_val in col_extra_num_lines_options[col_name]:
-                    if num_lines_val <= mid_max_lines:
-                        min_extra_for_col = extra_val
-                        found_suitable_extra = True
-                        break
-
-                if not found_suitable_extra:
-                    possible = False
-                    break
-
-                temp_current_extra_needed += min_extra_for_col
-                temp_current_allocation[col_name] = min_extra_for_col
-
-            if possible and temp_current_extra_needed <= total_es_budget:
-                optimal_max_lines = mid_max_lines
-                best_allocation = temp_current_allocation.copy()
-                R = mid_max_lines - 1
-            else:
-                L = mid_max_lines + 1
-
-        return optimal_max_lines, best_allocation
-
-    def estimate_column_widths(self):
-        """
-        Estimate sensible column widths for the dataframe in character units.
-
-        Used by HTML and TeX output. returns tikz_colw used by TeX output to print
-        the tikz (no impact on output, just makes the produced TeX align nicely),
-        tabs and scaled_tabs (reflecting scale). These three columns are added
-        to the column_width_df.
-
-        Internal variables:
-            mxmn   affects alignment: are all columns the same width?
-
-        TODO: de-TeX-ification will mess up how the tex table is printed...
-            but one rarely looks at that.
-
-        :param df:
-        :param nc_index: number of columns in the index...these are not counted as "data columns"
-        :param config.equal:  if True, try to make all data columns the same width (hint can be rejected)
-        :return:
-            tikz_colw   affects how the tex is printed to ensure it "looks neat" (actual width of data elements)
-            tabs   affects the actual output
-        """
-        # local variables (conversion from global method)
-        df = self.df
-        target_width = self.config.max_table_width
-        nc_index = self.nindex
-        scale = self.config.tikz_scale
-        equal = self.config.equal
-
-        # tabs from _tabs, an estimate column widths, determines the size of the table columns as displayed
-        # print(f'{nc_index=}, {scale=}, {config.equal=}')
-        # without tex adjustment
-        tikz_colw = dict.fromkeys(df.columns, 0)
-        # with tex adjustment
-        tex_colw = dict.fromkeys(df.columns, 0)
-        headw = dict.fromkeys(df.columns, 0)
-        tikz_headw = dict.fromkeys(df.columns, 0)
-        tabs = []
-        scaled_tabs = []
-        mxmn = {}
-        if df.empty:
-            return tikz_colw, tabs, scaled_tabs
-        nl = nc_index
-        for i, c in enumerate(df.columns):
-            # figure width of the column labels; if index c= str, if MI then c = tuple
-            # cw is the width of the column header/title
-            # tzcw is for tikz - no wrapping and no tex adjustment
-            if type(c) == str:
-                if i < nl:
-                    cw = GT.text_display_len(c)
-                    tzcw = len(c)
+                        # for data columns look at words rather than whole phrase
+                        cw = max(map(len_function, c.split(' ')))
+                        tzcw = len(c)
+                        # logger.info(f'leng col = {len(c)}, longest word = {cw}')
                 else:
-                    # for data columns look at words rather than whole phrase
-                    cw = max(map(GT.text_display_len, c.split(' ')))
-                    tzcw = len(c)
-                    # logger.info(f'leng col = {len(c)}, longest word = {cw}')
-            else:
-                # column name could be float etc. or if multi index a tuple
-                try:
-                    if isinstance(c, tuple):
-                        # multiindex: join and split into words and take length of each word
-                        words = ' '.join(c).split(' ')
-                        cw = max(
-                            map(lambda x: GT.text_display_len(str(x)), words))
-                        tzcw = max(map(len, words))
-                    else:
-                        cw = max(map(lambda x: GT.text_display_len(str(x)), c))
-                        tzcw = max(map(len, c))
-                    # print(f'{c}: {cw=} no error')
-                except TypeError:
-                    # not a MI, float or something
-                    cw = GT.text_display_len(str(c))
-                    tzcw = len(str(c))
-                    # print(f'{c}: {cw=} WITH error')
-            headw[c] = cw
-            tikz_headw[c] = tzcw
-            # now figure the width of the elements in the column
-            # mxmn is used to determine whether to center the column (if all the same size)
-            if df.dtypes.iloc[i] == object:
-                # weirdness here were some objects actually contain floats, str evaluates to NaN
-                # and picks up width zero
-                try:
-                    lens = df.iloc[:, i].map(
-                        lambda x: GT.text_display_len(str(x)))
+                    # column name could be float etc. or if multi index a tuple
+                    try:
+                        if isinstance(c, tuple):
+                            # multiindex: join and split into words and take length of each word
+                            words = ' '.join(c).split(' ')
+                            cw = max(
+                                map(lambda x: len_function(str(x)), words))
+                            tzcw = max(map(len, words))
+                        else:
+                            cw = max(map(lambda x: len_function(str(x)), c))
+                            tzcw = max(map(len, c))
+                        # print(f'{c}: {cw=} no error')
+                    except TypeError:
+                        # not a MI, float or something
+                        cw = len_function(str(c))
+                        tzcw = len(str(c))
+                        # print(f'{c}: {cw=} WITH error')
+                headw[c] = cw
+                tikz_headw[c] = tzcw
+                # now figure the width of the elements in the column
+                # mxmn is used to determine whether to center the column (if all the same size)
+                if df.dtypes.iloc[i] == object:
+                    # weirdness here were some objects actually contain floats, str evaluates to NaN
+                    # and picks up width zero
+                    try:
+                        lens = df.iloc[:, i].map(
+                            lambda x: len_function(str(x)))
+                        tex_colw[c] = lens.max()
+                        mxmn[c] = (lens.max(), lens.min())
+                        raw_lens = df.iloc[:, i].map(len)
+                        tikz_colw[c] = raw_lens.max()
+                    except Exception as e:
+                        raise
+                        # logger.error(
+                        #     f'{c} error {e} DO SOMETHING ABOUT THIS...if it never occurs dont need the if')
+                        # tikz_colw[c] = df[c].str.len().max()
+                        # mxmn[c] = (df[c].str.len().max(), df[c].str.len().min())
+                else:
+                    lens = df.iloc[:, i].map(lambda x: len_function(str(x)))
                     tex_colw[c] = lens.max()
                     mxmn[c] = (lens.max(), lens.min())
                     raw_lens = df.iloc[:, i].map(len)
                     tikz_colw[c] = raw_lens.max()
-                except Exception as e:
-                    raise
-                    # logger.error(
-                    #     f'{c} error {e} DO SOMETHING ABOUT THIS...if it never occurs dont need the if')
-                    # tikz_colw[c] = df[c].str.len().max()
-                    # mxmn[c] = (df[c].str.len().max(), df[c].str.len().min())
-            else:
-                lens = df.iloc[:, i].map(lambda x: GT.text_display_len(str(x)))
-                tex_colw[c] = lens.max()
-                mxmn[c] = (lens.max(), lens.min())
-                raw_lens = df.iloc[:, i].map(len)
-                tikz_colw[c] = raw_lens.max()
-        # pick up long headers too
-        for c in df.columns:
-            tikz_colw[c] = max(tikz_colw[c], tikz_headw[c])
-        # print(tikz_colw)
-        # now know all column widths...decide what to do
-        # are all the data columns about the same width?
-        data_cols = np.array([tex_colw[k] for k in df.columns[nl:]])
-        same_size = (data_cols.std() <= 0.1 * data_cols.mean())
-        # print(f'same size test requires {data_cols.std()} <= {0.1 * data_cols.mean()}')
-        common_size = 0
-        if same_size:
-            common_size = int(data_cols.mean() + data_cols.std())
-            logger.info(f'data cols appear same size = {common_size}')
-            # print(f'data cols appear same size = {common_size}')
-        for i, c in enumerate(df.columns):
-            if i < nl or not same_size:
-                # index columns
-                tabs.append(int(max(tex_colw[c], headw[c])))
-            else:
-                # data all seems about the same width
-                tabs.append(common_size)
-        logger.info(f'Determined tab config.spacing: {tabs}')
-        if equal:
-            # see if config.equal widths makes sense
-            dt = tabs[nl:]
-            if max(dt) / sum(dt) < 4 / 3:
-                tabs = tabs[:nl] + [max(dt)] * (len(tabs) - nl)
-                logger.info(f'Taking config.equal width hint: {tabs}')
-                # print(f'Taking config.equal width hint: {tabs}')
-            else:
-                logger.info(f'Rejecting config.equal width hint')
-                # print(f'Rejecting config.equal width hint')
-        # look to rescale, shoot for width of 150 on 100 scale basis
-        data_width = sum(tabs[nl:])
-        index_width = sum(tabs[:nl])
-        target_width = target_width * scale - index_width
-        if data_width and data_width / target_width < 0.9:
-            # don't rescale above 1:1 - don't want too large
-            rescale = min(1 / scale, target_width / data_width)
-            scaled_tabs = [w if i < nl else
-                           int(w * rescale) for i, w in enumerate(tabs)]
-            logger.info(f'Rescale {rescale} applied; tabs = {tabs}')
-        else:
-            scaled_tabs = tabs
-            # print(f'Rescale {rescale} applied; tabs = {tabs}')
-        # print(f'{tikz_colw.values()=}\n{tabs=}')
-        return tikz_colw, tabs, scaled_tabs
-
-    @staticmethod
-    def text_display_len(s: str) -> int:
-        """Estimate text display length of a string allowing for TeX constructs."""
-        # note you DO WANT SPACES! So, no strip applied ever.
-        if s.find('$') < 0:
-            return len(s)
-        parts = re.split(r'(\$\$.*?\$\$)|(\$.*?\$)', s)
-        total = 0
-        for part in parts:
-            if part is None:
-                continue
-            if part.startswith('$$') and part.endswith('$$'):
-                total += GT._estimate_math_width(part[2:-2])
-            elif part.startswith('$') and part.endswith('$'):
-                total += GT._estimate_math_width(part[1:-1])
-            else:
-                total += len(part)
-        return total
-
-    @staticmethod
-    def _estimate_math_width(tex: str) -> int:
-        tokens = re.findall(r'\\[a-zA-Z]+|[a-zA-Z0-9]|.', tex)
-        width = 0
-        for tok in tokens:
-            if tok.startswith('\\'):
-                name = tok[1:]
-                if name in GT.TEX_SIMPLE_GLYPHS:
-                    width += 1
-                elif name in GT.TEX_WIDE:
-                    width += 3
-                elif name in GT.TEX_SPACING:
-                    width += 1
+            # pick up long headers too
+            for c in df.columns:
+                tikz_colw[c] = max(tikz_colw[c], tikz_headw[c])
+            # print(tikz_colw)
+            # now know all column widths...decide what to do
+            # are all the data columns about the same width?
+            data_cols = np.array([tex_colw[k] for k in df.columns[nc_index:]])
+            same_size = (data_cols.std() <= 0.1 * data_cols.mean())
+            # print(f'same size test requires {data_cols.std()} <= {0.1 * data_cols.mean()}')
+            common_size = 0
+            if same_size:
+                common_size = int(data_cols.mean() + data_cols.std())
+                logger.info(f'data cols appear same size = {common_size}')
+                # print(f'data cols appear same size = {common_size}')
+            for i, c in enumerate(df.columns):
+                if i < nc_index or not same_size:
+                    # index columns
+                    tabs.append(int(max(tex_colw[c], headw[c])))
                 else:
-                    width += 2  # unknown control sequences
-            elif tok in '{}^_':
-                continue  # grouping, sub/superscripts: ignore
+                    # data all seems about the same width
+                    tabs.append(common_size)
+            logger.info(f'Determined tabs spacing: {tabs}')
+            if self.config.equal:
+                # see if config.equal widths makes sense
+                dt = tabs[nc_index:]
+                if max(dt) / sum(dt) < 4 / 3:
+                    tabs = tabs[:nc_index] + [max(dt)] * (len(tabs) - nc_index)
+                    logger.info(f'Taking config.equal width hint: {tabs}')
+                    # print(f'Taking config.equal width hint: {tabs}')
+                else:
+                    logger.info(f'Rejecting config.equal width hint')
+                    # print(f'Rejecting config.equal width hint')
+            # look to rescale, shoot for width of 150 on 100 scale basis
+            data_width = sum(tabs[nc_index:])
+            index_width = sum(tabs[:nc_index])
+            target_width = target_width * self.config.tikz_scale - index_width
+            if data_width and data_width / target_width < 0.9:
+                # don't rescale above 1:1 - don't want too large
+                rescale = min(1 / self.config.tikz_scale, target_width / data_width)
+                scaled_tabs = [w if i < nc_index else
+                               int(w * rescale) for i, w in enumerate(tabs)]
+                logger.info(f'Rescale {rescale} applied; tabs = {tabs}')
             else:
-                width += 1
-        return width
+                scaled_tabs = tabs
+            # add to the answer
+            ans['tikz_colw'] = tikz_colw
+            ans['tikz_colw'] += 2  # padding \I spacer
+            ans['estimated_tabs'] = tabs
+            ans['estimated_scaled_tabs'] = scaled_tabs
+            if self.tabs is not None:
+                ans['input_tabs'] = self.tabs
+            else:
+                ans['input_tabs'] = -1
+            # this column should be used in place of tabs from estimate_column_widths
+            # in make html and make tikz
+            ans['tabs'] = np.maximum(ans['input_tabs'],
+                                                       ans['estimated_tabs'])
+            ans['scaled_tabs'] = np.maximum(ans['input_tabs'],
+                                                              ans['estimated_scaled_tabs'])
+
+        # in all cases...assemble the answer  with relevant information
+        return_columns = [
+            'alignment',
+            'break_penalties',
+            'breakability',
+            'natural_width',
+            'acceptable_width',
+            'minimum_width',
+            'raw_recommended',
+            'header_tweak',
+            'recommended',
+            'tikz_colw',
+            'estimated_tabs',
+            'estimated_scaled_tabs',
+            'input_tabs',
+            'tabs',
+            'scaled_tabs',
+            ]
+        ans = ans[[i for i in return_columns if i in ans.columns]]
+        # need recommended to be > 0
+        ans['recommended'] = np.maximum(ans['recommended'], 1)
+        return ans
 
     def make_style(self, tabs):
         """Write out custom CSS for the table."""
@@ -1837,8 +1465,8 @@ class GT(object):
         font-weight: bold;
     }}
 ''']
-        for i, w in enumerate(tabs):
-            style.append(f'    #{self.df_id} .grt-c-{i} {{ width: {w}em; }}')
+        # for i, w in enumerate(tabs):
+        #     style.append(f'    #{self.df_id} .grt-c-{i} {{ width: {w}em; }}')
         style.append('</style>')
         logger.info('CREATED CSS')
         return '\n'.join(style)
@@ -1860,30 +1488,19 @@ class GT(object):
             html.append(f'<caption>{self.caption}</caption>')
 
         # Process header: allow_duplicates=True means can create cols with the same name
-        bit = self.df.T.reset_index(drop=False, allow_duplicates=True)
+        bit = self.df_html.T.reset_index(drop=False, allow_duplicates=True)
         idx_header = bit.iloc[:self.nindex, :self.ncolumns]
         columns = bit.iloc[self.nindex:, :self.ncolumns]
 
         # figure appropriate widths
-        tabs = self.column_width_df['tabs']
+        tabs = self.html_knowledge_df['recommended'].map(lambda x: np.round(x, 3))
 
         # set column widths; tabs returns lengths of strings in each column
-        # for proportional fonts, average char is 0.4 to 0.5 em but numbers with
-        # tabular-nums are fixed 0.5, so use that
-        # scale: want tables about 150-200 char wide, 1 char = 0.5 px size of font
-        # so what 75-100 em wide in total
-        # add the padding
-        # TODO FONT SIZE
-        # /4 works well for the tests (handles dates) but seems a bit illogical...
-        # guessing font size...
         tabs = np.array(tabs) + (self.padl + self.padr) / 12
-        # em_per_char = 0.5; true exactly for tabular-nums
-        em_per_char = 0.6
-        tabs = tabs * em_per_char
         # this gets stripped out by quarto, so make part of style
         html.append('<colgroup>')
         for w in tabs:
-            html.append(f'<col style="width: {w * em_per_char}em;">')
+            html.append(f'<col style="width: {w}em;">')
         html.append('</colgroup>')
 
         # TODO Add header aligners
@@ -1965,7 +1582,7 @@ class GT(object):
 
         bold_idx = 'grt-bold' if self.config.font_bold_index else ''
         html.append("<tbody>")
-        for i, (n, r) in enumerate(self.df.iterrows()):
+        for i, (n, r) in enumerate(self.df_html.iterrows()):
             # one per row of dataframe
             html.append("<tr>")
             hrule = ''
@@ -1998,11 +1615,9 @@ class GT(object):
             html.append("</tr>")
         html.append("</tbody>")
         text = '\n'.join(html)
-        self.df_html = GT.clean_html_tex(text)
+        self._df_html_text = Escaping.clean_html_tex(text)
         logger.info('CREATED HTML')
-        self.df_style = self.make_style(tabs)
-
-        return self.df_html
+        self._df_style_text = self.make_style(tabs)
 
     def clean_style(self, soup):
         """Minify CSS inside <style> blocks and remove slash-star comments."""
@@ -2020,17 +1635,17 @@ class GT(object):
     @property
     def html(self):
         if self._clean_html == '':
-            if self.df_html == '':
+            if self._df_html_text == '':
                 # makes style and html (need tabs)
-                self.df_html = self.make_html()
+                self.make_html()
             code = ["<div class='greater-table'>",
-                    self.df_style,
-                    self.df_html,
+                    self._df_style_text,
+                    self._df_html_text,
                     "</div>"]
             soup = BeautifulSoup('\n'.join(code), 'html.parser')
             soup = self.clean_style(soup)
             self._clean_html = str(soup)  # .prettify() -> too many newlines
-            logger.info('CREATED HTML')
+            logger.info('CREATED COMBINED HTML and STYLE')
         return self._clean_html
 
     def make_tikz(self):
@@ -2121,8 +1736,8 @@ class GT(object):
         post_process = self.config.tikz_post_process
         latex = self.config.tikz_latex
 
-        # local variable - with all formatters already applied
-        df = GT.escape_df_tex(self.df) # .copy()  # self.apply_formatters(self.raw_df.copy(), mode='raw')
+        # TODO: really should just work with this not a copy?
+        df = self.df_tex.copy()
         caption = self.caption
         label = self.label
         # prepare label and caption
@@ -2170,18 +1785,6 @@ class GT(object):
 \\end{{{container_env}}}
 """
 
-    # TODO TIDY
-        # always a good idea to do this...need to deal with underscores, %
-        # and it handles index types that are not strings
-        # df = GT.clean_index(df)
-        # make sure percents are escaped, but not if already escaped
-        # df = df.replace(r"(?<!\\)%", r"\%", regex=True)
-
-        # set in init
-        # self.nindex = self.df.index.nlevels if self.show_index else 0
-        # self.ncolumns = self.df.columns.nlevels
-        # self.ncols = self.df.shape[1]
-
         nc_index = self.nindex
         nr_columns = self.ncolumns
 
@@ -2198,18 +1801,12 @@ class GT(object):
         # internal TeX code (same as HTML code)
         matrix_name = self.df_id
 
-        # note this happens AFTER you have reset the index...need to pass
-        # number of index columns
-        # have also converted everything to formatted strings
-        # estimate... originally called guess_column_widths, with more parameters
-        colw = self.column_width_df['tikz_colw']
-        tabs = self.column_width_df['scaled_tabs']
+        # column and tikz display widths
+        colw = self.tex_knowledge_df['tikz_colw'].map(lambda x: np.round(x, 3))
+        tabs = self.tex_knowledge_df['scaled_tabs'].map(lambda x: np.round(x, 3))
         # these are indexed with pre-TeX mangling names
-        colw.index = df.columns
-        tabs.index = df.columns
-
-        logger.info('colw: %', colw)
-        logger.info('tabs: %', tabs)
+        # colw.index = df.columns
+        # tabs.index = df.columns
 
         # alignment dictionaries - these are still used below
         ad = {'l': 'left', 'r': 'right', 'c': 'center'}
@@ -2232,7 +1829,6 @@ class GT(object):
             latex = ''
         else:
             latex = f'[{latex}]'
-        debug = ''
         if self.config.debug:
             # color all boxes
             debug = ', draw=blue!10'
@@ -2274,10 +1870,10 @@ class GT(object):
                           f'nodes={{align={ad[al]:<6s}}}, '
                           'text height=0.9em, text depth=0.2em, '
                           f'inner xsep={column_sep}em, inner ysep=0, '
-                          f'text width={max(2, 0.6 * w):.2f}em}},\n')
+                          f'text width={max(2, w):.2f}em}},\n')
             else:
                 sio.write(f'\tcolumn {i:>2d}/.style={{'
-                          f'nodes={{align={ad[al]:<6s}}}, nosep, text width={max(2, 0.6 * w):.2f}em}},\n')
+                          f'nodes={{align={ad[al]:<6s}}}, nosep, text width={max(2, w):.2f}em}},\n')
         # extra col to right which enforces row height
         sio.write(
             f'\tcolumn {i+1:>2d}/.style={{text height=0.9em, text depth=0.2em, nosep, text width=0em}}\n')
@@ -2301,7 +1897,7 @@ class GT(object):
         if isinstance(df.columns, pd.MultiIndex):
             for lvl in range(len(df.columns.levels)):
                 nl = ''
-                sparse_columns[lvl], mi_vrules[lvl] = GT.sparsify_mi(df.columns.get_level_values(lvl),
+                sparse_columns[lvl], mi_vrules[lvl] = Sparsify.sparsify_mi(df.columns.get_level_values(lvl),
                                                                      lvl == len(df.columns.levels) - 1)
                 for cn, c, al in zip(df.columns, sparse_columns[lvl], align):
                     # c = wfloat_format(c)
@@ -2423,442 +2019,33 @@ class GT(object):
 
         sio.write(footer.format(container_env=container_env,
                   post_process=post_process))
-
+        if not all(df == self.df_tex):
+            logger.error('In tikz and df has changed...')
         return sio.getvalue()
 
-    @staticmethod
-    def escape_tex_outside_math(text):
-        # Pattern to match math environments: $...$, $$...$$, \[...\]
-        if not isinstance(text, str):
-            return text
-        math_pattern = re.compile(r'(\$\$.*?\$\$|\$.*?\$|\\\[.*?\\\])', re.DOTALL)
+    def make_rich(self, console, box_style=box.SQUARE):
+        """Render to a rich table using Console object console."""
+        # figure col widths and aligners
+        cw = self.text_knowledge_df['recommended']
+        aligners = self.text_knowledge_df['alignment']
+        show_lines = self.config.hrule_widths[0] > 0
 
-        # def escape_non_math(s):
-        #     return s.replace('\\', r'\\').replace('%', r'\%')
-        # because of use within tikz tables
-        def escape_non_math(s):
-            return s.replace('\\', r'\textbackslash{}').replace('%', r'\%').replace('_', r'\_')
-
-        parts = []
-        last_end = 0
-        for m in math_pattern.finditer(text):
-            start, end = m.span()
-            parts.append(escape_non_math(text[last_end:start]))
-            parts.append(m.group())  # math part, unescaped
-            last_end = end
-        parts.append(escape_non_math(text[last_end:]))
-
-        return ''.join(parts)
-
-    @staticmethod
-    def escape_df_tex(df):
-        # Escape data elements
-        df = df.map(GT.escape_tex_outside_math)
-
-        # Escape index and column values
-        def escape_index(idx):
-            if isinstance(idx, pd.MultiIndex):
-                return pd.MultiIndex.from_tuples(
-                    [tuple(GT.escape_tex_outside_math(x) for x in tup) for tup in idx],
-                    names=[GT.escape_tex_outside_math(n) if n else n for n in idx.names]
-                )
-            else:
-                return pd.Index([GT.escape_tex_outside_math(x) for x in idx],
-                             name=GT.escape_tex_outside_math(idx.name) if idx.name else None)
-
-        df.index = escape_index(df.index)
-        df.columns = escape_index(df.columns)
-
-        return df
-
-    @staticmethod
-    def sparsify(df, cs):
-        out = df.copy()
-        for i, c in enumerate(cs):
-            mask = df[cs[:i + 1]].ne(df[cs[:i + 1]].shift()).any(axis=1)
-            out.loc[~mask, c] = ''
-        return out
-
-    @staticmethod
-    def sparsify_old(col):
-        """
-        sparsify col values, col a pd.Series or dict, with items and accessor
-        column results from a reset_index so has index 0,1,2... this is relied upon.
-        TODO: this doesn't work if there is a change in a higher level but not this level
-        """
-        # fix error with empty dfs
-        new_col = col.copy()
-        rules = []
-        if col.empty:
-            return new_col, rules
-        last = col[0]
-        for k, v in col[1:].items():
-            if v == last:
-                new_col[k] = ''
-            else:
-                last = v
-                rules.append(k - 1)
-                new_col[k] = v
-        return new_col, rules
-
-    @staticmethod
-    def sparsify_mi(mi, bottom_level=False):
-        """
-        as above for a multi index level, without the benefit of the index...
-        really all should use this function
-        :param mi:
-        :param bottom_level: for the lowest level ... all values repeated, no sparsificaiton
-        :return:
-        """
-        last = mi[0]
-        new_col = list(mi)
-        rules = []
-        for k, v in enumerate(new_col[1:]):
-            if v == last and not bottom_level:
-                new_col[k + 1] = ''
-            else:
-                last = v
-                rules.append(k + 1)
-                new_col[k + 1] = v
-        return new_col, rules
-
-    @staticmethod
-    def clean_name(n):
-        """
-        Escape underscores for using a name in a DataFrame index
-        and converts to a string. Also escape %.
-
-        Called by Tikz routines.
-
-        :param n: input name, str
-        :return:
-        """
-        try:
-            if type(n) == str:
-                # quote underscores that are not in dollars
-                return '$'.join((i if n % 2 else i.replace('_', '\\_').replace('%', '\\%')
-                                 for n, i in enumerate(n.split('$'))))
-            else:
-                # can't contain an underscore!
-                return str(n)
-        except:
-            return str(n)
-
-    @staticmethod
-    def clean_index(df):
-        """
-        escape _ for columns and index, being careful about subscripts
-        in TeX formulas.
-
-        :param df:
-        :return:
-        """
-        return df.rename(index=GT.clean_name, columns=GT.clean_name)
-
-    @staticmethod
-    def clean_html_tex(text):
-        r"""
-        Clean TeX entries in HTML: $ -> \( and \) and $$ to \[ \].
-
-        Apply after all other HTML rendering steps. HTML rendering only.
-        """
-        text = re.sub(r'\$\$(.*?)\$\$', r'\\[\1\\]', text, flags=re.DOTALL)
-        # Convert inline math: $...$ → \(...\)
-        text = re.sub(r'(?<!\$)\$(.*?)(?<!\\)\$(?!\$)', r'\\(\1\\)', text)
-        return text
-
-    @staticmethod
-    def md_to_df(txt):
-        """Convert markdown text string table to DataFrame."""
-        # extract table and optional caption part
-        table, caption = GT.parse_markdown_table_and_caption(txt)
-        m = re.search(r'\{#(tbl[:a-zA-Z0-9_-]+)\}', caption)
-        if m:
-            label = m.group(1)
-            if label != '':
-                # remove from caption
-                caption = caption.replace(f'{{#{label}}}', '').strip()
-        else:
-            label = ''
-        # print(f'{caption = } and {label = }')
-        if table == '':
-            raise ValueError('Bad markdown table')
-
-        # remove starting and ending | in each line (optional anyway)
-        txt = re.sub(r'^\||\|$', '', table, flags=re.MULTILINE)
-        txt = txt.split('\n')
-        # remove starting and ending *'s added by hand - but try to avoid * within headings!
-        txt[0] = '|'.join([re.sub(r'^\*\*?|\*\*?$', '', i.strip())
-                          for i in txt[0].split('|')])
-
-        # remove the alignment row
-        alignment_row = txt.pop(1)
-        aligners = []
-        for t in alignment_row.split('|'):
-            if t[0] == ':' and t[-1] == ':':
-                aligners.append('c')
-            elif t[0] == ':':
-                aligners.append('l')
-            elif t[-1] == ':':
-                aligners.append('r')
-            else:
-                # no alignment info
-                pass
-        if len(aligners) == 0:
-            aligners = None
-        else:
-            aligners = ''.join(aligners)
-        txt = [[j.strip() for j in i.split('|')] for i in txt]
-        df = pd.DataFrame(txt).T
-        df = df.set_index(0)
-        df = df.T
-        return df, aligners, caption, label
-
-    @staticmethod
-    def parse_markdown_table_and_caption(txt: str) -> tuple[str, str | None]:
-        """
-        Parses a Markdown table and an optional caption from a given string,
-        handling cases where only the caption is present.
-
-        Args:
-            txt: The input string.
-
-        Returns:
-            A tuple containing the table string (empty if not found) and the caption string (or None if no caption).
-        """
-        table_match = re.search(r"((?:\|.*\|\s*(?:\n|$))+)", txt, re.DOTALL)
-        caption_match = re.search(
-            r"^(?:table)?:\s*(.+)", txt, re.MULTILINE + re.IGNORECASE)
-
-        table_part = table_match.group(1).strip() if table_match else ""
-        caption_part = caption_match.group(1) if caption_match else ""
-
-        return table_part.strip(), caption_part.strip()
+        self._rich_table = table = (
+            RichOutput.make_rich_table(self.df, cw, aligners, num_index_columns=self.nindex,
+                             title=self.caption, show_lines=show_lines,
+                             box_style=box_style))
+        return table
 
     def make_string(self):
         """Print to string using custom (i.e., not Tabulate) functionality."""
         if self.df.empty:
             return ""
         if self._string == "":
-            cw = self.column_width_df['recommended']
-            aligners = self.column_width_df['alignment']
-            self._string = GT.make_text_table(
+            cw = self.text_knowledge_df['recommended']
+            aligners = self.text_knowledge_df['alignment']
+            self._string = TextOutput.make_text_table(
                 self.df, cw, aligners, index_levels=self.nindex)
         return self._string
-
-    @staticmethod
-    def make_text_table(
-        df: pd.DataFrame,
-        data_col_widths: list[int],
-        data_col_aligns: list[str],
-        *,
-        index_levels: int = 1,
-        fmt: TableFormat = GT_Format
-    ) -> str:
-        """
-        Render self.df as a wrapped, boxed table.
-
-        Output like tabulate's mixed_grid with support for:
-        - Multi-level column headers (always shown, bottom-aligned, can wrap)
-        - Split index vs. body section with heavy vertical separator
-        - Per-column width and alignment
-        - Wrapped body cells with top alignment
-
-        Custom code to print a dataframe to text.
-
-        pd.DataFrame.to_string uses tabulate.tabulate which is hard to
-        control. This modoule provides similar functionality with greater
-        control over column widths and the ability to demark the index
-        columns.
-
-        Returns:
-            str: A fully formatted table as a string (useful for print, logs, or files).
-        """
-        buf = StringIO()
-
-        def _write_line(line: str) -> None:
-            """Writes a line to the buffer followed by a newline."""
-            buf.write(line + '\n')
-
-        def _format_cell(text: str, width: int, align: str) -> list[str]:
-            """
-            Formats a single cell, wrapping text and applying padding and alignment.
-            Returns a list of strings, each representing a line of the cell.
-            """
-            lines = wrap(str(text), width=width) or ['']
-            padded_width = width + 2 * fmt.padding
-            return [
-                (" " * fmt.padding)
-                + (line.ljust(width) if align == 'left'
-                   else line.center(width) if align == 'center'
-                   else line.rjust(width)) +
-                (" " * fmt.padding)
-                for line in lines
-            ]
-
-        def _make_horizontal_line(line_fmt: Line, col_widths: list[int]) -> str:
-            """Constructs a full horizontal line for the table."""
-            parts = []
-            for i, w in enumerate(col_widths):
-                total = w + 2 * fmt.padding
-                if index_levels and i == index_levels:
-                    parts.append(line_fmt.index_sep)
-                elif i > 0:
-                    parts.append(line_fmt.sep)
-                parts.append(line_fmt.hline * total)
-            return f"{line_fmt.begin}{''.join(parts)}{line_fmt.end}"
-
-        def _make_data_row(row_fmt: DataRow, line_cells: list[str]) -> str:
-            """Constructs a single data row from formatted cell strings."""
-            parts = []
-            for i, cell in enumerate(line_cells):
-                if index_levels and i == index_levels:
-                    parts.append(row_fmt.index_sep)
-                elif i > 0:
-                    parts.append(row_fmt.sep)
-                parts.append(cell)
-            return f"{row_fmt.begin}{''.join(parts)}{row_fmt.end}"
-
-        def _render_header_level(wrapped_cells: list[list[str]], level_widths: list[int]) -> list[str]:
-            """
-            Renders a single level of the header, ensuring cells are bottom-aligned.
-            Returns a list of strings, each representing a line of the header.
-            """
-            max_height = max(len(c) for c in wrapped_cells)
-            padded_cells = [
-                [' ' * (w + 2 * fmt.padding)] * (max_height - len(cell)) + cell
-                for cell, w in zip(wrapped_cells, level_widths)
-            ]
-            return [_make_data_row(fmt.headerrow, [col[i] for col in padded_cells]) for i in range(max_height)]
-
-        col_levels = df.columns.nlevels
-        col_tuples = df.columns if col_levels > 1 else [
-            (c,) for c in df.columns]
-
-        # Step 1: format each level of the column headers (one header line per level)
-        # header alignment is left in index and center in body
-        index_col_aligns = [
-            'left' if i < index_levels else 'center' for i in range(len(data_col_aligns))]
-        _write_line(_make_horizontal_line(fmt.lineabove, data_col_widths))
-        # collect all wrapped + bottom-aligned rows for each level
-        for level in range(col_levels):
-            level_texts = [str(t[level] if level < len(t) else '')
-                           for t in col_tuples]
-            wrapped_cells = [_format_cell(txt, w, a) for txt, w, a in zip(
-                level_texts, data_col_widths, index_col_aligns)]
-            level_rows = _render_header_level(wrapped_cells, data_col_widths)
-            for row in level_rows:
-                _write_line(row)
-            if level < col_levels - 1:
-                _write_line(_make_horizontal_line(
-                    fmt.linebetweenrows, data_col_widths))
-        _write_line(_make_horizontal_line(
-            fmt.linebelowheader, data_col_widths))
-
-        for row_idx, (_, row) in enumerate(df.iterrows()):
-            data_cells = [
-                _format_cell(val, w, a)
-                for val, w, a in zip(row.values, data_col_widths, data_col_aligns)
-            ]
-            max_height = max(len(c) for c in data_cells)
-            padded = [
-                c + [' ' * (w + 2 * fmt.padding)] * (max_height - len(c))
-                for c, w in zip(data_cells, data_col_widths)
-            ]
-            for i in range(max_height):
-                _write_line(_make_data_row(
-                    fmt.datarow, [col[i] for col in padded]))
-
-            if row_idx < len(df) - 1:
-                _write_line(_make_horizontal_line(
-                    fmt.linebetweenrows, data_col_widths))
-            else:
-                _write_line(_make_horizontal_line(
-                    fmt.linebelow, data_col_widths))
-
-        return buf.getvalue()
-
-    @staticmethod
-    def make_rich_table(
-        df,
-        column_widths,
-        column_alignments=None,
-        num_index_columns=0,
-        title=None,
-        show_lines=False,
-        box_style=box.SIMPLE_HEAVY,
-    ):
-        """
-        Render a preformatted DataFrame as a Rich table.
-
-        Parameters:
-            df (pd.DataFrame): DataFrame with all string values.
-            column_widths (dict or list): Widths by column name or position.
-            column_alignments (dict or list): Alignments ('left', 'center', 'right').
-            num_index_columns (int): Number of left-most columns to treat as index-like.
-            title (str): Optional title.
-            show_lines (bool): Add row separator lines.
-            box_style (rich.box.Box): Border style (see below).
-        """
-        colnames = list(df.columns)
-
-        if isinstance(column_widths, list):
-            column_widths = {colnames[i]: w for i,
-                             w in enumerate(column_widths)}
-
-        if column_alignments is None:
-            column_alignments = {}
-        elif isinstance(column_alignments, list):
-            column_alignments = {
-                colnames[i]: a for i, a in enumerate(column_alignments)}
-
-        table = Table(title=title,
-                      box=box_style,
-                      show_lines=show_lines,
-                      expand=True)
-
-        for i, col in enumerate(colnames):
-            is_index = i < num_index_columns
-            table.add_column(
-                header=str(col),
-                width=column_widths.get(col, None),
-                justify=column_alignments.get(col, "left"),
-                style="dim" if is_index else None,
-                header_style="bold dim" if is_index else "bold",
-                no_wrap=False,
-                overflow="fold",
-                vertical="middle",
-                # divider=divider,
-            )
-
-        for _, row in df.iterrows():
-            table.add_row(*row.tolist())
-
-        return table
-
-    def rich_table(self, console, box_style=box.SQUARE):
-        """Render to a rich table using Console object console."""
-        # hijack max table width
-        mtw = self.config.max_table_width
-        tw_mode = self.config.table_width_mode
-        self.config.table_width_mode = 'explicit'
-        self.config.max_table_width = console.width
-        # figure col widths and aligners
-        cw = self.column_widths['recommended']
-        aligners = self.column_widths['alignment']
-        show_lines = self.config.hrule_widths[0] > 0
-
-        self._rich_table = table = GT.make_rich_table(self.df,
-                                                      cw,
-                                                      aligners,
-                                                      num_index_columns=self.nindex,
-                                                      title=self.caption,
-                                                      show_lines=show_lines,
-                                                      box_style=box_style)
-
-        self.config.max_table_width = mtw
-        self.config.table_width_mode = tw_mode
-        return table
 
     def make_svg(self):
         """Render tikz into svg text."""
@@ -2875,6 +2062,48 @@ class GT(object):
         txt = p.read_text()
         return txt
 
+    def save_html(self, fn):
+        """Save HTML to file."""
+        html_boiler_plate = '''<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Greater Table</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Web-safe fonts fallback -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&family=Open+Sans+Condensed:ital,wght@0,300;1,300&display=swap" rel="stylesheet">
+
+  <!-- MathJax for TeX rendering -->
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+  <style>
+    body {
+      font-family: "Roboto", "Open Sans Condensed", "Arial", 'Segoe UI', sans-serif;
+      margin: 2em;
+      background: #fff;
+      color: #000;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Rendered Table</h1>
+
+{table_html}
+
+</body>
+</html>
+'''
+        p = Path(fn)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p = p.with_suffix('.html')
+        print(p)
+        html = html_boiler_plate.replace('{table_html}', self.html)
+        soup = BeautifulSoup(html, 'html.parser')
+        p.write_text(soup.prettify(), encoding='utf-8')
+        logger.info(f'Saved to {p}')
+
     def show_svg(self):
         """Display svg in Jupyter."""
         svg = self.make_svg()
@@ -2883,23 +2112,30 @@ class GT(object):
         else:
             print('No SVG file available (TeX compile error).')
 
-    def save_html(self, fn):
-        """Save HTML to file."""
-        p = Path(fn)
-        p.parent.mkdir(parents=True, exist_ok=True)
-        p = p.with_suffix('.html')
-        soup = BeautifulSoup(self.html, 'html.parser')
-        p.write_text(soup.prettify(), encoding='utf-8')
-        logger.info(f'Saved to {p}')
+    def show_html(self, fn=''):
+        if fn == '':
+            with tempfile.NamedTemporaryFile(suffix=".html", delete=False) as tmp:
+                tmp_path = Path(tmp.name)
+        else:
+            tmp_path = Path(fn)
+        self.save_html(fn=tmp_path)
+        os.startfile(tmp_path)  # native Windows way to open in default browser
+        return tmp_path
 
     @staticmethod
-    def uber_test(df, **kwargs):
-        """Print various diagnostics and all the formats."""
+    def uber_test(df, show_html=False, **kwargs):
+        """
+        Print various diagnostics and all the formats.
+
+        show_html -> run show_html to display in new browser tab.
+        """
         f = GT(df, **kwargs)
         display(f)
+        if show_html:
+            f.show_html()
         print(f)
         f.show_svg()
         display(df)
-        display(f.column_width_df)
+        display(f.width_report())
         print(f.make_tikz())
         return f
