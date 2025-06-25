@@ -45,7 +45,7 @@ greater\_tables.gtenums module
    :show-inheritance:
 
 greater\_tables.gtformats module
---------------------------------
+----------------------------------
 
 .. automodule:: greater_tables.gtformats
    :members:
@@ -61,7 +61,7 @@ greater\_tables.gtutilities module
    :show-inheritance:
 
 greater\_tables.gthasher module
------------------------------
+----------------------------------
 
 .. automodule:: greater_tables.hasher
    :members:
