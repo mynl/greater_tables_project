@@ -36,6 +36,7 @@ write_to = "greater_tables/_version.py"
 version_scheme = "post-release"
 local_scheme = "node-and-date"  # "no-local-version"
 
+
 [tool.setuptools.packages.find]
 include = ["greater_tables", "greater_tables.data"]
 exclude = ["img", "tests", "docs"]
@@ -48,6 +49,8 @@ version  = { attr = "greater_tables.__version__" }
 
 [project.urls]
 "Source Code" = "https://github.com/mynl/greater_tables_project"
+"Documentation" = "https://greater-tables-project.readthedocs.io/en/latest/"
+"Changelog" = "https://greater-tables-project.readthedocs.io/en/latest/versions.html"
 
 [project.optional-dependencies]
 dev = [

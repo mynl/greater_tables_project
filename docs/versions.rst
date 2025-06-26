@@ -1,5 +1,5 @@
-Versions
-==========
+Versions and Change Log
+==========================
 
 5.0.0
 -------

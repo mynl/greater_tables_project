@@ -376,14 +376,14 @@ class GT(object):
 
         # figure the default formatter (used in conjunction with raw columns)
         if self.config.default_formatter is None:
-            self.default_formatter = self.default_formatter
+            self.default_formatter = self._default_formatter
         else:
             assert callable(
-                config.default_formatter), 'config.default_formatter must be callable'
+                self.config.default_formatter), 'config.default_formatter must be callable'
 
             def wrapped_default_formatter(x):
                 try:
-                    return config.default_formatter(x)
+                    return self.config.default_formatter(x)
                 except ValueError:
                     return str(x)
             self.default_formatter = wrapped_default_formatter
@@ -513,9 +513,9 @@ class GT(object):
         if tabs is None:
             self.tabs = None
         elif isinstance(tabs, (int, float)):
-            self.tabs = (tabs,) * self.ncols
+            self.tabs = (tabs,) * (self.nindex + self.ncols)
         elif isinstance(tabs, (np.ndarray, pd.Series, list, tuple)):
-            if len(tabs) == self.ncols:
+            if len(tabs) == self.nindex + self.ncols:
                 self.tabs = tabs  # Already iterable and right length, self.tabs = as is
             else:
                 logger.error(
@@ -579,7 +579,7 @@ class GT(object):
         if self.config.tikz_escape_tex:
             self.df_tex = Escaping.escape_df_tex(self.df)
         else:
-            self.df_tex
+            self.df_tex = self.df
 
     def __repr__(self):
         """Basic representation."""
@@ -710,8 +710,8 @@ class GT(object):
             logger.debug(f'AttributeError {e}')
             return str(x)
 
-    def default_formatter(self, x):
-        """Default universal formatter for other types (GTP re-write of above cluster)."""
+    def _default_formatter(self, x):
+        """Default universal formatter for other types."""
         try:
             f = float(x)
         except (TypeError, ValueError):
@@ -920,7 +920,12 @@ class GT(object):
     def tex_knowledge_df(self):
         """Uber source of information for tex formatting."""
         if self._tex_knowledge_df is None:
-            self._tex_knowledge_df = self.estimate_column_widths_by_mode('tex')
+            if (all(self.df_tex.index == self.df_html.index)
+                and all(self.df_tex.columns == self.df_html.columns)
+                and all(self.df_tex == self.df_html)):
+                self._tex_knowledge_df = self.html_knowledge_df
+            else:
+                self._tex_knowledge_df = self.estimate_column_widths_by_mode('tex')
         return self._tex_knowledge_df
 
     def width_report(self):
@@ -959,7 +964,7 @@ class GT(object):
         return bit
 
     def estimate_column_widths_by_mode(self, mode):
-        """
+        r"""
         Return dataframe of width information: three modes for text, html, and tex.
 
         Mode adjusts which df is used and how widths are estimated
@@ -2027,7 +2032,9 @@ class GT(object):
     def make_svg(self):
         """Render tikz into svg text."""
         tz = Etcher(self._repr_latex_(),
-                           file_name=self.df_id, debug=self.config.debug)
+                    self.config.table_font_pt_size,
+                    file_name=self.df_id
+                    )
         p = tz.file_path.with_suffix('.svg')
         if not p.exists():
             try:

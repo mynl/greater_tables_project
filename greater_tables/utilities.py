@@ -302,7 +302,7 @@ class TextLength:
         "‘": 0.333,
         "{": 0.48,
         "}": 0.48,
-        "-": 0.333,
+        "-": 0.5, # 0.333,
     }
         char_width = {c: w for chars, w in width_table.items() for c in chars}
         return char_width.get(c, 0.6)

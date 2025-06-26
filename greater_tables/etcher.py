@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 class Etcher:
     """Create PDF and SVG files from Tikz blocks."""
     # Full TeX preamble to generate a .fmt if needed
-    _tex_template_full = r"""\documentclass[10pt, border=5mm]{standalone}
+    _tex_template_full = r"""\documentclass[11pt, border=5mm]{standalone}
 \usepackage{newtxtext,newtxmath}  % gpt recommended like STIX
 %\usepackage{mathptmx}             % gpt like times roman
 \usepackage{amsfonts}
@@ -44,27 +44,35 @@ class Etcher:
 \newcommand{{\I}}{{\vphantom{{lp}}}}   % fka grtspacer
 \def\dfrac{{\displaystyle\frac}}
 \def\dint{{\displaystyle\int}}
+
 \begin{{document}}
+
 {tikz_begin}{tikz_code}{tikz_end}
+
 \end{{document}}
 """
 
 
-    def __init__(self, txt, file_name='', base_path='.', tex_engine='pdflatex', debug=False):
+    def __init__(self, txt, font_size=11, file_name='', base_path='.', tex_engine='pdflatex'):
         """Create object from txt, a TeX blob containing a tikzpicture."""
         self.txt = txt
+        self.font_size = font_size
         self.tex_engine = tex_engine
         self.base_path = Path(base_path).resolve()
         self.out_path = self.base_path / 'tikz'
         self.out_path.mkdir(exist_ok=True)
         file_name = file_name or  txt_short_hash(txt)
         self.file_path = self.out_path / file_name
-        self.format_file = self.out_path / 'tikz_format.fmt'
-        self.debug = debug
+        self.format_file = self.out_path / f'tikz_format-{self.font_size}.fmt'
 
     def split_tikz(self):
         """Split text to extract the TikZ picture."""
         return re.split(r'(\\begin{tikz(?:cd|picture)}|\\end{tikz(?:cd|picture)})', self.txt)
+
+    def unlink_format_file(self):
+        """Unlink the format file to force a rebuild."""
+        if self.format_file.exists():
+            self.format_file.unlink()
 
     def ensure_format_file(self):
         """Create format file for faster compilation if missing."""
@@ -84,8 +92,10 @@ class Etcher:
         (self.file_path.parent / 'make_format.bat').write_text(" ".join(cmd), encoding='utf-8')
         self.run_command(cmd, raise_on_error=True, cwd=self.out_path)
         # tidy up ... to some extent
-        # tmp.unlink()
-        (self.out_path / f'{self.format_file.stem}.log').unlink()
+        for ext in ('.aux', '.log'):
+            path = tmp.with_suffix(ext)
+            if path.exists():
+                path.unlink()
         logger.info('...success...format file built', self.format_file.resolve())
 
     def process_tikz(self):
@@ -112,8 +122,7 @@ class Etcher:
             str(tex_path)
         ]
         (tex_path.parent / 'make_tikz.bat').write_text(" ".join(tex_cmd), encoding='utf-8')
-        if self.debug:
-            logger.info("Running:", " ".join(tex_cmd))
+        logger.info("Running:", " ".join(tex_cmd))
         if self.run_command(tex_cmd):
             raise ValueError('TeX failed to compile, not pdf or svg output.')
             # no tidying up
@@ -125,15 +134,13 @@ class Etcher:
                 str(pdf_path),
                 str(svg_path)
             ]
-            if self.debug:
-                logger.info("Running:", " ".join(svg_cmd))
+            logger.info("Running:", " ".join(svg_cmd))
             self.run_command(svg_cmd, raise_on_error=True)
 
-            if not self.debug:
-                for ext in ('.tex', '.aux', '.log', '.pdf'):
-                    path = tex_path.with_suffix(ext)
-                    if path.exists():
-                        path.unlink()
+            for ext in ('.aux', '.log', '.pdf'):
+                path = tex_path.with_suffix(ext)
+                if path.exists():
+                    path.unlink()
 
     def display(self):
         """Display the SVG in Jupyter."""
@@ -143,7 +150,7 @@ class Etcher:
         """Run command with subprocess and show output."""
         with Popen(command, cwd=cwd, stdout=PIPE, stderr=PIPE, universal_newlines=True) as p:
             stdout, stderr = p.communicate()
-            if stdout and self.debug:
+            if stdout:
                 logger.info('Run command output ends\n', stdout.strip()[-250:])
             if stdout:
                 if stdout.find('no output PDF file produced') > 0:

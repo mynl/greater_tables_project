@@ -166,3 +166,6 @@ cython_debug/
 #.idea/
 docs/books.bib
 docs/library.bib
+
+# rust
+gtfont/target

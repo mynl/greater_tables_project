@@ -51,7 +51,7 @@ class Configurator(BaseModel):
     default_ratio_str: str = Field(
         "{x:.1%}", description="Format f-string for ratios. Example: '{x:.1%}'"
     )
-    default_formatter: Optional[str] = Field(
+    default_formatter: Optional[Union[str, Callable[[Any, str], str]]] = Field(
         None, description="Optional fallback formatter f-string"
     )
 
