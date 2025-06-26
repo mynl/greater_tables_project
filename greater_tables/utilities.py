@@ -563,15 +563,13 @@ class Width:
         avoid_intra = input_df.groupby('col').min().extra.sum()
         if avoid_intra >= space:
             # that's all we can do
-            print("NO FURTHER IMPROVEMENTS")
+            logger.warning("Insufficient space to avoid ugly wraps -> NO FURTHER IMPROVEMENTS")
         else:
             # can try for a better solution
             sol = Width.optimal_heading(input_df, space)
             adjustments.update(sol[1])
             logger.info('best solution: %s', sol)
-        # global temp
-        # temp = input_df
-        return adjustments, input_df
+        return adjustments
 
     @staticmethod
     def optimal_heading(input_df: pd.DataFrame, total_es_budget: int) -> tuple[int, dict[str, int]]:

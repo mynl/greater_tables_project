@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "greater_tables"
-version = "5.0.1.dev1+gc3d2dfc.d20250626"
+version = "5.1.0"
 description = "Perfect tables from pandas dataframes."
 authors = [{name = "Stephen J Mildehall", email = "mynl@me.com" }]
 readme = {file = "README.md", content-type = "text/markdown"}

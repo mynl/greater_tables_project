@@ -6,7 +6,7 @@ from collections import deque
 from datetime import datetime, timedelta
 from importlib.resources import files
 from itertools import cycle, chain, count, zip_longest, product, islice
-# import logging
+import logging
 from math import prod
 from pathlib import Path
 from typing import Optional, Union
@@ -18,7 +18,7 @@ import numpy as np
 import pandas as pd
 
 
-# logger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class Fabricator:
@@ -107,13 +107,16 @@ class Fabricator:
                                if len(lvl) == 1]
             if len(drop_levels) == df.index.nlevels:
                 drop_levels.pop()
-            df = df.droplevel(drop_levels)
+            if len(drop_levels):
+                logger.info('dropping empty index levels %s', drop_levels)
+                df = df.droplevel(drop_levels)
         if isinstance(df.columns, pd.MultiIndex):
             drop_levels = [i for i, lvl in enumerate(df.columns.levels) if len(lvl) == 1]
             if len(drop_levels) == df.columns.nlevels:
                 drop_levels.pop()
-            # df.columns = df.columns.droplevel()
-            df = df.droplevel(drop_levels, axis=1)
+            if len(drop_levels):
+                logger.info('dropping empty column levels %s', drop_levels)
+                df = df.droplevel(drop_levels, axis=1)
         return df
 
     def make(self, rows, data_spec, *, index_levels=1, index_names=None,

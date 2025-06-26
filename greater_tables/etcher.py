@@ -96,7 +96,7 @@ class Etcher:
             path = tmp.with_suffix(ext)
             if path.exists():
                 path.unlink()
-        logger.info('...success...format file built', self.format_file.resolve())
+        logger.info('...success...format file built %s', self.format_file.resolve())
 
     def process_tikz(self):
         """Compile TikZ to PDF and convert to SVG."""
@@ -122,7 +122,7 @@ class Etcher:
             str(tex_path)
         ]
         (tex_path.parent / 'make_tikz.bat').write_text(" ".join(tex_cmd), encoding='utf-8')
-        logger.info("Running:", " ".join(tex_cmd))
+        logger.info("Running: %s", " ".join(tex_cmd))
         if self.run_command(tex_cmd):
             raise ValueError('TeX failed to compile, not pdf or svg output.')
             # no tidying up
@@ -134,7 +134,7 @@ class Etcher:
                 str(pdf_path),
                 str(svg_path)
             ]
-            logger.info("Running:", " ".join(svg_cmd))
+            logger.info("Running: %s", " ".join(svg_cmd))
             self.run_command(svg_cmd, raise_on_error=True)
 
             for ext in ('.aux', '.log', '.pdf'):
@@ -151,7 +151,7 @@ class Etcher:
         with Popen(command, cwd=cwd, stdout=PIPE, stderr=PIPE, universal_newlines=True) as p:
             stdout, stderr = p.communicate()
             if stdout:
-                logger.info('Run command output ends\n', stdout.strip()[-250:])
+                logger.info('Run command output ends\n %s', stdout.strip()[-250:])
             if stdout:
                 if stdout.find('no output PDF file produced') > 0:
                     logger.error("ERROR no pdf output\n"*5)

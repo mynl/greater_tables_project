@@ -920,23 +920,27 @@ class GT(object):
     def tex_knowledge_df(self):
         """Uber source of information for tex formatting."""
         if self._tex_knowledge_df is None:
-            if (all(self.df_tex.index == self.df_html.index)
-                and all(self.df_tex.columns == self.df_html.columns)
-                and all(self.df_tex == self.df_html)):
-                self._tex_knowledge_df = self.html_knowledge_df
-            else:
-                self._tex_knowledge_df = self.estimate_column_widths_by_mode('tex')
+            # seems this is unlikely to be a good idea!
+            # if (all(self.df_tex.index == self.df_html.index)
+            #     and all(self.df_tex.columns == self.df_html.columns)
+            #     and all(self.df_tex == self.df_html)):
+            #     self._tex_knowledge_df = self.html_knowledge_df
+            # else:
+            self._tex_knowledge_df = self.estimate_column_widths_by_mode('tex')
         return self._tex_knowledge_df
 
     def width_report(self):
         """Return a report summarizing the width information."""
         natural = self.text_knowledge_df.natural_width.sum()
         minimum = self.text_knowledge_df.minimum_width.sum()
-        ht = self.text_knowledge_df.header_tweak.sum()
+        if 'header_tweak' in self.text_knowledge_df:
+            ht = self.text_knowledge_df.header_tweak.sum()
+        else:
+            ht = 0
         text = self.text_knowledge_df.recommended.sum()
         h = self.html_knowledge_df.recommended.sum()
-        tikz = self.tex_knowledge_df['tikz_colw'].sum()
-        tex =  self.tex_knowledge_df['scaled_tabs'].sum()
+        tex =  self.tex_knowledge_df.recommended.sum()
+        tikz = self.tex_knowledge_df.tikz_colw.sum()
         mtw = self.max_table_width_em
         mtiw = self.config.max_table_inch_width
         pts = self.config.table_font_pt_size
@@ -946,8 +950,8 @@ class GT(object):
                         'text header tweak': self.text_knowledge_df.header_tweak,
                         'text recommended': self.text_knowledge_df.recommended,
                         'html recommended': self.html_knowledge_df.recommended,
-                        'tex recommended': self.tex_knowledge_df['scaled_tabs'],
-                        'tikz recommended': self.tex_knowledge_df['tikz_colw'],
+                        'tex recommended': self.tex_knowledge_df.recommended,
+                        'tikz recommended': self.tex_knowledge_df.tikz_colw,
         }).fillna(0)
         ser = pd.Series({
                         'text natural': natural,
@@ -1009,7 +1013,6 @@ class GT(object):
         elif mode == 'html':
             df = self.df_html
             len_function = TextLength.text_display_len
-
         else: #  mode == 'tex':
             df = self.df_tex
             len_function = TextLength.text_display_len
@@ -1039,8 +1042,7 @@ class GT(object):
             )
 
         # begin to assemble the parts
-        # ans will be the col_width_df;  break_penalties needed by all methods
-
+        # ans will be the col_width_df; break_penalties needed by all methods
         ans = pd.DataFrame({
             'alignment': [i[4:] for i in self.df_aligners],
             'break_penalties': self.break_penalties,
@@ -1051,21 +1053,27 @@ class GT(object):
         ans['acceptable_width'] = np.where(
             ans.break_penalties == Breakability.ACCEPTABLE, ans.minimum_width, ans.natural_width)
 
-        # adjustments and recommendations
+        # adjustments and recommendations - these are keyed to text output with padding
         natural, acceptable, minimum = ans.iloc[:, 3:].sum()
         PADDING = 2  # per column TODO enhance
-        if self.config.table_width_mode == 'explicit':
-            # target width INCLUDES padding and column marks |
-            target_width = self.max_table_width_em - \
-                           (PADDING + 1) * n_col - 1
-            logger.info(f'Col padding effect {self.max_table_width_em=}'
-                        f' ==> {target_width=}')
-        elif self.config.table_width_mode == 'natural':
-            target_width = natural + (PADDING + 1) * n_col + 1
-        elif self.config.table_width_mode == 'breakable':
-            target_width = acceptable + (PADDING + 1) * n_col + 1
-        elif self.config.table_width_mode == 'minimum':
-            target_width = minimum + (PADDING + 1) * n_col + 1
+        if mode == 'text':
+            if self.config.table_width_mode == 'explicit':
+                # target width INCLUDES padding and column marks |
+                target_width = self.max_table_width_em - \
+                               (PADDING + 1) * n_col - 1
+                logger.info(f'{self.max_table_width_em=}'
+                            f' ==> {target_width=} after column spacer adjustment')
+            elif self.config.table_width_mode == 'natural':
+                # +1 for the pipe!
+                target_width = natural + (PADDING + 1) * n_col + 1
+            elif self.config.table_width_mode == 'breakable':
+                target_width = acceptable + (PADDING + 1) * n_col + 1
+            elif self.config.table_width_mode == 'minimum':
+                target_width = minimum + (PADDING + 1) * n_col + 1
+        else:
+            # tex and html ignore niceties of padding?? these will be narrower
+            target_width = self.max_table_width_em
+            logger.info(f'{target_width=} ignoring column spacers')
 
         # extra space for the headers to relax, if useful
         if self.config.table_width_header_adjust > 0:
@@ -1074,7 +1082,7 @@ class GT(object):
         else:
             max_extra = 0
 
-        logger.info(f'{mode=} {target_width=}, {natural=}, {acceptable=}, {minimum=}')
+        logger.info(f'{mode=} {target_width=}, {natural=}, {acceptable=}, {minimum=}, {max_extra=}')
 
         if target_width > natural:
             # everything gets its natural width
@@ -1087,212 +1095,94 @@ class GT(object):
             # use up extra on the ACCEPTABLE cols
             space = target_width - acceptable
             logger.info(
-                'Using breaks acceptable (dates not wrapped), spare space = %s', space)
+                'Using "breaks acceptable" (dates not wrapped), spare space = %s', space)
         elif target_width > minimum:
             # strings and dates wrap
             ans['recommended'] = ans['minimum_width']
             # use up extra on dates first, then strings
             space = target_width - minimum
             logger.info(
-                'Breaking all breakable (incl dates), spare space = %s', space)
+                'Using "minimum" (all breakable incl dates), spare space = %s', space)
         else:
             # OK severely too small
             ans['recommended'] = ans['minimum_width']
-            logger.info(
-                'Desired width too small for pleasant formatting, table will be too wide.')
             space = target_width - minimum
+            logger.warning(
+                'Desired width too small for pleasant formatting, table will be too wide by spare space %s < 0.',
+                space)
 
-        # this section adjusts for column headers. text has a
-        # more rigorous adjustment than the other two methds (which
-        # will naturally make better decisions about line breaks in the heading).
-        if mode == "text":
-            input_df = None
-            if space >= 0:
-                # Allocate the excess ------------------------------
-                # Fancy col headings currently only for 1-d index
-                # TODO NOTE: use config.sparsify logic you have for index applied to df.T
-                # to sort the columns!!
-                if df.columns.nlevels == 1:
-                    # Step 1: baseline comes in from code above
-                    ans['raw_recommended'] = ans['recommended']
+        # this section tweaks the widths for column headers -> text output only.
+        # trust tex and html output to naturally make better decisions about line breaks in the heading.
+        if mode == "text" and space > 0:
+            # text mode only: see if some header tweaks are in order (Index only for now, TODO)
+            if df.columns.nlevels == 1:
+                # Step 1: baseline comes in from code above
+                ans['raw_recommended'] = ans['recommended']
 
-                    # Step 2: get rid of intra-line breaks
-                    if max_extra > 0:
-                        adj, input_df = Width.header_adjustment(
-                            df, ans['recommended'], space, max_extra)
-                        # create new col and populate per GPT
-                        ans['header_tweak'] = pd.Series(adj)
-                    else:
-                        ans['header_tweak'] = 0
-                    ans['recommended'] = ans['recommended'] + ans['header_tweak']
-                    ans['natural_w_header'] = ans['recommended']
+                # Step 2: get rid of intra-line breaks
+                if max_extra > 0:
+                    adj = Width.header_adjustment(df, ans['recommended'], space, max_extra)
+                    # create new col and populate per GPT
+                    ans['header_tweak'] = pd.Series(adj)
                 else:
-                    # avoid a failure blow
-                    ans['raw_recommended'] = np.nan
-                    ans['header_tweak'] = np.nan
-                    ans['natural_w_header'] = np.nan
-                # Step 3: distribute remaining slack proportionally
-                remaining = target_width - ans['recommended'].sum()
-                if remaining > 0:
-                    slack = ans['natural_width'] - ans['recommended']
-                    total_slack = slack.clip(lower=0).sum()
-                    if total_slack > 0:
-                        fractions = slack.clip(lower=0) / total_slack
-                        ans['recommended'] += np.floor(fractions *
-                                                       remaining).astype(int)
-                        ans['recommended'] = np.maximum(
-                            ans['recommended'], ans['natural_w_header'])
+                    ans['header_tweak'] = 0
+                ans['recommended'] = ans['recommended'] + ans['header_tweak']
 
-                # Ensure final constraint
-                try:
-                    ans['recommended'] = ans['recommended'].astype(int)
-                except IntCastingNaNError:
-                    print('getting error')
-                    print(ans['recommended'])
-                    ans['recommended'] = pd.to_numeric(
-                        ans['recommended'], errors='coerce').fillna(0).astype(int)
-
-                logger.info("Raw rec: %s\tTweaks: %s\tActual: %s\tTarget: %s\tOver/(U): %s",
-                            ans['raw_recommended'].sum(),
-                            ans['header_tweak'].sum(),
-                            ans['recommended'].sum(),
-                            target_width,
-                            ans['recommended'].sum() - target_width
-                            )
+        # Step 3 (all modes): distribute remaining slack proportionally
+        # obvs remaining == space if mode is not text
+        remaining = target_width - ans['recommended'].sum()
+        ans['pre_space_share_recommended'] = ans['recommended']
+        if remaining > 0:
+            slack = ans['natural_width'] - ans['recommended']
+            total_slack = slack.clip(lower=0).sum()
+            if total_slack > 0:
+                logger.info('total slack to allocate after header adjustments = %s', total_slack)
+                fractions = slack.clip(lower=0) / total_slack
+                ans['recommended'] += np.floor(fractions *
+                                               remaining).astype(int)
             else:
-                # avoid a failure blow
-                ans['raw_recommended'] = np.nan
-                ans['header_tweak'] = np.nan
-                ans['natural_w_header'] = np.nan
-        else:
-            # for html and tex modes: adapts from old estimate_column_widths
-            target_width = self.max_table_width_em
-            nc_index = self.nindex
+                logger.info('no slack to allocate after header adjustments')
 
-            # without tex adjustment
+        # Ensure final constraint
+        # try:
+        #     ans['recommended'] = ans['recommended'].astype(int)
+        # except IntCastingNaNError:
+        #     print('getting error')
+        #     print(ans['recommended'])
+        #     ans['recommended'] = pd.to_numeric(
+        #         ans['recommended'], errors='coerce').fillna(0).astype(int)
+
+        # logger.info("Raw rec: %s\tTweaks: %s\tActual: %s\tTarget: %s\tOver/(U): %s",
+        #             ans['raw_recommended'].sum(),
+        #             ans['header_tweak'].sum(),
+        #             ans['recommended'].sum(),
+        #             target_width,
+        #             ans['recommended'].sum() - target_width
+        #             )
+
+        if mode == 'tex':
+            # tex mode only need tikz raw size for tex code layout
+            nc_index = self.nindex
             tikz_colw = dict.fromkeys(df.columns, 0)
-            # with tex adjustment
-            tex_colw = dict.fromkeys(df.columns, 0)
-            headw = dict.fromkeys(df.columns, 0)
             tikz_headw = dict.fromkeys(df.columns, 0)
-            tabs = []
-            mxmn = {}
             for i, c in enumerate(df.columns):
-                # figure width of the column labels; if index c= str, if MI then c = tuple
-                # cw is the width of the column header/title
-                # tzcw is for tikz - no wrapping and no tex adjustment
-                if type(c) == str:
-                    if i < nc_index:
-                        cw = len_function(c)
-                        tzcw = len(c)
-                    else:
-                        # for data columns look at words rather than whole phrase
-                        cw = max(map(len_function, c.split(' ')))
-                        tzcw = len(c)
-                        # logger.info(f'leng col = {len(c)}, longest word = {cw}')
-                else:
-                    # column name could be float etc. or if multi index a tuple
-                    try:
-                        if isinstance(c, tuple):
-                            # multiindex: join and split into words and take length of each word
-                            words = ' '.join(c).split(' ')
-                            cw = max(
-                                map(lambda x: len_function(str(x)), words))
-                            tzcw = max(map(len, words))
-                        else:
-                            cw = max(map(lambda x: len_function(str(x)), c))
-                            tzcw = max(map(len, c))
-                        # print(f'{c}: {cw=} no error')
-                    except TypeError:
-                        # not a MI, float or something
-                        cw = len_function(str(c))
-                        tzcw = len(str(c))
-                        # print(f'{c}: {cw=} WITH error')
-                headw[c] = cw
-                tikz_headw[c] = tzcw
+                # figure width of the column labels
+                c0 = c # before we mess around with it, for setting dict values
+                if not isinstance(c, tuple):
+                    # make it one: now index and multi index on same footing
+                    c = (c,)
+                # convert to strings
+                c = [str(i) for i in c]
+                tikz_headw[c0] = max(map(len, c))
+
                 # now figure the width of the elements in the column
-                # mxmn is used to determine whether to center the column (if all the same size)
-                if df.dtypes.iloc[i] == object:
-                    # weirdness here were some objects actually contain floats, str evaluates to NaN
-                    # and picks up width zero
-                    try:
-                        lens = df.iloc[:, i].map(
-                            lambda x: len_function(str(x)))
-                        tex_colw[c] = lens.max()
-                        mxmn[c] = (lens.max(), lens.min())
-                        raw_lens = df.iloc[:, i].map(len)
-                        tikz_colw[c] = raw_lens.max()
-                    except Exception as e:
-                        raise
-                        # logger.error(
-                        #     f'{c} error {e} DO SOMETHING ABOUT THIS...if it never occurs dont need the if')
-                        # tikz_colw[c] = df[c].str.len().max()
-                        # mxmn[c] = (df[c].str.len().max(), df[c].str.len().min())
-                else:
-                    lens = df.iloc[:, i].map(lambda x: len_function(str(x)))
-                    tex_colw[c] = lens.max()
-                    mxmn[c] = (lens.max(), lens.min())
-                    raw_lens = df.iloc[:, i].map(len)
-                    tikz_colw[c] = raw_lens.max()
-            # pick up long headers too
+                tikz_colw[c0] = df.iloc[:, i].map(lambda x: len(str(x))).max()
+            # needed tikz width is greater of two
             for c in df.columns:
                 tikz_colw[c] = max(tikz_colw[c], tikz_headw[c])
-            # print(tikz_colw)
-            # now know all column widths...decide what to do
-            # are all the data columns about the same width?
-            data_cols = np.array([tex_colw[k] for k in df.columns[nc_index:]])
-            same_size = (data_cols.std() <= 0.1 * data_cols.mean())
-            # print(f'same size test requires {data_cols.std()} <= {0.1 * data_cols.mean()}')
-            common_size = 0
-            if same_size:
-                common_size = int(data_cols.mean() + data_cols.std())
-                logger.info(f'data cols appear same size = {common_size}')
-                # print(f'data cols appear same size = {common_size}')
-            for i, c in enumerate(df.columns):
-                if i < nc_index or not same_size:
-                    # index columns
-                    tabs.append(int(max(tex_colw[c], headw[c])))
-                else:
-                    # data all seems about the same width
-                    tabs.append(common_size)
-            logger.info(f'Determined tabs spacing: {tabs}')
-            if self.config.equal:
-                # see if config.equal widths makes sense
-                dt = tabs[nc_index:]
-                if max(dt) / sum(dt) < 4 / 3:
-                    tabs = tabs[:nc_index] + [max(dt)] * (len(tabs) - nc_index)
-                    logger.info(f'Taking config.equal width hint: {tabs}')
-                    # print(f'Taking config.equal width hint: {tabs}')
-                else:
-                    logger.info(f'Rejecting config.equal width hint')
-                    # print(f'Rejecting config.equal width hint')
-            # look to rescale, shoot for width of 150 on 100 scale basis
-            data_width = sum(tabs[nc_index:])
-            index_width = sum(tabs[:nc_index])
-            target_width = target_width * self.config.tikz_scale - index_width
-            if data_width and data_width / target_width < 0.9:
-                # don't rescale above 1:1 - don't want too large
-                rescale = min(1 / self.config.tikz_scale, target_width / data_width)
-                scaled_tabs = [w if i < nc_index else
-                               int(w * rescale) for i, w in enumerate(tabs)]
-                logger.info(f'Rescale {rescale} applied; tabs = {tabs}')
-            else:
-                scaled_tabs = tabs
-            # add to the answer
+            # distribute any overage using the measures already done
             ans['tikz_colw'] = tikz_colw
-            ans['tikz_colw'] += 2  # padding \I spacer
-            ans['estimated_tabs'] = tabs
-            ans['estimated_scaled_tabs'] = scaled_tabs
-            if self.tabs is not None:
-                ans['input_tabs'] = self.tabs
-            else:
-                ans['input_tabs'] = -1
-            # this column should be used in place of tabs from estimate_column_widths
-            # in make html and make tikz
-            ans['tabs'] = np.maximum(ans['input_tabs'],
-                                                       ans['estimated_tabs'])
-            ans['scaled_tabs'] = np.maximum(ans['input_tabs'],
-                                                              ans['estimated_scaled_tabs'])
+            ans['tikz_colw'] += 2  # for \I
 
         # in all cases...assemble the answer  with relevant information
         return_columns = [
@@ -1304,13 +1194,9 @@ class GT(object):
             'minimum_width',
             'raw_recommended',
             'header_tweak',
+            'pre_space_share_recommended',
             'recommended',
             'tikz_colw',
-            'estimated_tabs',
-            'estimated_scaled_tabs',
-            'input_tabs',
-            'tabs',
-            'scaled_tabs',
             ]
         ans = ans[[i for i in return_columns if i in ans.columns]]
         # need recommended to be > 0
@@ -1790,7 +1676,7 @@ class GT(object):
 
         # column and tikz display widths
         colw = self.tex_knowledge_df['tikz_colw'].map(lambda x: np.round(x, 3))
-        tabs = self.tex_knowledge_df['scaled_tabs'].map(lambda x: np.round(x, 3))
+        tabs = self.tex_knowledge_df['recommended'].map(lambda x: np.round(x, 3))
         # these are indexed with pre-TeX mangling names
         # colw.index = df.columns
         # tabs.index = df.columns
