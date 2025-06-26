@@ -938,6 +938,8 @@ class GT(object):
         tikz = self.tex_knowledge_df['tikz_colw'].sum()
         tex =  self.tex_knowledge_df['scaled_tabs'].sum()
         mtw = self.max_table_width_em
+        mtiw = self.config.max_table_inch_width
+        pts = self.config.table_font_pt_size
         bit = pd.DataFrame({
                         'text natural': self.text_knowledge_df.natural_width,
                         'text minimum': self.text_knowledge_df.minimum_width,
@@ -957,7 +959,10 @@ class GT(object):
                         'tikz recommended': tikz,
         })
         bit.loc['total', :] = ser
-        print(f"requested width = {mtw}\n"
+        print(f"requested width = {mtw} em\n"
+              f"max tbl inch w  = {mtiw} inches\n"
+              f"font pts        = {pts} pts\n"
+              f"width in em chk = {mtiw * 72 / pts} em\n"
               f"width mode      = {self.config.table_width_mode}\n"
               f"header relax    = {self.config.table_width_header_adjust}\n"
               f"header chars    = {self.config.table_width_header_relax}")

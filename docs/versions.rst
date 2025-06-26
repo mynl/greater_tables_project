@@ -1,6 +1,21 @@
 Versions and Change Log
 ==========================
 
+.. remember
+
+.. test cases
+    * tex and or html in data, index, columns, escaped/unescaped
+    * long cols
+    * text with multiindex columns
+
+.. TODO
+    * self.padl and r / 12 in make html width adj s/b elsewhere
+
+5.1.0
+------
+* Added gtfont, a rust text to point size utility using fontdue https://docs.rs/fontdue/latest/fontdue/index.html.
+* Removed scm version, moved setuptools to maturin build system.
+
 5.0.0
 -------
 * Introduced ``knowledge_df`` as source of all formatting instructions
@@ -9,14 +24,6 @@ Versions and Change Log
 * Delete rich table output format?
 * Moved logging setup to separate file, called from cli but optional for use in other situation. GPT recommended approach.
 * Removed ``gt`` prefix from module file names, except logging.
-
-.. * test cases
-    * tex and or html in data, index, columns, escaped/unescaped
-    * long cols
-    * text with multiindex columns
-
-.. * TODO
-    * self.padl and r / 12 in make html width adj s/b elsewhere
 
 4.0.0
 -------

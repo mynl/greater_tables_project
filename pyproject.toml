@@ -1,14 +1,10 @@
 [build-system]
-requires = [
-    "setuptools",
-    "build",
-    "setuptools_scm[toml]>=7.0"
-    ]
-build-backend = "setuptools.build_meta"
+requires = ["maturin>=1.4", "tomlkit"]
+build-backend = "maturin"
 
 [project]
 name = "greater_tables"
-dynamic = ["version"]
+version = "5.0.1.dev1+gc3d2dfc.d20250626"
 description = "Perfect tables from pandas dataframes."
 authors = [{name = "Stephen J Mildehall", email = "mynl@me.com" }]
 readme = {file = "README.md", content-type = "text/markdown"}
@@ -27,33 +23,25 @@ dependencies = [
 classifiers = [
     "Development Status :: 4 - Beta",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Office/Business"
 ]
-
-[tool.setuptools_scm]
-write_to = "greater_tables/_version.py"
-version_scheme = "post-release"
-local_scheme = "node-and-date"  # "no-local-version"
-
-
-[tool.setuptools.packages.find]
-include = ["greater_tables", "greater_tables.data"]
-exclude = ["img", "tests", "docs"]
-
-[tool.setuptools.package-data]
-"greater_tables" = ["data/*.csv", "data/*.md"]
-
-[tool.setuptools.dynamic]
-version  = { attr = "greater_tables.__version__" }
 
 [project.urls]
 "Source Code" = "https://github.com/mynl/greater_tables_project"
 "Documentation" = "https://greater-tables-project.readthedocs.io/en/latest/"
 "Changelog" = "https://greater-tables-project.readthedocs.io/en/latest/versions.html"
 
+[tool.maturin]
+module-name = "greater_tables.gtfont"
+python-source = "."
+cargo-manifest = "gtfont/Cargo.toml"
+
 [project.optional-dependencies]
 dev = [
+    "setuptools_scm[toml]>=7.0",
+    "tomlkit",
     "docutils<0.17",
     "jupyter-sphinx",
     "myst_parser",
@@ -74,10 +62,3 @@ dev = [
 [project.scripts]
 gt = "greater_tables.cli:cli"
 
-[tool.flake8]
-max-line-length = 144
-ignore = ["E501", "E201", "W503"]
-
-[tool.pycodestyle]
-max_line_length = 144
-ignore = ["E501", "E201", "W503"]
