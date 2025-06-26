@@ -1,10 +1,10 @@
 [build-system]
-requires = ["maturin>=1.4", "tomlkit"]
-build-backend = "maturin"
+requires = ["setuptools>=62.3", "setuptools_scm[toml]>=7.0"]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "greater_tables"
-version = "5.1.0"
+dynamic = ["version"]
 description = "Perfect tables from pandas dataframes."
 authors = [{name = "Stephen J Mildehall", email = "mynl@me.com" }]
 readme = {file = "README.md", content-type = "text/markdown"}
@@ -33,10 +33,16 @@ classifiers = [
 "Documentation" = "https://greater-tables-project.readthedocs.io/en/latest/"
 "Changelog" = "https://greater-tables-project.readthedocs.io/en/latest/versions.html"
 
-[tool.maturin]
-module-name = "greater_tables.gtfont"
-python-source = "."
-cargo-manifest = "gtfont/Cargo.toml"
+[tool.setuptools_scm]
+version_file = "greater_tables/_version.py"
+local_scheme = "dirty-tag"                          # affects the "+gHASH" part
+version_scheme = "post-release"                     # affects dev version style
+
+[tool.setuptools.packages.find]
+include = ["greater_tables", "greater_tables.*"]
+
+[tool.setuptools.package-data]
+"greater_tables" = ["data/*.csv", "data/*.md"]
 
 [project.optional-dependencies]
 dev = [
