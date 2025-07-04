@@ -1,57 +1,79 @@
 @echo off
 setlocal
 
-:: --- Configuration ---
-set "PYTHON_VERSION=3.10"
+:: audit call: with python version and optional mode: new (default) or refresh
+if "%1"=="" (
+    echo Usage: build.bat PYTHON_VERSION new^|refresh
+    exit /b 1
+)
+
+if /i not "%2"=="new" if /i not "%2"=="refresh" (
+    echo Usage: build.bat PYTHON_VERSION new^|refresh
+    echo Invalid second argument mode: "%2"
+    echo Must be 'new' or 'refresh'.
+    exit /b 1
+)
+
+:: --- Configuration CUSTOMIZE HERE! ---
+set "PYTHON_VERSION=%1"
+set "MODE=%2"
 set "PROJECT_NAME=greater_tables_project"
 REM set "PROJECT_REPO=https://github.com/mynl/%PROJECT_NAME%.git"
 set "PROJECT_REPO=c:\s\telos\python\greater_tables_project"
-set "BUILD_DIR=C:\tmp\%PROJECT_NAME%_rtd_build"
+set "BUILD_DIR=C:\tmp\%PROJECT_NAME%_rtd_build_%1"
 set "VENV_DIR=%BUILD_DIR%\venv"
 set "HTML_OUTPUT_DIR=%BUILD_DIR%\html"
 set "PORT=9800"
+:: --- Prepare Environment and Clone Repository ---
+if /i "%MODE%"=="new" (
+    echo Cleaning previous build directory...
+    pushd C:\tmp
+    rmdir /s /q "%BUILD_DIR%" >nul 2>&1
+    mkdir "%BUILD_DIR%"
 
-:: --- Prepare Environment ---
-echo Cleaning previous build directory...
-pushd C:\tmp
-rmdir /s /q "%BUILD_DIR%" >nul 2>&1
-mkdir "%BUILD_DIR%"
+    echo Cloning repository...
+    git clone --depth 1 "%PROJECT_REPO%" "%BUILD_DIR%"
+    if %ERRORLEVEL% NEQ 0 (
+        echo Git clone failed. Exiting.
+        exit /b %ERRORLEVEL%
+    )
+) else (
+    echo Reusing existing build directory at "%BUILD_DIR%"
+)
 
-:: --- Clone Repository ---
-echo Cloning repository...
-git clone --depth 1 "%PROJECT_REPO%" "%BUILD_DIR%"
-rem git clone "%PROJECT_REPO%" "%BUILD_DIR%"
+
+pushd "%BUILD_DIR%"
+
+:: --- Fetch latest changes ---
+echo Fetching latest changes...
+git fetch origin --force --prune --prune-tags --depth 50 refs/heads/master:refs/remotes/origin/master
 if %ERRORLEVEL% NEQ 0 (
-    echo Git clone failed. Exiting.
+    echo Git fetch failed. Exiting.
     exit /b %ERRORLEVEL%
 )
 
-cd "%BUILD_DIR%"
-
-:: --- Fetch latest changes ---
-rem echo Fetching latest changes...
-rem git fetch origin --force --prune --prune-tags --depth 50 refs/heads/master:refs/remotes/origin/master
-rem if %ERRORLEVEL% NEQ 0 (
-rem     echo Git fetch failed. Exiting.
-rem     exit /b %ERRORLEVEL%
-rem )
-
 :: --- Checkout master branch ---
-rem echo Checking out master branch...
-rem git checkout --force origin/master
-rem if %ERRORLEVEL% NEQ 0 (
-rem     echo Git checkout failed. Exiting.
-rem     exit /b %ERRORLEVEL%
-rem )
+echo Checking out master branch...
+git checkout --force origin/master
+if %ERRORLEVEL% NEQ 0 (
+    echo Git checkout failed. Exiting.
+    exit /b %ERRORLEVEL%
+)
 
 :: --- Setup Virtual Environment ---
-echo Creating virtual environment for Python %PYTHON_VERSION%...
-:: Assuming 'uv' is installed and available in PATH.
-:: If not, you might need to install it: uv pip install uv
-uv venv "%VENV_DIR%" --python %PYTHON_VERSION%
-if %ERRORLEVEL% NEQ 0 (
-    echo Failed to create virtual environment. Ensure uv and Python %PYTHON_VERSION% are available. Exiting.
-    exit /b %ERRORLEVEL%
+if /i "%MODE%"=="new" (
+    echo Creating virtual environment for Python %PYTHON_VERSION%...
+    uv venv "%VENV_DIR%" --python %PYTHON_VERSION%
+    if %ERRORLEVEL% NEQ 0 (
+        echo Failed to create virtual environment. Exiting.
+        exit /b %ERRORLEVEL%
+    )
+)
+
+if not exist "%VENV_DIR%\Scripts\activate.bat" (
+    echo Virtual environment not found at "%VENV_DIR%".
+    echo Please run with 'new' mode first to create it.
+    exit /b 1
 )
 
 call "%VENV_DIR%\Scripts\activate.bat"
@@ -60,26 +82,28 @@ if %ERRORLEVEL% NEQ 0 (
     exit /b %ERRORLEVEL%
 )
 
-:: --- Install Dependencies ---
-echo Upgrading setuptools...
-uv pip install --upgrade setuptools
-if %ERRORLEVEL% NEQ 0 (
-    echo Failed to upgrade setuptools. Exiting.
-    exit /b %ERRORLEVEL%
-)
+if /i "%MODE%"=="new" (
+    :: --- Install Dependencies ---
+    echo Upgrading setuptools...
+    uv pip install --upgrade setuptools
+    if %ERRORLEVEL% NEQ 0 (
+        echo Failed to upgrade setuptools. Exiting.
+        exit /b %ERRORLEVEL%
+    )
 
-echo Installing Sphinx...
-uv pip install --upgrade sphinx
-if %ERRORLEVEL% NEQ 0 (
-    echo Failed to install Sphinx. Exiting.
-    exit /b %ERRORLEVEL%
-)
+    echo Installing Sphinx...
+    uv pip install --upgrade sphinx
+    if %ERRORLEVEL% NEQ 0 (
+        echo Failed to install Sphinx. Exiting.
+        exit /b %ERRORLEVEL%
+    )
 
-echo Installing project dependencies from pyproject.toml...
-uv pip install --upgrade --no-cache-dir .[dev]
-if %ERRORLEVEL% NEQ 0 (
-    echo Failed to install project dependencies. Exiting.
-    exit /b %ERRORLEVEL%
+    echo Installing project dependencies from pyproject.toml...
+    uv pip install --upgrade --no-cache-dir .[dev]
+    if %ERRORLEVEL% NEQ 0 (
+        echo Failed to install project dependencies. Exiting.
+        exit /b %ERRORLEVEL%
+    )
 )
 
 :: --- Build HTML Documentation ---
@@ -90,14 +114,17 @@ if %ERRORLEVEL% NEQ 0 (
     exit /b %ERRORLEVEL%
 )
 
+
 echo.
 echo HTML documentation built successfully in "%HTML_OUTPUT_DIR%"
+echo run cd "%HTML_OUTPUT_DIR%" && python -m http.server %PORT%
+echo to serve the documentation.
 
 :: --- Launch Web Server and Open Docs ---
-echo Launching a simple web server for the documentation...
-start /b cmd /c "cd /d "%HTML_OUTPUT_DIR%" && python -m http.server %PORT%"
-echo Opening documentation in your default browser...
-start "" "http://localhost:%PORT%"
+rem echo Launching a simple web server for the documentation...
+rem start /b cmd /c "cd /d "%HTML_OUTPUT_DIR%" && python -m http.server %PORT%"
+rem echo Opening documentation in your default browser...
+rem start "" "http://localhost:%PORT%"
 
 :: --- Optional: Build LaTeX/PDF (commented out) ---
 :: echo Building LaTeX/PDF documentation...

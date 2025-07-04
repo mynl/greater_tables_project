@@ -559,7 +559,7 @@ class GT(object):
         self._text_knowledge_df = None
         self._html_knowledge_df = None
         self._tex_knowledge_df = None
-
+        self._knowledge_dfs = None
         # finally config.sparsify and then apply formaters
         # this radically alters the df, so keep a copy for now...
         self.df_pre_applying_formatters = self.df.copy()
@@ -929,14 +929,23 @@ class GT(object):
             self._tex_knowledge_df = self.estimate_column_widths_by_mode('tex')
         return self._tex_knowledge_df
 
+    @property
+    def knowledge_dfs(self):
+        if self._knowledge_dfs is None:
+            self._knowledge_dfs = pd.concat((self.text_knowledge_df.T,
+                        self.html_knowledge_df.T, self.tex_knowledge_df.T),
+                        keys=['text','html', 'tex'], names=['mode', 'measure'])
+            self._knowledge_dfs['Total'] = self._knowledge_dfs.fillna(0.).apply(
+                lambda row: sum(x for x in row if pd.api.types.is_number(x)), axis=1)
+            idx = self._knowledge_dfs.query('Total == 0').index
+            self._knowledge_dfs.loc[idx, 'Total'] = ''
+            self._knowledge_dfs = self._knowledge_dfs.fillna('')
+        return self._knowledge_dfs
+
     def width_report(self):
         """Return a report summarizing the width information."""
         natural = self.text_knowledge_df.natural_width.sum()
         minimum = self.text_knowledge_df.minimum_width.sum()
-        if 'header_tweak' in self.text_knowledge_df:
-            ht = self.text_knowledge_df.header_tweak.sum()
-        else:
-            ht = 0
         text = self.text_knowledge_df.recommended.sum()
         h = self.html_knowledge_df.recommended.sum()
         tex =  self.tex_knowledge_df.recommended.sum()
@@ -947,7 +956,6 @@ class GT(object):
         bit = pd.DataFrame({
                         'text natural': self.text_knowledge_df.natural_width,
                         'text minimum': self.text_knowledge_df.minimum_width,
-                        'text header tweak': self.text_knowledge_df.header_tweak,
                         'text recommended': self.text_knowledge_df.recommended,
                         'html recommended': self.html_knowledge_df.recommended,
                         'tex recommended': self.tex_knowledge_df.recommended,
@@ -956,7 +964,6 @@ class GT(object):
         ser = pd.Series({
                         'text natural': natural,
                         'text minimum': minimum,
-                        'text header tweak': ht,
                         'text recommended': text,
                         'html recommended': h,
                         'tex recommended': tex,
@@ -1023,14 +1030,16 @@ class GT(object):
         # Series=dict colname->max width of cells in column
         natural_width = df.map(lambda x: len_function(x.strip())).max(axis=0).to_dict()
 
-        # in text mode: figure out where you can break
-        pat = r'(?<=[.,;:!?)\]}\u2014\u2013])\s+|--+\s+|\s+'
+        # in text mode: figure out where you can break; pat breaks after punctuation or at -
+        pat = r'(?<=[.,;:!?)\]}\u2014\u2013])\s+|--*\s+|\s+'
         iso_date_split = r'(?<=\b\d{4})-(?=\d{2}-\d{2})'
         pat = f'{pat}|{iso_date_split}'
 
         # Calculate ideal (no wrap) and minimum possible widths for all columns
         # The absolute minimum width each column can take (e.g., longest word for text)
         minimum_width = {}
+        header_natural = {}
+        header_minimum = {}
         for col_name in df.columns:
             minimum_width[col_name] = (
                 df[col_name].str
@@ -1040,6 +1049,10 @@ class GT(object):
                 .max(axis=1)
                 .max()
             )
+            # ensure is a tuple
+            ctuple = col_name if isinstance(col_name, tuple) else (col_name, )
+            header_natural[col_name] = max(map(len_function, ctuple))
+            header_minimum[col_name] = min(len_function(part) for i in ctuple for part in re.split(pat, str(i)))
 
         # begin to assemble the parts
         # ans will be the col_width_df; break_penalties needed by all methods
@@ -1052,38 +1065,45 @@ class GT(object):
             }, index=df.columns)
         ans['acceptable_width'] = np.where(
             ans.break_penalties == Breakability.ACCEPTABLE, ans.minimum_width, ans.natural_width)
+        ans['header_natural'] = header_natural
+        ans['header_minimum'] = header_minimum
+
+        if mode in ('html', 'tex'):
+            # put in some padding TODO KLUDGE
+            ans['natural_width'] += 1
+            ans['minimum_width'] += 1
+            ans['header_natural'] += 1
+            ans['header_minimum'] += 1
 
         # adjustments and recommendations - these are keyed to text output with padding
-        natural, acceptable, minimum = ans.iloc[:, 3:].sum()
-        PADDING = 2  # per column TODO enhance
+        natural, acceptable, minimum = ans.iloc[:, 3:6].sum()
+        head_natural, head_minimum = ans.iloc[:, 6:8].sum()
+
         if mode == 'text':
-            if self.config.table_width_mode == 'explicit':
-                # target width INCLUDES padding and column marks |
-                target_width = self.max_table_width_em - \
-                               (PADDING + 1) * n_col - 1
-                logger.info(f'{self.max_table_width_em=}'
-                            f' ==> {target_width=} after column spacer adjustment')
-            elif self.config.table_width_mode == 'natural':
-                # +1 for the pipe!
-                target_width = natural + (PADDING + 1) * n_col + 1
-            elif self.config.table_width_mode == 'breakable':
-                target_width = acceptable + (PADDING + 1) * n_col + 1
-            elif self.config.table_width_mode == 'minimum':
-                target_width = minimum + (PADDING + 1) * n_col + 1
+            # +1 for the pipe | symbol
+            PADDING = 2  # per column TODO enhance
+            pad_adjustment = (PADDING + 1) * n_col - 1
         else:
-            # tex and html ignore niceties of padding?? these will be narrower
-            target_width = self.max_table_width_em
-            logger.info(f'{target_width=} ignoring column spacers')
+            PADDING = 1  # per column TODO enhance
+            pad_adjustment =  PADDING * n_col
+        if self.config.table_width_mode == 'explicit':
+            # target width INCLUDES padding and column marks |
+            target_width = self.max_table_width_em - pad_adjustment
+        elif self.config.table_width_mode == 'natural':
+            target_width = natural + pad_adjustment
+        elif self.config.table_width_mode == 'breakable':
+            target_width = acceptable + pad_adjustment
+        elif self.config.table_width_mode == 'minimum':
+            target_width = minimum + pad_adjustment
+        logger.info('table_width_mode = %s', self.config.table_width_mode)
+        logger.info('config self.max_table_width_em %s', self.max_table_width_em)
+        logger.info('target width after column spacer adjustment %s', target_width)
 
         # extra space for the headers to relax, if useful
         if self.config.table_width_header_adjust > 0:
-            max_extra = int(
-                self.config.table_width_header_adjust * target_width)
+            max_extra = int(self.config.table_width_header_adjust * target_width)
         else:
             max_extra = 0
-
-        logger.info(f'{mode=} {target_width=}, {natural=}, {acceptable=}, {minimum=}, {max_extra=}')
-
         if target_width > natural:
             # everything gets its natural width
             ans['recommended'] = ans['natural_width']
@@ -1110,59 +1130,46 @@ class GT(object):
             logger.warning(
                 'Desired width too small for pleasant formatting, table will be too wide by spare space %s < 0.',
                 space)
+        logger.info(f'{mode=} {target_width=}, {natural=}, {acceptable=}, {minimum=}, {max_extra=}, {space=}')
 
         # this section tweaks the widths for column headers -> text output only.
         # trust tex and html output to naturally make better decisions about line breaks in the heading.
-        if mode == "text" and space > 0:
+        if mode == "text" and space > 0 and df.columns.nlevels == 1:
             # text mode only: see if some header tweaks are in order (Index only for now, TODO)
-            if df.columns.nlevels == 1:
-                # Step 1: baseline comes in from code above
-                ans['raw_recommended'] = ans['recommended']
+            # Step 1: baseline comes in from code above
+            ans['raw_recommended'] = ans['recommended']
 
-                # Step 2: get rid of intra-line breaks
-                if max_extra > 0:
-                    adj = Width.header_adjustment(df, ans['recommended'], space, max_extra)
-                    # create new col and populate per GPT
-                    ans['header_tweak'] = pd.Series(adj)
-                else:
-                    ans['header_tweak'] = 0
-                ans['recommended'] = ans['recommended'] + ans['header_tweak']
+            # Step 2: optimize to get rid of intra-line breaks
+            if max_extra > 0:
+                adj = Width.header_adjustment(df, ans['recommended'], space, max_extra)
+                # create new col and populate per GPT
+                ans['header_tweak'] = pd.Series(adj)
+            else:
+                ans['header_tweak'] = 0
+            ans['recommended'] = ans['recommended'] + ans['header_tweak']
+            # in this case zero out impact of header_natural and header_minimum cos don't want to use them below
+            ans['header_natural'] = ans['recommended']
+            ans['header_minimum'] = ans['recommended']
 
-        # Step 3 (all modes): distribute remaining slack proportionally
+        # Step 3 (all modes): distribute remaining shortfall proportionally
+        # account for
         # obvs remaining == space if mode is not text
         remaining = target_width - ans['recommended'].sum()
-        ans['pre_space_share_recommended'] = ans['recommended']
+        ans['pre_shortfall_recommended'] = ans['recommended']
         if remaining > 0:
-            slack = ans['natural_width'] - ans['recommended']
-            total_slack = slack.clip(lower=0).sum()
-            if total_slack > 0:
-                logger.info('total slack to allocate after header adjustments = %s', total_slack)
-                fractions = slack.clip(lower=0) / total_slack
-                ans['recommended'] += np.floor(fractions *
-                                               remaining).astype(int)
+            shortfall = ans[['natural_width', 'header_natural']].max(axis=1) - ans['recommended']
+            total_shortfall = shortfall.clip(lower=0).sum()
+            if total_shortfall > 0:
+                logger.info('total shortfall to allocate after header adjustments = %s', total_shortfall)
+                fractions = shortfall.clip(lower=0) / total_shortfall
+                ans['proto_recommended'] = ans['recommended'] + np.floor(fractions * remaining).astype(int)
+                ans['recommended'] = np.minimum(ans[['natural_width', 'header_natural']].max(axis=1),
+                                                ans['proto_recommended'])
             else:
-                logger.info('no slack to allocate after header adjustments')
-
-        # Ensure final constraint
-        # try:
-        #     ans['recommended'] = ans['recommended'].astype(int)
-        # except IntCastingNaNError:
-        #     print('getting error')
-        #     print(ans['recommended'])
-        #     ans['recommended'] = pd.to_numeric(
-        #         ans['recommended'], errors='coerce').fillna(0).astype(int)
-
-        # logger.info("Raw rec: %s\tTweaks: %s\tActual: %s\tTarget: %s\tOver/(U): %s",
-        #             ans['raw_recommended'].sum(),
-        #             ans['header_tweak'].sum(),
-        #             ans['recommended'].sum(),
-        #             target_width,
-        #             ans['recommended'].sum() - target_width
-        #             )
+                logger.info('no shortfall to allocate after header adjustments')
 
         if mode == 'tex':
             # tex mode only need tikz raw size for tex code layout
-            nc_index = self.nindex
             tikz_colw = dict.fromkeys(df.columns, 0)
             tikz_headw = dict.fromkeys(df.columns, 0)
             for i, c in enumerate(df.columns):
@@ -1192,9 +1199,12 @@ class GT(object):
             'natural_width',
             'acceptable_width',
             'minimum_width',
+            'header_natural',
+            'header_minimum',
             'raw_recommended',
             'header_tweak',
             'pre_space_share_recommended',
+            'proto_recommended',
             'recommended',
             'tikz_colw',
             ]
@@ -1603,7 +1613,6 @@ class GT(object):
         column_sep = self.config.tikz_column_sep
         row_sep = self.config.tikz_row_sep
         container_env = self.config.tikz_container_env
-        extra_defs = self.config.tikz_extra_defs
         hrule = self.config.tikz_hrule
         vrule = self.config.tikz_vrule
         post_process = self.config.tikz_post_process
@@ -1631,12 +1640,11 @@ class GT(object):
         if not df.columns.is_unique:
             # possible index/body column interaction
             raise ValueError('tikz routine requires unique column names')
-# {extra_defs}
         # centering handled by quarto
         header = """
 \\begin{{{container_env}}}{latex}
 {caption}
-\\centering{{
+% \\centering{{
 \\begin{{tikzpicture}}[
     auto,
     transform shape,
@@ -1654,7 +1662,7 @@ class GT(object):
 {post_process}
 
 \\end{{tikzpicture}}
-}}   % close centering
+% }}   % close centering
 \\end{{{container_env}}}
 """
 
@@ -1709,7 +1717,6 @@ class GT(object):
             debug = ''
         sio.write(header.format(container_env=container_env,
                                 caption=caption,
-                                extra_defs=extra_defs,
                                 scale=self.config.tikz_scale,
                                 column_sep=column_sep,
                                 row_sep=row_sep,

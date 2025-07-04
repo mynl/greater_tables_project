@@ -168,8 +168,6 @@ class Configurator(BaseModel):
         default="table",
         description="Type of element: 'table', 'figure', or 'sidewaysfigure'"
     )
-    tikz_extra_defs: str = Field(
-        '', description="TeX defintions and commands put at top of table, eg \\centering.")
     tikz_hrule: Optional[list[int]] = Field(
         default=None,
         description="Optional, list of (0-based) integers for horizontal rules below each value; None means no lines."
