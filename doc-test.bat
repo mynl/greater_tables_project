@@ -19,7 +19,7 @@ set "PYTHON_VERSION=%1"
 set "MODE=%2"
 set "PROJECT_NAME=greater_tables_project"
 REM set "PROJECT_REPO=https://github.com/mynl/%PROJECT_NAME%.git"
-set "PROJECT_REPO=c:\s\telos\python\greater_tables_project"
+set "PROJECT_REPO=c:\s\telos\python\%PROJECT_NAME%"
 set "BUILD_DIR=C:\tmp\%PROJECT_NAME%_rtd_build_%1"
 set "VENV_DIR=%BUILD_DIR%\venv"
 set "HTML_OUTPUT_DIR=%BUILD_DIR%\html"
@@ -44,20 +44,15 @@ if /i "%MODE%"=="new" (
 
 pushd "%BUILD_DIR%"
 
-:: --- Fetch latest changes ---
-echo Fetching latest changes...
-git fetch origin --force --prune --prune-tags --depth 50 refs/heads/master:refs/remotes/origin/master
-if %ERRORLEVEL% NEQ 0 (
-    echo Git fetch failed. Exiting.
-    exit /b %ERRORLEVEL%
-)
-
-:: --- Checkout master branch ---
-echo Checking out master branch...
-git checkout --force origin/master
-if %ERRORLEVEL% NEQ 0 (
-    echo Git checkout failed. Exiting.
-    exit /b %ERRORLEVEL%
+if /i "%MODE%"=="refresh" (
+    echo Updating local clone from "%PROJECT_REPO%"...
+    git remote add source "%PROJECT_REPO%" 2>nul
+    git fetch source
+    git reset --hard source/master
+    if %ERRORLEVEL% NEQ 0 (
+        echo Git update failed. Exiting.
+        exit /b %ERRORLEVEL%
+    )
 )
 
 :: --- Setup Virtual Environment ---
@@ -117,7 +112,7 @@ if %ERRORLEVEL% NEQ 0 (
 
 echo.
 echo HTML documentation built successfully in "%HTML_OUTPUT_DIR%"
-echo run cd "%HTML_OUTPUT_DIR%" && python -m http.server %PORT%
+echo run cd "%HTML_OUTPUT_DIR%" ^&^& python -m http.server %PORT%
 echo to serve the documentation.
 
 :: --- Launch Web Server and Open Docs ---

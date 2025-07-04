@@ -11,6 +11,12 @@ Versions and Change Log
 .. TODO
     * self.padl and r / 12 in make html width adj s/b elsewhere
 
+
+5.2.0
+------
+* Adjusted logging to standard.
+* Updated doc-test batch file to standard.
+
 5.1.0
 ------
 * Added gtfont, a rust text to point size utility using fontdue https://docs.rs/fontdue/latest/fontdue/index.html.
