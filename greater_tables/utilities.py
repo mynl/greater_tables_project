@@ -310,6 +310,10 @@ class TextLength:
     @staticmethod
     def text_display_len(s: str) -> float:
         """Estimate display width in ems, ignoring HTML tags, interpreting TeX, and HTML entities."""
+        # can be called on an index that may not be a string??
+        if not isinstance(s, str):
+            # print(f'{s} is {type(s)}!!')
+            s = str(s)
         def strip_html_tags(text):
             return re.sub(r'<[^>]*>', '', text)
 
@@ -863,3 +867,25 @@ class RichOutput:
             table.add_row(*row.tolist())
 
         return table
+
+
+class SmartTitle():
+    """Support reasonable Title case for text."""
+    # TODO: Implement smart titling! 
+    @staticmethod
+    def smart_title(text):
+        """Slightly smart title capitalization (GPT4o)."""
+        small_words = {"a", "an", "and", "as", "at", "but", "by", "for",
+                       "in", "is", "of", "on", "or", "the", "to", "up", "via", "vs"}
+        words = text.split()
+        result = []
+
+        for i, word in enumerate(words):
+            if len(word) <= 3 and word.isupper():
+                result.append(word)  # already acronym-like
+            elif word.lower() in small_words and i != 0:
+                result.append(word.lower())
+            else:
+                result.append(word.capitalize())
+
+        return " ".join(result)

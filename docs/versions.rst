@@ -11,6 +11,10 @@ Versions and Change Log
 .. TODO
     * self.padl and r / 12 in make html width adj s/b elsewhere
 
+5.2.1
+-----
+* Added ``SmartTitle`` class in utilites - eventually add capitalize option for index?
+* Added ``tikz`` option: if true compute tikz output else when known not to be needed.
 
 5.2.0
 ------

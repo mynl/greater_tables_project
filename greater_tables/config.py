@@ -54,7 +54,6 @@ class Configurator(BaseModel):
     default_formatter: Optional[Union[str, Callable[[Any, str], str]]] = Field(
         None, description="Optional fallback formatter f-string"
     )
-
     table_float_format: Optional[Union[str, Callable[[Any, str], str]]] = Field(
         None, description="Float format function or format string for the entire table; overrides column-specific formats"
     )
@@ -157,6 +156,9 @@ class Configurator(BaseModel):
     )
 
     # tikz specific options
+    tikz: bool = Field(
+        True, description="Compute tikz output (default), else skipped for speed."
+        )
     tikz_scale: float = Field(
         1.0, description="Scaling factor applied to LaTeX TikZ tables"
     )

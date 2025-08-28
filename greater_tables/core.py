@@ -45,6 +45,7 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 # GPT recommended approach
 logger = logging.getLogger(__name__)
 
+
 class GT(object):
     """
     Create a greater_tables formatting object.
@@ -100,101 +101,6 @@ class GT(object):
     * Sparsify if requested and if multiindex
     * Result is a dataframe with all object column types and values that
       reflect the formatting choices.
-
-
-    Parameters
-    -----------
-
-    :param df: target DataFrame or list of lists or markdown table string
-    :param caption: table caption, optional (GT will look for gt_caption
-      attribute of df and use that)
-    :param label: TeX label (used in \\label{} command). For markdown
-      tables with #tbl:... in the caption it is extracted automatically.
-    :param aligners: None or dict (type or colname) -> left | center |
-      right
-    :param formatters: None or dict (type or colname) -> format function
-      for the column; formatters trump ratio_cols
-    :param unbreakable: None or list of columns to be considered unbreakable
-    :param ratio_cols: None, or "all" or list of column names treated as
-      ratios. Set defaults in derived class suitable to application.
-    :param year_cols: None, or "all" or list of column names treated as
-      years (no commas, no decimals). Set defaults in derived class suitable
-      to application.
-    :param date_cols: None, or "all" or list of column names treated as
-      dates. Set defaults in derived class suitable to application.
-    :param raw_cols: None, or "all" or list of column names that are NOT
-      cast to floats. Set defaults in derived class suitable to application.
-    :param show_index: if True, show the index columns, default True
-    :param config.default_integer_str: format f-string for integers, default
-      value '{x:,d}'
-    :param config.default_float_str: format f-string for floats, default
-      value '{x:,.3f}'
-    :param config.default_date_str: format f-string for dates, default '%Y-%m-%d'.
-      NOTE: no braces or x!
-    :param config.default_ratio_str: format f-string for ratios, default '{x:.1%}'
-    :param config.table_float_format: None or format string for floats in the
-      table format function, applied to entire table, default None
-    :param config.table_hrule_width: width of the table top, botton and header
-      hrule, default 1
-    :param config.table_vrule_width: width of the table vrule, separating the
-      index from the body, default 1
-    :param config.hrule_widths: None or tuple of three ints for hrule widths
-      (for use with multiindexes)
-    :param config.vrule_widths: None or tuple of three ints for vrule widths
-      (for use when columns have multiindexes)
-    :param config.sparsify: if True, config.sparsify the index columns, you almost always
-      want this to be true!
-    :param config.sparsify_columns: if True, config.sparsify the columns, default True,
-      generally a better look, headings centered in colspans
-    :param config.spacing: 'tight', 'medium', 'wide' to quickly set cell padding.
-      Medium is default (2, 10, 2, 10).
-    :param config.padding_trbl: None or tuple of four ints for padding, in order
-      top, right, bottom, left.
-    :param config.tikz_scale: scale factor applied to tikz LaTeX tables.
-    :param config.font_body: font size for body text, default 0.9. Units in em.
-    :param config.font_head: font size for header text, default 1.0. Units in em.
-    :param config.font_caption: font size for caption text, default 1.1.
-      Units in em.
-    :param config.font_bold_index: if True, make the index columns bold,
-      default False.
-    :param config.pef_precision: precision (digits after period) for pandas
-      engineering format, default 3.
-    :param config.pef_lower: apply engineering format to floats with absolute
-      value < 10**config.pef_lower; default -3.
-    :param config.pef_upper: apply engineering format to floats with absolute
-      value > 10**config.pef_upper; default 6.
-    :param config.cast_to_floats: if True, try to cast all non-integer, non-date
-      columns to floats
-    :param config.header_row: True: use first row as headers; False no headings.
-      Default True
-    :param config.tabs: None or list of column widths in characters or a common
-      int or float width. (It is converted into em; one character is about
-      0.5em on average; digits are exactly 0.5em.) If None, will be calculated.
-      Default None.
-    :param config.equal: if True, set all column widths config.equal. Default False. Maybe
-      ignored, depending on computed ideal column widths.
-    :param config.caption_align: for the caption
-    :param config.large_ok: signal that you are intentionally applying to a large
-      dataframe. Sub-classes may restrict or apply .head() to df.
-    :param config.max_str_length: maximum displayed length of object types, that
-      are cast to strings. Eg if you have nested DataFrames!
-    :param str_table_fmt: table border format used for string output
-      (markdown), default mixed_grid DEPRECATED??
-    :param config.table_width_mode:
-        'explicit': set using config.max_table_width_em
-        'natural': each cell on one line (can be very wide with long strings)
-        'breakable': wrap breakable cells (text strings) at word boundaries
-          to fit longest word
-        'minimum': wrap breakable and ok-to-break (dates) cells
-    :param config.table_width_header_adjust: additional proportion of table width
-      used to balance header columns.
-    :param config.table_width_header_relax: extra spaces allowed per column heading
-      to facilitate better column header wrapping.
-    :param config.max_table_width_em: max table width used for markdown string output,
-      default 200; width is never less than minimum width. Padding (3 chars
-      per row plus 1) consumed out of config.max_table_width_em in string output mode.
-    :param config.debug: if True, add id to caption and use colored lines in table,
-      default False.
     """
 
     def __init__(
@@ -217,6 +123,100 @@ class GT(object):
         config_path: Path | None = None,
         **overrides,
     ):
+        """
+        Available keyword ``**overrides`:
+
+        :param df: target DataFrame or list of lists or markdown table string
+        :param caption: table caption, optional (GT will look for gt_caption
+          attribute of df and use that)
+        :param label: TeX label (used in \\label{} command). For markdown
+          tables with #tbl:... in the caption it is extracted automatically.
+        :param aligners: None or dict (type or colname) -> left | center |
+          right
+        :param formatters: None or dict (type or colname) -> format function
+          for the column; formatters trump ratio_cols
+        :param unbreakable: None or list of columns to be considered unbreakable
+        :param ratio_cols: None, or "all" or list of column names treated as
+          ratios. Set defaults in derived class suitable to application.
+        :param year_cols: None, or "all" or list of column names treated as
+          years (no commas, no decimals). Set defaults in derived class suitable
+          to application.
+        :param date_cols: None, or "all" or list of column names treated as
+          dates. Set defaults in derived class suitable to application.
+        :param raw_cols: None, or "all" or list of column names that are NOT
+          cast to floats. Set defaults in derived class suitable to application.
+        :param show_index: if True, show the index columns, default True
+        :param config.default_integer_str: format f-string for integers, default
+          value '{x:,d}'
+        :param config.default_float_str: format f-string for floats, default
+          value '{x:,.3f}'
+        :param config.default_date_str: format f-string for dates, default '%Y-%m-%d'.
+          NOTE: no braces or x!
+        :param config.default_ratio_str: format f-string for ratios, default '{x:.1%}'
+        :param config.table_float_format: None or format string for floats in the
+          table format function, applied to entire table, default None
+        :param config.table_hrule_width: width of the table top, botton and header
+          hrule, default 1
+        :param config.table_vrule_width: width of the table vrule, separating the
+          index from the body, default 1
+        :param config.hrule_widths: None or tuple of three ints for hrule widths
+          (for use with multiindexes)
+        :param config.vrule_widths: None or tuple of three ints for vrule widths
+          (for use when columns have multiindexes)
+        :param config.sparsify: if True, config.sparsify the index columns, you almost always
+          want this to be true!
+        :param config.sparsify_columns: if True, config.sparsify the columns, default True,
+          generally a better look, headings centered in colspans
+        :param config.spacing: 'tight', 'medium', 'wide' to quickly set cell padding.
+          Medium is default (2, 10, 2, 10).
+        :param config.padding_trbl: None or tuple of four ints for padding, in order
+          top, right, bottom, left.
+        :param config.tikz_scale: scale factor applied to tikz LaTeX tables.
+        :param config.font_body: font size for body text, default 0.9. Units in em.
+        :param config.font_head: font size for header text, default 1.0. Units in em.
+        :param config.font_caption: font size for caption text, default 1.1.
+          Units in em.
+        :param config.font_bold_index: if True, make the index columns bold,
+          default False.
+        :param config.pef_precision: precision (digits after period) for pandas
+          engineering format, default 3.
+        :param config.pef_lower: apply engineering format to floats with absolute
+          value < 10**config.pef_lower; default -3.
+        :param config.pef_upper: apply engineering format to floats with absolute
+          value > 10**config.pef_upper; default 6.
+        :param config.cast_to_floats: if True, try to cast all non-integer, non-date
+          columns to floats
+        :param config.header_row: True: use first row as headers; False no headings.
+          Default True
+        :param config.tabs: None or list of column widths in characters or a common
+          int or float width. (It is converted into em; one character is about
+          0.5em on average; digits are exactly 0.5em.) If None, will be calculated.
+          Default None.
+        :param config.equal: if True, set all column widths config.equal. Default False. Maybe
+          ignored, depending on computed ideal column widths.
+        :param config.caption_align: for the caption
+        :param config.large_ok: signal that you are intentionally applying to a large
+          dataframe. Sub-classes may restrict or apply .head() to df.
+        :param config.max_str_length: maximum displayed length of object types, that
+          are cast to strings. Eg if you have nested DataFrames!
+        :param str_table_fmt: table border format used for string output
+          (markdown), default mixed_grid DEPRECATED??
+        :param config.table_width_mode:
+            'explicit': set using config.max_table_width_em
+            'natural': each cell on one line (can be very wide with long strings)
+            'breakable': wrap breakable cells (text strings) at word boundaries
+              to fit longest word
+            'minimum': wrap breakable and ok-to-break (dates) cells
+        :param config.table_width_header_adjust: additional proportion of table width
+          used to balance header columns.
+        :param config.table_width_header_relax: extra spaces allowed per column heading
+          to facilitate better column header wrapping.
+        :param config.max_table_width_em: max table width used for markdown string output,
+          default 200; width is never less than minimum width. Padding (3 chars
+          per row plus 1) consumed out of config.max_table_width_em in string output mode.
+        :param config.debug: if True, add id to caption and use colored lines in table,
+          default False.
+        """
         if config and config_path:
             raise ValueError(
                 "Pass either 'config' or 'config_path', not both.")
@@ -400,14 +400,12 @@ class GT(object):
                     if not np.any((is_integer_dtype(self.df.iloc[:, i]),
                                    is_datetime64_any_dtype(self.df.iloc[:, i]))):
                         try:
-                            self.df.iloc[:, i] = self.df.iloc[:,
-                                                              i].astype(float)
+                            self.df.iloc[:, i] = self.df.iloc[: ,i].astype(float)
                             logger.debug(
-                                f'coerce {i}={c} from {old_type} to float')
+                                f'coerced column {i}={c} from {old_type} to float success')
                         except (ValueError, TypeError):
                             logger.debug(
                                 f'coercing {i}={c} from {old_type} to float FAILED')
-
         # massage unbreakable
         if unbreakable is None:
             unbreakable = []
@@ -663,7 +661,7 @@ class GT(object):
         """Year formatter."""
         try:
             return f'{int(x):d}'
-        except ValueError:
+        except (TypeError, ValueError):
             return str(x)
 
     def default_raw_formatter(self, x):
@@ -862,8 +860,9 @@ class GT(object):
     def apply_formatters_work(df, formatters):
         """Apply formatters to a DataFrame."""
         try:
+            # very surprising bug: if df is empty new_df will have type float!!
             new_df = pd.DataFrame({i: map(f, df.iloc[:, i])
-                                   for i, f in enumerate(formatters)})
+                                   for i, f in enumerate(formatters)}, dtype=object)
         except TypeError:
             print('NASTY TYPE ERROR')
             raise
@@ -926,7 +925,11 @@ class GT(object):
             #     and all(self.df_tex == self.df_html)):
             #     self._tex_knowledge_df = self.html_knowledge_df
             # else:
-            self._tex_knowledge_df = self.estimate_column_widths_by_mode('tex')
+            if not self.config.tikz:
+                # just repeat html so you have something
+                self._tex_knowledge_df = self.html_knowledge_df
+            else:
+                self._tex_knowledge_df = self.estimate_column_widths_by_mode('tex')
         return self._tex_knowledge_df
 
     @property
@@ -1040,6 +1043,7 @@ class GT(object):
         minimum_width = {}
         header_natural = {}
         header_minimum = {}
+
         for col_name in df.columns:
             minimum_width[col_name] = (
                 df[col_name].str
@@ -1128,8 +1132,8 @@ class GT(object):
             ans['recommended'] = ans['minimum_width']
             space = target_width - minimum
             logger.warning(
-                'Desired width too small for pleasant formatting, table will be too wide by spare space %s < 0.',
-                space)
+                'Mode %s, desired width too small for pleasant formatting, table will be too wide by spare space %s em < 0.',
+                mode, space)
         logger.info(f'{mode=} {target_width=}, {natural=}, {acceptable=}, {minimum=}, {max_extra=}, {space=}')
 
         # this section tweaks the widths for column headers -> text output only.
@@ -1609,6 +1613,8 @@ class GT(object):
         :param label:
         :return:
         """
+        if not self.config.tikz:
+            return ''
         # pull out arguments (convert to local vars - these used to be arguments)
         column_sep = self.config.tikz_column_sep
         row_sep = self.config.tikz_row_sep
@@ -1792,7 +1798,8 @@ class GT(object):
                 # c = wfloat_format(c)
                 s = f'{nl} {{cell:{ad2[al]}{colw[c]}s}} '
                 nl = '\\&'
-                sio.write(s.format(cell=c + '\\I'))
+                # cols may not be strings...
+                sio.write(s.format(cell=str(c) + '\\I'))
             sio.write('\\& \\\\\n')
 
         # write table entries
