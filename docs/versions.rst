@@ -11,6 +11,14 @@ Versions and Change Log
 .. TODO
     * self.padl and r / 12 in make html width adj s/b elsewhere
 
+5.4
+----
+* Can now pass a namedtuple as df; it is converted to a dataframe. 
+
+5.3
+----
+* Passing a callable to formatters applies that function to **all** columns.
+
 5.2.1
 -----
 * Added ``SmartTitle`` class in utilites - eventually add capitalize option for index?

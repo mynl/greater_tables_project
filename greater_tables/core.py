@@ -7,6 +7,7 @@ to HTML, plain text, or LaTeX output using a validated configuration model.
 This is the main entry point for rendering logic. See `gtconfig.py` for configuration schema.
 """
 
+from collections import namedtuple
 from decimal import InvalidOperation
 from io import StringIO
 from itertools import groupby
@@ -62,6 +63,7 @@ class GT(object):
 
     **Input transformation**
 
+    * ``namedtuple`` converted to ``DataFrame``
     * ``pd.Series`` converted to ``DataFrame``
     * ``list`` converted to  ``DataFrame``, optionally using row 0 as
       ``config.header_row``
@@ -124,7 +126,7 @@ class GT(object):
         **overrides,
     ):
         """
-        Available keyword ``**overrides`:
+        Parameters:
 
         :param df: target DataFrame or list of lists or markdown table string
         :param caption: table caption, optional (GT will look for gt_caption
@@ -133,8 +135,13 @@ class GT(object):
           tables with #tbl:... in the caption it is extracted automatically.
         :param aligners: None or dict (type or colname) -> left | center |
           right
-        :param formatters: None or dict (type or colname) -> format function
-          for the column; formatters trump ratio_cols
+        :param formatters: None or dict (type or colname) or callable ->
+           format function for the column; formatters trump ratio_cols; if
+           callable passed, it is applied to **all columns**.
+        :param tabs: None or list of column widths in characters or a common
+          int or float width. (It is converted into em; one character is about
+          0.5em on average; digits are exactly 0.5em.) If None, will be calculated.
+          Default None.
         :param unbreakable: None or list of columns to be considered unbreakable
         :param ratio_cols: None, or "all" or list of column names treated as
           ratios. Set defaults in derived class suitable to application.
@@ -146,6 +153,9 @@ class GT(object):
         :param raw_cols: None, or "all" or list of column names that are NOT
           cast to floats. Set defaults in derived class suitable to application.
         :param show_index: if True, show the index columns, default True
+
+        Available keyword *overrides:
+
         :param config.default_integer_str: format f-string for integers, default
           value '{x:,d}'
         :param config.default_float_str: format f-string for floats, default
@@ -188,10 +198,6 @@ class GT(object):
           columns to floats
         :param config.header_row: True: use first row as headers; False no headings.
           Default True
-        :param config.tabs: None or list of column widths in characters or a common
-          int or float width. (It is converted into em; one character is about
-          0.5em on average; digits are exactly 0.5em.) If None, will be calculated.
-          Default None.
         :param config.equal: if True, set all column widths config.equal. Default False. Maybe
           ignored, depending on computed ideal column widths.
         :param config.caption_align: for the caption
@@ -224,6 +230,7 @@ class GT(object):
         if config:
             base_config = config
         elif config_path:
+            config_path = Path(config_path)
             try:
                 raw = yaml.safe_load(config_path.read_text(encoding="utf-8"))
                 base_config = Configurator.model_validate(raw)
@@ -266,6 +273,8 @@ class GT(object):
             else:
                 df, aligners, caption, label = MD2DF.md_to_df(df)
                 show_index = False
+        elif GT._is_namedtuple_instance(df):
+            df = GT._ntdf(df)
         else:
             raise ValueError(
                 'df must be a DataFrame, a list of lists, or a markdown table string')
@@ -492,16 +501,20 @@ class GT(object):
 
         self.df_idx_aligners = self.df_aligners[:self.nindex]
 
+        self.default_formatters = {}
         if formatters is None:
-            self.default_formatters = {}
+            pass
+        elif callable(formatters):
+            # apply to all columns
+            for k in self.df.columns:
+                self.default_formatters[k] = formatters
         else:
-            self.default_formatters = {}
             for k, v in formatters.items():
                 if callable(v):
                     self.default_formatters[k] = v
-                elif type(v) == str:
+                elif isinstance(v, str):
                     self.default_formatters[k] = lambda x: v.format(x=x)
-                elif type(v) == int:
+                elif isinstance(v, int):
                     fmt = f'{{x:.{v}f}}'
                     self.default_formatters[k] = lambda x: fmt.format(x=x)
                 else:
@@ -526,7 +539,7 @@ class GT(object):
             self.tabs = None
 
         if self.config.padding_trbl is not None:
-            padding_trbl = self.config_padding_trbl
+            padding_trbl = self.config.padding_trbl
         elif self.config.padding_trbl is None:
             if self.config.spacing == 'tight':
                 padding_trbl = (0, 5, 0, 5)
@@ -1020,12 +1033,16 @@ class GT(object):
         if mode == 'text':
             df = self.df
             len_function = len
+            # no bold in text mode
+            bold_adjustment = 1.0
         elif mode == 'html':
             df = self.df_html
             len_function = TextLength.text_display_len
+            bold_adjustment = 1.1
         else: #  mode == 'tex':
             df = self.df_tex
             len_function = TextLength.text_display_len
+            bold_adjustment = 1.1
 
         n_row, n_col = df.shape
 
@@ -1055,8 +1072,8 @@ class GT(object):
             )
             # ensure is a tuple
             ctuple = col_name if isinstance(col_name, tuple) else (col_name, )
-            header_natural[col_name] = max(map(len_function, ctuple))
-            header_minimum[col_name] = min(len_function(part) for i in ctuple for part in re.split(pat, str(i)))
+            header_natural[col_name] = bold_adjustment * max(map(len_function, ctuple))
+            header_minimum[col_name] = bold_adjustment * min(len_function(part) for i in ctuple for part in re.split(pat, str(i)))
 
         # begin to assemble the parts
         # ans will be the col_width_df; break_penalties needed by all methods
@@ -2028,3 +2045,14 @@ class GT(object):
         display(f.width_report())
         print(f.make_tikz())
         return f
+
+    @staticmethod
+    def _is_namedtuple_instance(x) -> bool:
+        """Heuristic: namedtuple instances are tuples whose class defines _fields."""
+        return isinstance(x, tuple) and isinstance(getattr(type(x), "_fields", None), tuple)
+
+    @staticmethod
+    def _ntdf(t):
+        """Convert named tuple to pandas dataframe to display."""
+        return pd.Series(t, index=pd.Index(t._fields, name="Item")).to_frame('Value')
+
