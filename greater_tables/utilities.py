@@ -13,12 +13,19 @@ from pybtex.textutils import width
 from rich import box
 from rich.table import Table
 
-from . formats import GT_Format, TableFormat, Line, DataRow
+from .formats import GT_Format, TableFormat, Line, DataRow
 
 
-__all__ = ['MD2DF', 'Escaping', 'TextLength',
-           'Sparsify', 'Indexing', 'Width', 'TextOutput',
-           'RichOutput']
+__all__ = [
+    "MD2DF",
+    "Escaping",
+    "TextLength",
+    "Sparsify",
+    "Indexing",
+    "Width",
+    "TextOutput",
+    "RichOutput",
+]
 
 
 logger = logging.getLogger(__name__)
@@ -26,48 +33,50 @@ logger = logging.getLogger(__name__)
 
 class MD2DF:
     """Convert markdown to dataframe."""
+
     @staticmethod
     def md_to_df(txt):
         """Convert markdown text string table to DataFrame."""
         # extract table and optional caption part
         table, caption = MD2DF.parse_markdown_table_and_caption(txt)
-        m = re.search(r'\{#(tbl[:a-zA-Z0-9_-]+)\}', caption)
+        m = re.search(r"\{#(tbl[:a-zA-Z0-9_-]+)\}", caption)
         if m:
             label = m.group(1)
-            if label != '':
+            if label != "":
                 # remove from caption
-                caption = caption.replace(f'{{#{label}}}', '').strip()
+                caption = caption.replace(f"{{#{label}}}", "").strip()
         else:
-            label = ''
+            label = ""
         # print(f'{caption = } and {label = }')
-        if table == '':
-            raise ValueError('Bad markdown table')
+        if table == "":
+            raise ValueError("Bad markdown table")
 
         # remove starting and ending | in each line (optional anyway)
-        txt = re.sub(r'^\||\|$', '', table, flags=re.MULTILINE)
-        txt = txt.split('\n')
+        txt = re.sub(r"^\||\|$", "", table, flags=re.MULTILINE)
+        txt = txt.split("\n")
         # remove starting and ending *'s added by hand - but try to avoid * within headings!
-        txt[0] = '|'.join([re.sub(r'^\*\*?|\*\*?$', '', i.strip())
-                          for i in txt[0].split('|')])
+        txt[0] = "|".join(
+            [re.sub(r"^\*\*?|\*\*?$", "", i.strip()) for i in txt[0].split("|")]
+        )
 
         # remove the alignment row
         alignment_row = txt.pop(1)
         aligners = []
-        for t in alignment_row.split('|'):
-            if t[0] == ':' and t[-1] == ':':
-                aligners.append('c')
-            elif t[0] == ':':
-                aligners.append('l')
-            elif t[-1] == ':':
-                aligners.append('r')
+        for t in alignment_row.split("|"):
+            if t[0] == ":" and t[-1] == ":":
+                aligners.append("c")
+            elif t[0] == ":":
+                aligners.append("l")
+            elif t[-1] == ":":
+                aligners.append("r")
             else:
                 # no alignment info
                 pass
         if len(aligners) == 0:
             aligners = None
         else:
-            aligners = ''.join(aligners)
-        txt = [[j.strip() for j in i.split('|')] for i in txt]
+            aligners = "".join(aligners)
+        txt = [[j.strip() for j in i.split("|")] for i in txt]
         df = pd.DataFrame(txt).T
         df = df.set_index(0)
         df = df.T
@@ -87,7 +96,8 @@ class MD2DF:
         """
         table_match = re.search(r"((?:\|.*\|\s*(?:\n|$))+)", txt, re.DOTALL)
         caption_match = re.search(
-            r"^(?:table)?:\s*(.+)", txt, re.MULTILINE + re.IGNORECASE)
+            r"^(?:table)?:\s*(.+)", txt, re.MULTILINE + re.IGNORECASE
+        )
 
         table_part = table_match.group(1).strip() if table_match else ""
         caption_part = caption_match.group(1) if caption_match else ""
@@ -97,6 +107,7 @@ class MD2DF:
 
 class Escaping:
     """Escape html and tex within tables."""
+
     @staticmethod
     def clean_name(n):
         """
@@ -111,8 +122,12 @@ class Escaping:
         try:
             if type(n) == str:
                 # quote underscores that are not in dollars
-                return '$'.join((i if n % 2 else i.replace('_', '\\_').replace('%', '\\%')
-                                 for n, i in enumerate(n.split('$'))))
+                return "$".join(
+                    (
+                        i if n % 2 else i.replace("_", "\\_").replace("%", "\\%")
+                        for n, i in enumerate(n.split("$"))
+                    )
+                )
             else:
                 # can't contain an underscore!
                 return str(n)
@@ -137,9 +152,9 @@ class Escaping:
 
         Apply after all other HTML rendering steps. HTML rendering only.
         """
-        text = re.sub(r'\$\$(.*?)\$\$', r'\\[\1\\]', text, flags=re.DOTALL)
+        text = re.sub(r"\$\$(.*?)\$\$", r"\\[\1\\]", text, flags=re.DOTALL)
         # Convert inline math: $...$ → \(...\)
-        text = re.sub(r'(?<!\$)\$(.*?)(?<!\\)\$(?!\$)', r'\\(\1\\)', text)
+        text = re.sub(r"(?<!\$)\$(.*?)(?<!\\)\$(?!\$)", r"\\(\1\\)", text)
         return text
 
     @staticmethod
@@ -147,14 +162,17 @@ class Escaping:
         # Pattern to match math environments: $...$, $$...$$, \[...\]
         if not isinstance(text, str):
             return text
-        math_pattern = re.compile(
-            r'(\$\$.*?\$\$|\$.*?\$|\\\[.*?\\\])', re.DOTALL)
+        math_pattern = re.compile(r"(\$\$.*?\$\$|\$.*?\$|\\\[.*?\\\])", re.DOTALL)
 
         # def escape_non_math(s):
         #     return s.replace('\\', r'\\').replace('%', r'\%')
         # because of use within tikz tables
         def escape_non_math(s):
-            return s.replace('\\', r'\textbackslash{}').replace('%', r'\%').replace('_', r'\_')
+            return (
+                s.replace("\\", r"\textbackslash{}")
+                .replace("%", r"\%")
+                .replace("_", r"\_")
+            )
 
         parts = []
         last_end = 0
@@ -165,7 +183,7 @@ class Escaping:
             last_end = end
         parts.append(escape_non_math(text[last_end:]))
 
-        return ''.join(parts)
+        return "".join(parts)
 
     @staticmethod
     def escape_df_tex(df):
@@ -176,14 +194,22 @@ class Escaping:
         def escape_index(idx):
             if isinstance(idx, pd.MultiIndex):
                 return pd.MultiIndex.from_tuples(
-                    [tuple(Escaping.escape_tex_outside_math(x)
-                           for x in tup) for tup in idx],
-                    names=[Escaping.escape_tex_outside_math(
-                        n) if n else n for n in idx.names]
+                    [
+                        tuple(Escaping.escape_tex_outside_math(x) for x in tup)
+                        for tup in idx
+                    ],
+                    names=[
+                        Escaping.escape_tex_outside_math(n) if n else n
+                        for n in idx.names
+                    ],
                 )
             else:
-                return pd.Index([Escaping.escape_tex_outside_math(x) for x in idx],
-                                name=Escaping.escape_tex_outside_math(idx.name) if idx.name else None)
+                return pd.Index(
+                    [Escaping.escape_tex_outside_math(x) for x in idx],
+                    name=Escaping.escape_tex_outside_math(idx.name)
+                    if idx.name
+                    else None,
+                )
 
         df.index = escape_index(df.index)
         df.columns = escape_index(df.columns)
@@ -193,28 +219,135 @@ class Escaping:
 
 class TextLength:
     """Estimate length in em of displayed text."""
+
     # TeX control sequence display widths (heuristic)
     TEX_SIMPLE_GLYPHS = {
-        'alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta', 'eta', 'theta',
-        'iota', 'kappa', 'lambda', 'mu', 'nu', 'xi', 'omicron', 'pi', 'rho',
-        'sigma', 'tau', 'upsilon', 'phi', 'chi', 'psi', 'omega', 'infty',
-        'sum', 'prod', 'int', 'cup', 'cap', 'vee', 'wedge', 'forall', 'exists',
-        'neg', 'leq', 'geq', 'neq', 'approx', 'to', 'leftarrow', 'rightarrow'
+        "alpha",
+        "beta",
+        "gamma",
+        "delta",
+        "epsilon",
+        "zeta",
+        "eta",
+        "theta",
+        "iota",
+        "kappa",
+        "lambda",
+        "mu",
+        "nu",
+        "xi",
+        "omicron",
+        "pi",
+        "rho",
+        "sigma",
+        "tau",
+        "upsilon",
+        "phi",
+        "chi",
+        "psi",
+        "omega",
+        "infty",
+        "sum",
+        "prod",
+        "int",
+        "cup",
+        "cap",
+        "vee",
+        "wedge",
+        "forall",
+        "exists",
+        "neg",
+        "leq",
+        "geq",
+        "neq",
+        "approx",
+        "to",
+        "leftarrow",
+        "rightarrow",
     }
-    TEX_WIDE = {'frac', 'sqrt', 'sum', 'int', 'prod'}
-    TEX_SPACING = {'quad', 'qquad', ',', ';', ' ', '!'}
-    _WIDTH_TABLE = {"a": 0.444, "b": 0.5, "c": 0.444, "d": 0.5, "e": 0.444, "f": 0.333,
-        "g": 0.5, "h": 0.5, "i": 0.278, "j": 0.278, "k": 0.5, "l": 0.278, "m": 0.778,
-        "n": 0.5, "o": 0.5, "p": 0.5, "q": 0.5, "r": 0.333, "s": 0.389, "t": 0.278,
-        "u": 0.5, "v": 0.5, "w": 0.722, "x": 0.5, "y": 0.5, "z": 0.444, "A": 0.722,
-        "B": 0.667, "C": 0.667, "D": 0.722, "E": 0.611, "F": 0.556, "G": 0.722, "H": 0.722,
-        "I": 0.333, "J": 0.389, "K": 0.722, "L": 0.611, "M": 0.889, "N": 0.722, "O": 0.722,
-        "P": 0.556, "Q": 0.722, "R": 0.667, "S": 0.556, "T": 0.611, "U": 0.722, "V": 0.722,
-        "W": 0.944, "X": 0.722, "Y": 0.722, "Z": 0.611, "0": 0.5, "1": 0.5, "2": 0.5,
-        "3": 0.5, "4": 0.5, "5": 0.5, "6": 0.5, "7": 0.5, "8": 0.5, "9": 0.5,
-        ".": 0.25, ",": 0.25, ":": 0.278, ";": 0.278, "(": 0.333, ")": 0.333, "[": 0.333,
-        "]": 0.333, "’": 0.333, '"': 0.444, "!": 0.333, "?": 0.444, " ": 0.25, "|": 0.2,
-        "‘": 0.333, "{": 0.48, "}": 0.48, "-": 0.5, # 0.333,
+    TEX_WIDE = {"frac", "sqrt", "sum", "int", "prod"}
+    TEX_SPACING = {"quad", "qquad", ",", ";", " ", "!"}
+    _WIDTH_TABLE = {
+        "a": 0.444,
+        "b": 0.5,
+        "c": 0.444,
+        "d": 0.5,
+        "e": 0.444,
+        "f": 0.333,
+        "g": 0.5,
+        "h": 0.5,
+        "i": 0.278,
+        "j": 0.278,
+        "k": 0.5,
+        "l": 0.278,
+        "m": 0.778,
+        "n": 0.5,
+        "o": 0.5,
+        "p": 0.5,
+        "q": 0.5,
+        "r": 0.333,
+        "s": 0.389,
+        "t": 0.278,
+        "u": 0.5,
+        "v": 0.5,
+        "w": 0.722,
+        "x": 0.5,
+        "y": 0.5,
+        "z": 0.444,
+        "A": 0.722,
+        "B": 0.667,
+        "C": 0.667,
+        "D": 0.722,
+        "E": 0.611,
+        "F": 0.556,
+        "G": 0.722,
+        "H": 0.722,
+        "I": 0.333,
+        "J": 0.389,
+        "K": 0.722,
+        "L": 0.611,
+        "M": 0.889,
+        "N": 0.722,
+        "O": 0.722,
+        "P": 0.556,
+        "Q": 0.722,
+        "R": 0.667,
+        "S": 0.556,
+        "T": 0.611,
+        "U": 0.722,
+        "V": 0.722,
+        "W": 0.944,
+        "X": 0.722,
+        "Y": 0.722,
+        "Z": 0.611,
+        "0": 0.5,
+        "1": 0.5,
+        "2": 0.5,
+        "3": 0.5,
+        "4": 0.5,
+        "5": 0.5,
+        "6": 0.5,
+        "7": 0.5,
+        "8": 0.5,
+        "9": 0.5,
+        ".": 0.25,
+        ",": 0.25,
+        ":": 0.278,
+        ";": 0.278,
+        "(": 0.333,
+        ")": 0.333,
+        "[": 0.333,
+        "]": 0.333,
+        "’": 0.333,
+        '"': 0.444,
+        "!": 0.333,
+        "?": 0.444,
+        " ": 0.25,
+        "|": 0.2,
+        "‘": 0.333,
+        "{": 0.48,
+        "}": 0.48,
+        "-": 0.5,  # 0.333,
     }
     _DEFAULT_WIDTH = 0.6
 
@@ -230,23 +363,24 @@ class TextLength:
         if not isinstance(s, str):
             # print(f'{s} is {type(s)}!!')
             s = str(s)
+
         def strip_html_tags(text):
-            return re.sub(r'<[^>]*>', '', text)
+            return re.sub(r"<[^>]*>", "", text)
 
         def decode_entities(text):
             return html.unescape(text)
 
-        if '$' not in s and '<' not in s and '&' not in s:
+        if "$" not in s and "<" not in s and "&" not in s:
             return sum(TextLength.approximate_char_width_em(c) for c in s)
 
-        parts = re.split(r'(\$\$.*?\$\$)|(\$.*?\$)', s)
+        parts = re.split(r"(\$\$.*?\$\$)|(\$.*?\$)", s)
         total = 0.0
         for part in parts:
             if part is None:
                 continue
-            if part.startswith('$$') and part.endswith('$$'):
+            if part.startswith("$$") and part.endswith("$$"):
                 total += TextLength.estimate_math_width(part[2:-2])
-            elif part.startswith('$') and part.endswith('$'):
+            elif part.startswith("$") and part.endswith("$"):
                 total += TextLength.estimate_math_width(part[1:-1])
             else:
                 visible = strip_html_tags(part)
@@ -256,10 +390,10 @@ class TextLength:
 
     @staticmethod
     def estimate_math_width(tex: str) -> float:
-        tokens = re.findall(r'\\[a-zA-Z]+|[a-zA-Z0-9]|.', tex)
+        tokens = re.findall(r"\\[a-zA-Z]+|[a-zA-Z0-9]|.", tex)
         width = 0.0
         for tok in tokens:
-            if tok.startswith('\\'):
+            if tok.startswith("\\"):
                 name = tok[1:]
                 if name in TextLength.TEX_SIMPLE_GLYPHS:
                     width += 0.6
@@ -269,9 +403,9 @@ class TextLength:
                     width += 0.4
                 else:
                     width += 1.0  # unknown control sequences
-            elif tok in '{}':
+            elif tok in "{}":
                 continue  # grouping only
-            elif tok in '^_':
+            elif tok in "^_":
                 width += 0.3  # assume sub/superscript takes some space
             else:
                 width += TextLength.approximate_char_width_em(tok)
@@ -321,12 +455,13 @@ class TextLength:
 
 class Sparsify:
     """Sparsify multiindex rows and columns."""
+
     @staticmethod
     def sparsify(df, cs):
         out = df.copy()
         for i, c in enumerate(cs):
-            mask = df[cs[:i + 1]].ne(df[cs[:i + 1]].shift()).any(axis=1)
-            out.loc[~mask, c] = ''
+            mask = df[cs[: i + 1]].ne(df[cs[: i + 1]].shift()).any(axis=1)
+            out.loc[~mask, c] = ""
         return out
 
     @staticmethod
@@ -343,7 +478,7 @@ class Sparsify:
         rules = []
         for k, v in enumerate(new_col[1:]):
             if v == last and not bottom_level:
-                new_col[k + 1] = ''
+                new_col[k + 1] = ""
             else:
                 last = v
                 rules.append(k + 1)
@@ -353,6 +488,7 @@ class Sparsify:
 
 class Indexing:
     """Changed column and level from a multi-index."""
+
     @staticmethod
     def changed_column(bit):
         """Return the column that changes with each row."""
@@ -420,7 +556,7 @@ class Width:
                 True if any word is broken across lines, False otherwise.
             """
             nonlocal num_lines
-            wrapped_lines = wrap(text, width=width)
+            wrapped_lines = wrap(text, width=width) if width else text
             num_lines = len(wrapped_lines)
             original_words = text.split()
 
@@ -443,8 +579,13 @@ class Width:
 
         # First pass: avoid ugly intraword breaks
         # make dict of col -> longest word length
-        min_acceptable = {c: v for c, v in
-                          zip(colnames, map(lambda x: max(len(i) for i in re.split(r'[ \-/]', x)), colnames))}
+        min_acceptable = {
+            c: v
+            for c, v in zip(
+                colnames,
+                map(lambda x: max(len(i) for i in re.split(r"[ \-/]", x)), colnames),
+            )
+        }
         options = []
         for col in colnames:
             if not isinstance(col, str):
@@ -478,21 +619,25 @@ class Width:
             # display(config.debug)
         # make df[col name, amount of extra space for col, resulting number of lines]
         # this is needed as input for the optimal heading function (next)
-        input_df = pd.DataFrame(options, columns=['col', 'extra', 'num_lines'])
+        input_df = pd.DataFrame(options, columns=["col", "extra", "num_lines"])
         # min amount to avoid intra work breaks
-        avoid_intra = input_df.groupby('col').min().extra.sum()
+        avoid_intra = input_df.groupby("col").min().extra.sum()
         if avoid_intra >= space:
             # that's all we can do
-            logger.warning("Insufficient space to avoid ugly wraps -> NO FURTHER IMPROVEMENTS")
+            logger.warning(
+                "Insufficient space to avoid ugly wraps -> NO FURTHER IMPROVEMENTS"
+            )
         else:
             # can try for a better solution
             sol = Width.optimal_heading(input_df, space)
             adjustments.update(sol[1])
-            logger.info('best solution: %s', sol)
+            logger.info("best solution: %s", sol)
         return adjustments
 
     @staticmethod
-    def optimal_heading(input_df: pd.DataFrame, total_es_budget: int) -> tuple[int, dict[str, int]]:
+    def optimal_heading(
+        input_df: pd.DataFrame, total_es_budget: int
+    ) -> tuple[int, dict[str, int]]:
         """
         Optimize extra config.spacing for best heading.
 
@@ -516,19 +661,19 @@ class Width:
 
         """
         # Pre-processing
-        unique_cols = input_df['col'].unique().tolist()
+        unique_cols = input_df["col"].unique().tolist()
 
         col_extra_num_lines_options = {}
         for col_name in unique_cols:
-            col_data = input_df[input_df['col'] ==
-                                col_name].sort_values(by='extra')
+            col_data = input_df[input_df["col"] == col_name].sort_values(by="extra")
             col_extra_num_lines_options[col_name] = list(
-                zip(col_data['extra'], col_data['num_lines']))
+                zip(col_data["extra"], col_data["num_lines"])
+            )
 
         def check(target_max_lines: int) -> bool:
             current_extra_needed = 0
             for col_name in unique_cols:
-                min_extra_for_col = float('inf')
+                min_extra_for_col = float("inf")
                 found_suitable_extra = False
                 for extra_val, num_lines_val in col_extra_num_lines_options[col_name]:
                     if num_lines_val <= target_max_lines:
@@ -543,7 +688,7 @@ class Width:
 
             return current_extra_needed <= total_es_budget
 
-        all_num_lines = input_df['num_lines'].unique()
+        all_num_lines = input_df["num_lines"].unique()
 
         # Corrected line: Check length of the numpy array
         if len(all_num_lines) == 0:
@@ -562,7 +707,7 @@ class Width:
             temp_current_allocation = {}
             possible = True
             for col_name in unique_cols:
-                min_extra_for_col = float('inf')
+                min_extra_for_col = float("inf")
                 found_suitable_extra = False
                 for extra_val, num_lines_val in col_extra_num_lines_options[col_name]:
                     if num_lines_val <= mid_max_lines:
@@ -597,7 +742,7 @@ class TextOutput:
         data_col_aligns: list[str],
         *,
         index_levels: int = 1,
-        fmt: TableFormat = GT_Format
+        fmt: TableFormat = GT_Format,
     ) -> str:
         """
         Render self.df as a wrapped, boxed table.
@@ -622,21 +767,25 @@ class TextOutput:
 
         def _write_line(line: str) -> None:
             """Writes a line to the buffer followed by a newline."""
-            buf.write(line + '\n')
+            buf.write(line + "\n")
 
         def _format_cell(text: str, width: int, align: str) -> list[str]:
             """
             Formats a single cell, wrapping text and applying padding and alignment.
             Returns a list of strings, each representing a line of the cell.
             """
-            lines = wrap(str(text), width=width) or ['']
+            lines = wrap(str(text), width=width) or [""]
             padded_width = width + 2 * fmt.padding
             return [
                 (" " * fmt.padding)
-                + (line.ljust(width) if align == 'left'
-                   else line.center(width) if align == 'center'
-                   else line.rjust(width)) +
-                (" " * fmt.padding)
+                + (
+                    line.ljust(width)
+                    if align == "left"
+                    else line.center(width)
+                    if align == "center"
+                    else line.rjust(width)
+                )
+                + (" " * fmt.padding)
                 for line in lines
             ]
 
@@ -663,41 +812,46 @@ class TextOutput:
                 parts.append(cell)
             return f"{row_fmt.begin}{''.join(parts)}{row_fmt.end}"
 
-        def _render_header_level(wrapped_cells: list[list[str]], level_widths: list[int]) -> list[str]:
+        def _render_header_level(
+            wrapped_cells: list[list[str]], level_widths: list[int]
+        ) -> list[str]:
             """
             Renders a single level of the header, ensuring cells are bottom-aligned.
             Returns a list of strings, each representing a line of the header.
             """
             max_height = max(len(c) for c in wrapped_cells)
             padded_cells = [
-                [' ' * (w + 2 * fmt.padding)] * (max_height - len(cell)) + cell
+                [" " * (w + 2 * fmt.padding)] * (max_height - len(cell)) + cell
                 for cell, w in zip(wrapped_cells, level_widths)
             ]
-            return [_make_data_row(fmt.headerrow, [col[i] for col in padded_cells]) for i in range(max_height)]
+            return [
+                _make_data_row(fmt.headerrow, [col[i] for col in padded_cells])
+                for i in range(max_height)
+            ]
 
         col_levels = df.columns.nlevels
-        col_tuples = df.columns if col_levels > 1 else [
-            (c,) for c in df.columns]
+        col_tuples = df.columns if col_levels > 1 else [(c,) for c in df.columns]
 
         # Step 1: format each level of the column headers (one header line per level)
         # header alignment is left in index and center in body
         index_col_aligns = [
-            'left' if i < index_levels else 'center' for i in range(len(data_col_aligns))]
+            "left" if i < index_levels else "center"
+            for i in range(len(data_col_aligns))
+        ]
         _write_line(_make_horizontal_line(fmt.lineabove, data_col_widths))
         # collect all wrapped + bottom-aligned rows for each level
         for level in range(col_levels):
-            level_texts = [str(t[level] if level < len(t) else '')
-                           for t in col_tuples]
-            wrapped_cells = [_format_cell(txt, w, a) for txt, w, a in zip(
-                level_texts, data_col_widths, index_col_aligns)]
+            level_texts = [str(t[level] if level < len(t) else "") for t in col_tuples]
+            wrapped_cells = [
+                _format_cell(txt, w, a)
+                for txt, w, a in zip(level_texts, data_col_widths, index_col_aligns)
+            ]
             level_rows = _render_header_level(wrapped_cells, data_col_widths)
             for row in level_rows:
                 _write_line(row)
             if level < col_levels - 1:
-                _write_line(_make_horizontal_line(
-                    fmt.linebetweenrows, data_col_widths))
-        _write_line(_make_horizontal_line(
-            fmt.linebelowheader, data_col_widths))
+                _write_line(_make_horizontal_line(fmt.linebetweenrows, data_col_widths))
+        _write_line(_make_horizontal_line(fmt.linebelowheader, data_col_widths))
 
         for row_idx, (_, row) in enumerate(df.iterrows()):
             data_cells = [
@@ -706,19 +860,16 @@ class TextOutput:
             ]
             max_height = max(len(c) for c in data_cells)
             padded = [
-                c + [' ' * (w + 2 * fmt.padding)] * (max_height - len(c))
+                c + [" " * (w + 2 * fmt.padding)] * (max_height - len(c))
                 for c, w in zip(data_cells, data_col_widths)
             ]
             for i in range(max_height):
-                _write_line(_make_data_row(
-                    fmt.datarow, [col[i] for col in padded]))
+                _write_line(_make_data_row(fmt.datarow, [col[i] for col in padded]))
 
             if row_idx < len(df) - 1:
-                _write_line(_make_horizontal_line(
-                    fmt.linebetweenrows, data_col_widths))
+                _write_line(_make_horizontal_line(fmt.linebetweenrows, data_col_widths))
             else:
-                _write_line(_make_horizontal_line(
-                    fmt.linebelow, data_col_widths))
+                _write_line(_make_horizontal_line(fmt.linebelow, data_col_widths))
 
         return buf.getvalue()
 
@@ -751,19 +902,16 @@ class RichOutput:
         colnames = list(df.columns)
 
         if isinstance(column_widths, list):
-            column_widths = {colnames[i]: w for i,
-                             w in enumerate(column_widths)}
+            column_widths = {colnames[i]: w for i, w in enumerate(column_widths)}
 
         if column_alignments is None:
             column_alignments = {}
         elif isinstance(column_alignments, list):
             column_alignments = {
-                colnames[i]: a for i, a in enumerate(column_alignments)}
+                colnames[i]: a for i, a in enumerate(column_alignments)
+            }
 
-        table = Table(title=title,
-                      box=box_style,
-                      show_lines=show_lines,
-                      expand=True)
+        table = Table(title=title, box=box_style, show_lines=show_lines, expand=True)
 
         for i, col in enumerate(colnames):
             is_index = i < num_index_columns
@@ -785,14 +933,33 @@ class RichOutput:
         return table
 
 
-class SmartTitle():
+class SmartTitle:
     """Support reasonable Title case for text."""
-    # TODO: Implement smart titling! 
+
+    # TODO: Implement smart titling!
     @staticmethod
     def smart_title(text):
         """Slightly smart title capitalization (GPT4o)."""
-        small_words = {"a", "an", "and", "as", "at", "but", "by", "for",
-                       "in", "is", "of", "on", "or", "the", "to", "up", "via", "vs"}
+        small_words = {
+            "a",
+            "an",
+            "and",
+            "as",
+            "at",
+            "but",
+            "by",
+            "for",
+            "in",
+            "is",
+            "of",
+            "on",
+            "or",
+            "the",
+            "to",
+            "up",
+            "via",
+            "vs",
+        }
         words = text.split()
         result = []
 

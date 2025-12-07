@@ -84,7 +84,7 @@ class Configurator(BaseModel):
         None, description="Manual padding in the order (top, right, bottom, left)"
     )
     tex_to_html: Optional[Callable[[str], str]] = Field(
-        default=None, description="Function to map non-math TeX to HTML, eg remap \\textbf{...}")
+        default=None, description="Function to map non-math TeX (or markdown) to HTML, e.g., remap \\textbf{...} or to map *italics* to <em>italics</em>.")
 
     font_body: float = Field(
         0.9, description="Font size for body text (in em units)"

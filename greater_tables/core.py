@@ -261,7 +261,7 @@ class GT(object):
             df = pd.DataFrame(df)
             # override this selection come what may
             show_index = False
-            if config.header_row:
+            if self.config.header_row:
                 # Set first row as column names
                 df.columns = df.iloc[0]
                 # Drop first row and reset index
@@ -1148,7 +1148,8 @@ class GT(object):
             # OK severely too small
             ans['recommended'] = ans['minimum_width']
             space = target_width - minimum
-            logger.warning(
+            # hard to shut this up...
+            logger.info(
                 'Mode %s, desired width too small for pleasant formatting, table will be too wide by spare space %s em < 0.',
                 mode, space)
         logger.info(f'{mode=} {target_width=}, {natural=}, {acceptable=}, {minimum=}, {max_extra=}, {space=}')
