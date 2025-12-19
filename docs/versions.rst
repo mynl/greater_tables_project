@@ -11,9 +11,16 @@ Versions and Change Log
 .. TODO
     * self.padl and r / 12 in make html width adj s/b elsewhere
 
+6.0.0
+-----
+
+* Support for pyarrow data types.
+* Added pyarrow option to Fabricator to create pyarrow dataframes. 
+
 5.4.1 and 5.4.1
 ------------------
 * Minor bug fixes; tikz method no works for empty dataframe.
+* Non-integer width bug.
 
 5.4
 ----

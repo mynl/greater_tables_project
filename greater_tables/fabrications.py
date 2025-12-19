@@ -11,7 +11,6 @@ from math import prod
 from pathlib import Path
 from typing import Optional, Union, Literal
 import hashlib
-import random
 import re
 
 import numpy as np
@@ -93,7 +92,7 @@ class Fabricator:
     metric_suffix = ["", "rate", "score", "amount",
                      "index", "ratio", "factor", "value"]
 
-    def __init__(self, decorate=False, seed: Optional[int] = None):
+    def __init__(self, decorate=False, pyarrow: bool = False, seed: Optional[int] = None):
         """
         Fabricate small synthetic pandas DataFrames for testing.
 
@@ -105,6 +104,7 @@ class Fabricator:
         self.seed = int(
             seed if seed is not None else np.random.SeedSequence().entropy)
         self.decorate = decorate
+        self.pyarrow = pyarrow
         # rng
         self.rng = np.random.default_rng(self.seed)
 
@@ -295,6 +295,9 @@ class Fabricator:
         if simplify:
             df = self.drop_singleton_levels(df)
 
+        if self.pyarrow:
+            df = df.convert_dtypes(dtype_backend='pyarrow')
+
         self.cache.appendleft(df)
         return df
 
@@ -366,7 +369,7 @@ class Fabricator:
         if dtype == 'd':
             return random_datetime_series(n, rng=self.rng)
         if dtype == 'y':
-            return pd.Series(random.sample(range(1990, 2031), n))
+            return pd.Series(self.rng.integers(1990, 2031, n))
         if dtype == 't':
             start_dt = datetime.now() - timedelta(days=365 * 2)
             return pd.Series([
@@ -411,7 +414,8 @@ class Fabricator:
     @staticmethod
     def random_date_within_last_n_years(n: int) -> pd.Timestamp:
         today = datetime.today()
-        days = random.randint(0, n * 365)
+        # days = random.randint(0, n * 365)
+        days = self.rng.integers(0, n * 365, endpoint=True)
         return pd.Timestamp(today - timedelta(days=days))
 
     def _insert_missing(self, df: pd.DataFrame, prop: float) -> pd.DataFrame:
@@ -473,10 +477,11 @@ class Fabricator:
         return primes
 
 
-def quick_fab(rows: int = 10, data_spec: str = 's3sfid', **kwargs):
+def quick_fab(rows: int = 10, data_spec: str = 's3sfid', pyarrow=False, **kwargs):
     """One-stop quick fabrication of a random dataframe."""
-    fab = Fabricator()
-    return fab.make(rows, data_spec, **kwargs)
+    fab = Fabricator(pyarrow=pyarrow)
+    df = fab.make(rows, data_spec, **kwargs)
+    return df
 
 
 rand_df = make_df = quick_df = quick_fab
