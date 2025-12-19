@@ -11,6 +11,10 @@ Versions and Change Log
 .. TODO
     * self.padl and r / 12 in make html width adj s/b elsewhere
 
+5.4.1 and 5.4.1
+------------------
+* Minor bug fixes; tikz method no works for empty dataframe.
+
 5.4
 ----
 * Can now pass a namedtuple as df; it is converted to a dataframe. 

@@ -774,6 +774,7 @@ class TextOutput:
             Formats a single cell, wrapping text and applying padding and alignment.
             Returns a list of strings, each representing a line of the cell.
             """
+            width = int(width)
             lines = wrap(str(text), width=width) or [""]
             padded_width = width + 2 * fmt.padding
             return [
@@ -798,7 +799,14 @@ class TextOutput:
                     parts.append(line_fmt.index_sep)
                 elif i > 0:
                     parts.append(line_fmt.sep)
-                parts.append(line_fmt.hline * total)
+                try:
+                    parts.append(line_fmt.hline * int(total))
+                except:
+                    # print('ERROR')
+                    # print(w, fmt.padding)
+                    # print(total, type(total))
+                    # print(line_fmt.hline)
+                    raise
             return f"{line_fmt.begin}{''.join(parts)}{line_fmt.end}"
 
         def _make_data_row(row_fmt: DataRow, line_cells: list[str]) -> str:
@@ -821,7 +829,7 @@ class TextOutput:
             """
             max_height = max(len(c) for c in wrapped_cells)
             padded_cells = [
-                [" " * (w + 2 * fmt.padding)] * (max_height - len(cell)) + cell
+                [" " * int(w + 2 * fmt.padding)] * (max_height - len(cell)) + cell
                 for cell, w in zip(wrapped_cells, level_widths)
             ]
             return [
@@ -860,7 +868,7 @@ class TextOutput:
             ]
             max_height = max(len(c) for c in data_cells)
             padded = [
-                c + [" " * (w + 2 * fmt.padding)] * (max_height - len(c))
+                c + [" " * int(w + 2 * fmt.padding)] * (max_height - len(c))
                 for c, w in zip(data_cells, data_col_widths)
             ]
             for i in range(max_height):

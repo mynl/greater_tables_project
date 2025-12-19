@@ -281,7 +281,8 @@ class GT(object):
 
         if len(df) > self.config.large_warning and not self.config.large_ok:
             raise ValueError(
-                'Large dataframe (>50 rows) and config.large_ok not set to true...do you know what you are doing?')
+                f'Large dataframe (>{self.config.large_warning} rows) and config.large_ok not set to true. '
+                'Set large_ok=True or increase value of large_warning.')
 
         if not df.columns.is_unique:
             raise ValueError('df column names are not unique')
@@ -1707,7 +1708,7 @@ class GT(object):
         matrix_name = self.df_id
 
         # column and tikz display widths
-        colw = self.tex_knowledge_df['tikz_colw'].map(lambda x: np.round(x, 3))
+        colw = self.tex_knowledge_df['tikz_colw'].fillna(0).round(3)
         tabs = self.tex_knowledge_df['recommended'].map(lambda x: np.round(x, 3))
         # these are indexed with pre-TeX mangling names
         # colw.index = df.columns
