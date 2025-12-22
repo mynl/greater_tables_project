@@ -47,6 +47,9 @@ from . utilities import *
 pd.set_option('future.no_silent_downcasting', True)
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
+# for debugging  Turn RuntimeWarning into an exception
+warnings.simplefilter('error', RuntimeWarning)
+
 logger = logging.getLogger(__name__)
 
 
@@ -157,7 +160,8 @@ class GT(object):
         with warnings.catch_warnings():
             if self.show_index:
                 warnings.simplefilter("ignore", category=pd.errors.PerformanceWarning)
-                self.df = self.df.reset_index(drop=False, col_level=self.df.columns.nlevels - 1)
+                self.df = self.df.reset_index(drop=False, col_level=self.df.columns.nlevels - 1,
+                                              allow_duplicates=True)
             # Ensure index is essentially a row number for internal tracking
             self.df.index = np.arange(self.df.shape[0], dtype=int)
 
@@ -510,7 +514,8 @@ class GT(object):
                     continue
 
                 # 3. Type-Based Dispatch (The "PyArrow" logic)
-                dtype = self.df[col_name].dtype
+                # may be duplicate columns
+                dtype = self.df.iloc[:, i].dtype
 
                 # Date/Time
                 if (i in self.date_col_indices) or is_datetime64_any_dtype(dtype):
@@ -814,9 +819,17 @@ class GT(object):
                 if not isinstance(c, tuple): c = (c,)
                 c = [str(i) for i in c]
                 tikz_headw[c0] = max(map(len, c))
-                tikz_colw[c0] = df.iloc[:, i].map(lambda x: len(str(x))).max()
+                max_len = df.iloc[:, i].map(lambda x: 0 if pd.isna(x) else len(str(x))).max()
+                tikz_colw[c0] = 0 if pd.isna(max_len) else max_len
             for c in df.columns:
-                tikz_colw[c] = max(tikz_colw[c], tikz_headw[c])
+                current_col_w = tikz_colw[c]
+                current_head_w = tikz_headw[c]
+
+                # Robust max that handles remaining edge cases
+                tikz_colw[c] = max(
+                    0 if pd.isna(current_col_w) else current_col_w,
+                    0 if pd.isna(current_head_w) else current_head_w
+                )
             ans['tikz_colw'] = tikz_colw
             ans['tikz_colw'] += 2
 
@@ -827,7 +840,7 @@ class GT(object):
             'proto_recommended', 'recommended', 'tikz_colw',
             ]
         ans = ans[[i for i in return_columns if i in ans.columns]]
-        ans['recommended'] = np.maximum(ans['recommended'], 1)
+        ans['recommended'] = np.maximum(ans['recommended'].fillna(0), 1)
         return ans
 
     def make_style(self, tabs):
@@ -1079,7 +1092,8 @@ class GT(object):
         """
         Write DataFrame to custom tikz matrix.
         """
-        if not self.config.tikz:
+        if not self.config.tikz or not self.df_tex.columns.is_unique:
+            # tikz requires unique columns
             return ''
         column_sep = self.config.tikz_column_sep
         row_sep = self.config.tikz_row_sep
