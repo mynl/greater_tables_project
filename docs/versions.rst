@@ -11,6 +11,12 @@ Versions and Change Log
 .. TODO
     * self.padl and r / 12 in make html width adj s/b elsewhere
 
+
+6.0.1
+-----
+* Fixed bug with multi-indexing by moving coversion to pyarrow
+* Fixed bugs with TeX output where c is not a str.
+
 6.0.0
 -----
 

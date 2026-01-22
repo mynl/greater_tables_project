@@ -329,6 +329,13 @@ class GT(object):
         if self.config.sparsify and self.nindex > 1:
             self.df = Sparsify.sparsify(self.df, self.df.columns[:self.nindex])
 
+        # OPTIMIZATION: Convert to PyArrow strings now that sparsification is done.
+        try:
+            self.df = self.df.astype("string[pyarrow]")
+        except ImportError:
+            print('PyArrow import error, ignoring and continuing.')
+            pass
+
         # LaTeX / HTML mapping
         if self.config.tex_to_html is not None:
             self.df_html = self.df.map(self.config.tex_to_html)
@@ -557,13 +564,19 @@ class GT(object):
 
         new_df.columns = df.columns
 
-        # OPTIMIZATION: Convert to PyArrow strings immediately.
-        # This enables vectorized width calculations later.
-        try:
-            return new_df.astype("string[pyarrow]")
-        except ImportError:
-            # Fallback if pyarrow not installed (unlikely given context)
-            return new_df.astype(str)
+        # # OPTIMIZATION: Convert to PyArrow strings immediately.
+        # # This enables vectorized width calculations later.
+        # try:
+        #     return new_df.astype("string[pyarrow]")
+        # except ImportError:
+        #     # Fallback if pyarrow not installed (unlikely given context)
+        #     return new_df.astype(str)
+
+        # Fix [2026-01-22]: Return object dtype initially.
+        # Converting to PyArrow here breaks Sparsify.sparsify() which relies on
+        # standard object semantics (string vs NaN comparisons) for the first row.
+        # We will cast to PyArrow in __init__ after sparsification is complete.
+        return new_df
 
     def apply_formatters(self, df, mode='adjusted'):
         """
@@ -858,6 +871,14 @@ class GT(object):
 
         style = [f'''
 <style>
+    /* Gemini 3 thinks this will center */
+    .greater-table {{
+        display: flex;
+        justify-content: center;
+        width: 100%;
+        overflow-x: auto;
+    }}
+    /* --- end --- */
     #{self.df_id} {{
     border-collapse: collapse;
     font-family: "Roboto", "Open Sans Condensed", "Arial", 'Segoe UI', sans-serif;
@@ -1125,8 +1146,8 @@ class GT(object):
 
         header = """
 \\begin{{{container_env}}}{latex}
+\\centering
 {caption}
-% \\centering{{
 \\begin{{tikzpicture}}[
     auto,
     transform shape,
@@ -1140,9 +1161,7 @@ class GT(object):
 """
         footer = """
 {post_process}
-
 \\end{{tikzpicture}}
-% }}   % close centering
 \\end{{{container_env}}}
 """
 
@@ -1239,7 +1258,7 @@ class GT(object):
                 for cn, c, al in zip(df.columns, sparse_columns[lvl], align):
                     s = f'{nl} {{cell:{ad2[al]}{colw[cn]}s}} '
                     nl = '\\&'
-                    sio.write(s.format(cell=c + '\\I'))
+                    sio.write(s.format(cell=str(c) + '\\I'))
                 sio.write('\\& \\\\\n')
         else:
             nl = ''

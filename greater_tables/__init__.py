@@ -1,6 +1,6 @@
 __project__ = 'greater_tables'
 __author__ = 'Stephen J Mildenhall'
-__version__ = '6.0.0'
+__version__ = '6.0.1'
 
 from . core import GT
 from . fabrications import * 
