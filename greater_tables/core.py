@@ -65,6 +65,16 @@ class GT(object):
     coerce inputs to floats. It respects int64[pyarrow] and string[pyarrow]
     types natively, handling nulls via validity masks rather than NaN-casting.
     """
+    w2tikz = {
+        0: None,
+        0.25: 'ultra thin',
+        0.5: 'very thin',
+        0.75: 'thin',
+        1: 'semithick',
+        1.5: 'thick',
+        2: 'very thick',
+        3: 'ultra thick',
+        }
 
     def __init__(
         self,
@@ -1109,6 +1119,544 @@ class GT(object):
             logger.info('CREATED COMBINED HTML and STYLE')
         return self._clean_html
 
+    def make_tikz_no_hlines(self):
+        """
+        Write DataFrame to custom tikz matrix.
+        """
+        if not self.config.tikz or not self.df_tex.columns.is_unique:
+            return ''
+
+        column_sep = self.config.tikz_column_sep
+        row_sep = self.config.tikz_row_sep
+        container_env = self.config.tikz_container_env
+        hrule = self.config.tikz_hrule
+        vrule = self.config.tikz_vrule
+        post_process = self.config.tikz_post_process
+        latex = self.config.tikz_latex
+
+        df = self.df_tex.copy()
+        caption = self.caption
+        label = self.label
+
+        if label == '':
+            lt = ''
+            label = ''
+        else:
+            lt = label
+            label = f'\\label{{{label}}}'
+
+        if caption == '':
+            if lt != '':
+                logger.info(f'Label {label} ignored due to missing caption.')
+            caption = '% caption placeholder'
+        else:
+            caption = f'\\caption{{{self.caption}}}\n{label}'
+
+        if not df.columns.is_unique:
+            raise ValueError('tikz routine requires unique column names')
+
+        # [Fix] Added \def\gp for the phantom strut (Ascender/Descender Phantom)
+        # This forces every cell to be at least as tall/deep as "Ag", fixing row jitter.
+        header = """
+\\begin{{{container_env}}}{latex}
+\\centering
+{caption}
+\\def\\gp{{\\vphantom{{Ag}}}}
+\\begin{{tikzpicture}}[
+    auto,
+    transform shape,
+    nosep/.style={{inner sep=0}},
+    table/.style={{
+        matrix of nodes,
+        row sep={row_sep}em,
+        column sep={column_sep}em,
+        nodes in empty cells,
+        nodes={{rectangle, scale={scale}, text badly ragged {debug}}},
+"""
+        footer = """
+{post_process}
+
+\\end{{tikzpicture}}
+\\end{{{container_env}}}
+"""
+
+        nc_index = self.nindex
+        nr_columns = self.ncolumns
+
+        if vrule is None:
+            vrule = set()
+        else:
+            vrule = set(vrule)
+        vrule.add(nc_index + 1)
+
+        matrix_name = self.df_id
+        colw = self.tex_knowledge_df['tikz_colw'].fillna(0).round(3)
+        tabs = self.tex_knowledge_df['recommended'].map(lambda x: np.round(x, 3))
+
+        ad = {'l': 'left', 'r': 'right', 'c': 'center'}
+        ad2 = {'l': '<', 'r': '>', 'c': '^'}
+
+        align = []
+        for n, i in zip(df.columns, self.df_aligners):
+            align.append(ad.get(i[4:], 'left'))
+
+        sio = StringIO()
+        latex = f'[{latex}]' if latex else ''
+        debug = ', draw=blue!10' if self.config.debug else ''
+
+        sio.write(header.format(container_env=container_env,
+                                caption=caption,
+                                scale=self.config.tikz_scale,
+                                column_sep=column_sep,
+                                row_sep=row_sep,
+                                latex=latex,
+                                debug=debug))
+
+        # --- ROW STYLES ---
+        # Spacer row (1)
+        i = 1
+        sio.write(f'\trow {i}/.style={{nodes={{text=black, anchor=north, inner ysep=0, text height=0, text depth=0}}}},\n')
+
+        # Header rows (2 to nr_columns + 1)
+        for i in range(2, nr_columns + 2):
+            sio.write(f'\trow {i}/.style={{nodes={{text=black, anchor=south, inner ysep=.2em, minimum height=1.3em, font=\\bfseries, align=center}}}},\n')
+
+        # Index header overrides
+        for i in range(2, nr_columns + 2):
+            for j in range(1, 1+nc_index):
+                sio.write(f'\trow {i} column {j}/.style={{nodes={{font=\\bfseries\\itshape, align=left}}}},\n')
+
+        # --- COLUMN STYLES ---
+        # Removed rigid text height/depth; \gp handles it now.
+        for i, w, al in zip(range(1, len(align) + 1), tabs, align):
+            sio.write(f'\tcolumn {i:>2d}/.style={{'
+                      f'nodes={{align={al:<6s}}}, '
+                      f'nosep, text width={max(2, w):.2f}em}},\n')
+
+        # Dummy last column
+        sio.write(f'\tcolumn {i+1:>2d}/.style={{text height=0.9em, text depth=0.2em, nosep, text width=0em}}\n')
+        sio.write('\t}]\n')
+
+        sio.write("\\matrix ({matrix_name}) [table, ampersand replacement=\\&]{{\n".format(
+            matrix_name=matrix_name))
+
+        # --- WRITE CONTENT ---
+        # Note: We append \gp to every single cell to ensure consistent height/depth.
+
+        # Headers
+        nl = ''
+        for cn, al in zip(df.columns, align):
+            s = f'{nl} {{cell:{ad2[al[0]]}{colw[cn]}s}} '
+            nl = '\\&'
+            sio.write(s.format(cell=' ' + '\\gp'))
+        sio.write('\\& \\\\\n')
+
+        mi_vrules = {}
+        sparse_columns = {}
+        if isinstance(df.columns, pd.MultiIndex):
+            for lvl in range(len(df.columns.levels)):
+                nl = ''
+                sparse_columns[lvl], mi_vrules[lvl] = Sparsify.sparsify_mi(df.columns.get_level_values(lvl),
+                                                                     lvl == len(df.columns.levels) - 1)
+                for cn, c, al in zip(df.columns, sparse_columns[lvl], align):
+                    s = f'{nl} {{cell:{ad2[al[0]]}{colw[cn]}s}} '
+                    nl = '\\&'
+                    sio.write(s.format(cell=str(c) + '\\I\\gp'))
+                sio.write('\\& \\\\\n')
+        else:
+            nl = ''
+            for c, al in zip(df.columns, align):
+                s = f'{nl} {{cell:{ad2[al[0]]}{colw[c]}s}} '
+                nl = '\\&'
+                sio.write(s.format(cell=str(c) + '\\I\\gp'))
+            sio.write('\\& \\\\\n')
+
+        # Body Rows
+        for idx, row in df.iterrows():
+            nl = ''
+            for c, cell, al in zip(df.columns, row, align):
+                s = f'{nl} {{cell:{ad2[al[0]]}{colw[c]}s}} '
+                nl = '\\&'
+                sio.write(s.format(cell=str(cell) + '\\gp'))
+            sio.write('\\& \\\\\n')
+        sio.write(f'}};\n\n')
+
+        # --- DRAW LINES ---
+
+        nr, nc = df.shape
+        nr += nr_columns + 1
+
+        def get_linewidth(width_idx, is_vertical=False):
+            widths = self.config.vrule_widths if is_vertical else self.config.hrule_widths
+            if not isinstance(width_idx, int) or width_idx < 0 or width_idx >= len(widths):
+                return 'very thin'
+            w = widths[width_idx]
+            if w == 0: return None
+            if w >= 2: return 'thick'
+            if w >= 1: return 'semithick'
+            return 'very thin'
+
+        yshift = row_sep / 2
+        xshift = -column_sep / 2
+        gap_shift = column_sep / 2
+
+        # 1. Top Frame
+        sio.write(f'\\path[draw, thick] ({matrix_name}-1-1.north west) -- ({matrix_name}-1-{nc+1}.north east);\n')
+
+        # 2. Horizontal Grouping Rules (using index_change_level)
+        tikz_data_start = 1 + nr_columns + 1
+        index_name_to_level = dict(zip(self.raw_df.index.names, range(self.nindex)))
+
+        if self.show_index:
+            for r_idx, level_name in self.index_change_level.items():
+                level_idx = index_name_to_level.get(level_name, 0)
+                start_col = level_idx + 1 # Lines start where the level changes
+
+                style = get_linewidth(level_idx, is_vertical=False)
+                if style:
+                    tikz_row = tikz_data_start + r_idx
+                    ref_node = f"{matrix_name}-{tikz_row}-{nc+1}"
+                    start_node = f"{matrix_name}-{tikz_row}-{start_col}"
+                    end_node = f"{matrix_name}-{tikz_row}-{nc+1}"
+                    sio.write(f'\\path[draw, {style}] '
+                              f'([yshift={yshift}em]{ref_node}.north -| {start_node}.west) -- '
+                              f'([yshift={yshift}em]{ref_node}.north -| {end_node}.east);\n')
+
+        # 3. Bottom Frame
+        sio.write(f'\\path[draw, thick] ([yshift={-yshift}em]{matrix_name}-1-1.south west |- {matrix_name}.south) -- '
+                  f'([yshift={-yshift}em]{matrix_name}-1-{nc+1}.south east |- {matrix_name}.south);\n')
+
+        # 4. Vertical Rules
+
+        # A. Main Index Divider (Separates Index from Data)
+        # This acts as the "left-most" line for the data block.
+        if self.show_index and self.nindex > 0:
+            idx_col = self.nindex
+            sio.write(f'\\path[draw, thick] ([xshift={gap_shift}em]{matrix_name}-1-{idx_col}.south east) -- '
+                      f'([xshift={gap_shift}em]{matrix_name}-1-{idx_col}.south east |- {matrix_name}.south);\n')
+
+        # B. Data Column Dividers (Ported from make_html logic)
+        # We iterate through the data columns (j=1 to ncols-1).
+        # j=0 is the left edge of the first data col, handled by Main Index Divider above.
+        if self.ncols > 1:
+            for j in range(1, self.ncols):
+                # Check hierarchy level between col j-1 and j
+                level = self.column_change_level[j]
+                style = get_linewidth(level, is_vertical=True)
+
+                if style:
+                    # Map data column j to TikZ column cn
+                    # TikZ Col = Index Cols (nindex) + Data Col (j+1)
+                    cn = self.nindex + j + 1
+
+                    # Draw line to the LEFT of this column
+                    sio.write(f'\\path[draw, {style}] ([xshift={xshift}em]{matrix_name}-1-{cn}.south west) -- '
+                              f'([xshift={xshift}em]{matrix_name}-1-{cn}.south west |- {matrix_name}.south);\n')
+
+        # C. Header Vertical Rules (mi_vrules)
+        written = set(range(1, nc_index + 1))
+        if len(mi_vrules) > 0:
+            ls = 'ultra thin'
+            for k, cols in mi_vrules.items():
+                if k == len(mi_vrules) - 1: break
+                for cn in cols:
+                    if cn in written: continue
+
+                    # [Fix] Logic to cut out cols < self.nindex
+                    # cn is 0-based index of Data Columns.
+                    # We map it to TikZ: cn_tikz = cn + self.nindex + 1
+                    # If cn=0 (first data col), the line is at LEFT of it.
+                    # But mi_vrules typically draws to the RIGHT of cn.
+
+                    # If cn=0, it draws right of 1st data col. That is fine.
+                    # No lines will be drawn inside the index because 'cols' iterates data columns only.
+
+                    written.add(cn)
+                    top = k + 1
+
+                    # Map to TikZ column
+                    cn_tikz = cn + self.nindex + 1
+                    start_anchor = f"{matrix_name}-{top}-{cn_tikz}.south east"
+
+                    if top == 0:
+                         sio.write(f'\\path[draw, {ls}] ([xshift={gap_shift}em]{start_anchor}) -- '
+                                  f'([xshift={gap_shift}em, yshift={-yshift}em]{start_anchor} |- {matrix_name}.south);\n')
+                    else:
+                        sio.write(f'\\path[draw, {ls}] ([xshift={gap_shift}em, yshift={-yshift}em]{start_anchor}) -- '
+                                  f'([xshift={gap_shift}em, yshift={-yshift}em]{start_anchor} |- {matrix_name}.south);\n')
+
+        sio.write(footer.format(container_env=container_env, post_process=post_process))
+        return sio.getvalue()
+
+    def make_tikz_dm_wrong_index_vrules(self):
+        """
+        Write DataFrame to custom tikz matrix.
+        """
+        if not self.config.tikz or not self.df_tex.columns.is_unique:
+            return ''
+
+        column_sep = self.config.tikz_column_sep
+        row_sep = self.config.tikz_row_sep
+        container_env = self.config.tikz_container_env
+        hrule = self.config.tikz_hrule
+        vrule = self.config.tikz_vrule
+        post_process = self.config.tikz_post_process
+        latex = self.config.tikz_latex
+
+        df = self.df_tex.copy()
+        caption = self.caption
+        label = self.label
+
+        if label == '':
+            lt = ''
+            label = ''
+        else:
+            lt = label
+            label = f'\\label{{{label}}}'
+
+        if caption == '':
+            if lt != '':
+                logger.info(f'Label {label} ignored due to missing caption.')
+            caption = '% caption placeholder'
+        else:
+            caption = f'\\caption{{{self.caption}}}\n{label}'
+
+        if not df.columns.is_unique:
+            raise ValueError('tikz routine requires unique column names')
+
+        # [Fix] Added \def\gp for the phantom strut
+        header = """
+\\begin{{{container_env}}}{latex}
+\\centering
+{caption}
+\\def\\gp{{\\vphantom{{Ag}}}}
+\\begin{{tikzpicture}}[
+    auto,
+    transform shape,
+    nosep/.style={{inner sep=0}},
+    table/.style={{
+        matrix of nodes,
+        row sep={row_sep}em,
+        column sep={column_sep}em,
+        nodes in empty cells,
+        nodes={{rectangle, scale={scale}, text badly ragged {debug}}},
+"""
+        footer = """
+{post_process}
+
+\\end{{tikzpicture}}
+\\end{{{container_env}}}
+"""
+
+        nc_index = self.nindex
+        nr_columns = self.ncolumns
+
+        if vrule is None:
+            vrule = set()
+        else:
+            vrule = set(vrule)
+        vrule.add(nc_index + 1)
+
+        matrix_name = self.df_id
+        colw = self.tex_knowledge_df['tikz_colw'].fillna(0).round(3)
+        tabs = self.tex_knowledge_df['recommended'].map(lambda x: np.round(x, 3))
+
+        ad = {'l': 'left', 'r': 'right', 'c': 'center'}
+        ad2 = {'l': '<', 'r': '>', 'c': '^'}
+
+        align = []
+        for n, i in zip(df.columns, self.df_aligners):
+            align.append(ad.get(i[4], 'left')) # extract 'left' from 'grt-left'
+
+        sio = StringIO()
+        latex = f'[{latex}]' if latex else ''
+        debug = ', draw=blue!10' if self.config.debug else ''
+
+        sio.write(header.format(container_env=container_env,
+                                caption=caption,
+                                scale=self.config.tikz_scale,
+                                column_sep=column_sep,
+                                row_sep=row_sep,
+                                latex=latex,
+                                debug=debug))
+
+        # --- ROW STYLES ---
+        # Spacer row (1)
+        i = 1
+        sio.write(f'\trow {i}/.style={{nodes={{text=black, anchor=north, inner ysep=0, text height=0, text depth=0}}}},\n')
+
+        # Header rows (2 to nr_columns + 1)
+        for i in range(2, nr_columns + 2):
+            sio.write(f'\trow {i}/.style={{nodes={{text=black, anchor=south, inner ysep=.2em, minimum height=1.3em, font=\\bfseries, align=center}}}},\n')
+
+        # Index header overrides
+        for i in range(2, nr_columns + 2):
+            for j in range(1, 1+nc_index):
+                sio.write(f'\trow {i} column {j}/.style={{nodes={{font=\\bfseries\\itshape, align=left}}}},\n')
+
+        # --- COLUMN STYLES ---
+        # [Fix] Removed rigid "text height/depth" to let \gp handle consistency + expansion
+        for i, w, al in zip(range(1, len(align) + 1), tabs, align):
+            sio.write(f'\tcolumn {i:>2d}/.style={{'
+                      f'nodes={{align={al:<6s}}}, '
+                      f'nosep, text width={max(2, w):.2f}em}},\n')
+
+        # Dummy last column
+        sio.write(f'\tcolumn {i+1:>2d}/.style={{text height=0.9em, text depth=0.2em, nosep, text width=0em}}\n')
+        sio.write('\t}]\n')
+
+        sio.write("\\matrix ({matrix_name}) [table, ampersand replacement=\\&]{{\n".format(
+            matrix_name=matrix_name))
+
+        # --- WRITE CONTENT ---
+
+        # Headers
+        nl = ''
+        for cn, al in zip(df.columns, align):
+            # Header cells also get the phantom for safety
+            s = f'{nl} {{cell:{ad2[al[0]]}{colw[cn]}s}} '
+            nl = '\\&'
+            sio.write(s.format(cell=' ' + '\\gp'))
+        sio.write('\\& \\\\\n')
+
+        mi_vrules = {}
+        sparse_columns = {}
+        if isinstance(df.columns, pd.MultiIndex):
+            for lvl in range(len(df.columns.levels)):
+                nl = ''
+                sparse_columns[lvl], mi_vrules[lvl] = Sparsify.sparsify_mi(df.columns.get_level_values(lvl),
+                                                                     lvl == len(df.columns.levels) - 1)
+                for cn, c, al in zip(df.columns, sparse_columns[lvl], align):
+                    s = f'{nl} {{cell:{ad2[al[0]]}{colw[cn]}s}} '
+                    nl = '\\&'
+                    sio.write(s.format(cell=str(c) + '\\I\\gp')) # Append \gp
+                sio.write('\\& \\\\\n')
+        else:
+            nl = ''
+            for c, al in zip(df.columns, align):
+                s = f'{nl} {{cell:{ad2[al[0]]}{colw[c]}s}} '
+                nl = '\\&'
+                sio.write(s.format(cell=str(c) + '\\I\\gp')) # Append \gp
+            sio.write('\\& \\\\\n')
+
+        # Body Rows
+        for idx, row in df.iterrows():
+            nl = ''
+            for c, cell, al in zip(df.columns, row, align):
+                s = f'{nl} {{cell:{ad2[al[0]]}{colw[c]}s}} '
+                nl = '\\&'
+                # [Fix] Inject \gp (phantom) into every cell
+                sio.write(s.format(cell=str(cell) + '\\gp'))
+            sio.write('\\& \\\\\n')
+        sio.write(f'}};\n\n')
+
+        # --- DRAW LINES (The Logic Block) ---
+
+        nr, nc = df.shape
+        nr += nr_columns + 1 # Adjust for headers + spacer
+
+        # Helper for line styles
+        def get_linewidth(width_idx, is_vertical=False):
+            widths = self.config.vrule_widths if is_vertical else self.config.hrule_widths
+            if not isinstance(width_idx, int) or width_idx < 0 or width_idx >= len(widths):
+                return 'very thin'
+            w = widths[width_idx]
+            if w == 0: return None
+            if w >= 2: return 'thick'
+            if w >= 1: return 'semithick'
+            return 'very thin'
+
+        yshift = row_sep / 2
+        xshift = -column_sep / 2
+        gap_shift = column_sep / 2
+
+        # 1. Top Frame (Above Row 1 spacer)
+        sio.write(f'\\path[draw, thick] ({matrix_name}-1-1.north west) -- ({matrix_name}-1-{nc+1}.north east);\n')
+
+        # 2. Horizontal Grouping Rules
+        tikz_data_start = 1 + nr_columns + 1
+        index_name_to_level = dict(zip(self.raw_df.index.names, range(self.nindex)))
+
+        if self.show_index:
+            for r_idx, level_name in self.index_change_level.items():
+                level_idx = index_name_to_level.get(level_name, 0)
+                start_col = level_idx + 1
+
+                style = get_linewidth(level_idx, is_vertical=False)
+                if style:
+                    tikz_row = tikz_data_start + r_idx
+                    # Robust anchoring: Y from stable last col, X from dynamic start col
+                    ref_node = f"{matrix_name}-{tikz_row}-{nc+1}"
+                    start_node = f"{matrix_name}-{tikz_row}-{start_col}"
+                    end_node = f"{matrix_name}-{tikz_row}-{nc+1}"
+
+                    sio.write(f'\\path[draw, {style}] '
+                              f'([yshift={yshift}em]{ref_node}.north -| {start_node}.west) -- '
+                              f'([yshift={yshift}em]{ref_node}.north -| {end_node}.east);\n')
+
+        # 3. Bottom Frame
+        sio.write(f'\\path[draw, thick] ([yshift={-yshift}em]{matrix_name}-1-1.south west |- {matrix_name}.south) -- '
+                  f'([yshift={-yshift}em]{matrix_name}-1-{nc+1}.south east |- {matrix_name}.south);\n')
+
+        # 4. Vertical Rules
+
+        # A. Main Index Divider
+        if self.show_index and self.nindex > 0:
+            idx_col = self.nindex
+            sio.write(f'\\path[draw, thick] ([xshift={gap_shift}em]{matrix_name}-1-{idx_col}.south east) -- '
+                      f'([xshift={gap_shift}em]{matrix_name}-1-{idx_col}.south east |- {matrix_name}.south);\n')
+
+        # B. Internal Index Dividers (Index Hierarchy)
+        if self.show_index and self.nindex > 1:
+            for i in range(self.nindex - 1):
+                style = get_linewidth(i+1, is_vertical=True)
+                if style:
+                    col = i + 1
+                    sio.write(f'\\path[draw, {style}] ([xshift={xshift}em]{matrix_name}-1-{col}.south east) -- '
+                              f'([xshift={xshift}em]{matrix_name}-1-{col}.south east |- {matrix_name}.south);\n')
+
+        # C. Data Column Dividers (Ported from make_html logic)
+        # We iterate over data columns j=1 to ncols-1 (skipping j=0 which is the index border)
+        if self.ncols > 1:
+            for j in range(1, self.ncols):
+                # column_change_level[j] tells us the relationship between col j-1 and j
+                # If level is low (0 or 1), we draw a line.
+                level = self.column_change_level[j]
+                style = get_linewidth(level, is_vertical=True)
+
+                if style:
+                    # Map data column j to TikZ column cn
+                    # TikZ cols = [Index Cols] + [Data Cols] + [Dummy]
+                    cn = self.nindex + j + 1 # +1 for 1-based indexing
+
+                    # Draw line to the LEFT of column cn (standard TikZ boundary)
+                    sio.write(f'\\path[draw, {style}] ([xshift={xshift}em]{matrix_name}-1-{cn}.south west) -- '
+                              f'([xshift={xshift}em]{matrix_name}-1-{cn}.south west |- {matrix_name}.south);\n')
+
+        # D. Header Vertical Rules (mi_vrules)
+        written = set(range(1, nc_index + 1))
+        if len(mi_vrules) > 0:
+            ls = 'ultra thin'
+            for k, cols in mi_vrules.items():
+                if k == len(mi_vrules) - 1: break
+                for cn in cols:
+                    if cn in written: continue
+                    if cn <= 1: continue # Skip far left
+
+                    written.add(cn)
+                    top = k + 1
+                    start_anchor = f"{matrix_name}-{top}-{cn}.south east"
+
+                    if top == 0:
+                         sio.write(f'\\path[draw, {ls}] ([xshift={gap_shift}em]{start_anchor}) -- '
+                                  f'([xshift={gap_shift}em, yshift={-yshift}em]{start_anchor} |- {matrix_name}.south);\n')
+                    else:
+                        sio.write(f'\\path[draw, {ls}] ([xshift={gap_shift}em, yshift={-yshift}em]{start_anchor}) -- '
+                                  f'([xshift={gap_shift}em, yshift={-yshift}em]{start_anchor} |- {matrix_name}.south);\n')
+
+        sio.write(footer.format(container_env=container_env, post_process=post_process))
+        return sio.getvalue()
+
     def make_tikz(self):
         """
         Write DataFrame to custom tikz matrix.
@@ -1228,7 +1776,7 @@ class GT(object):
             if i == 1:
                 sio.write(f'\tcolumn {i:>2d}/.style={{'
                           f'nodes={{align={ad[al]:<6s}}}, '
-                          'text height=0.9em, text depth=0.2em, '
+                          # 'text height=0.9em, text depth=0.2em, '
                           f'inner xsep={column_sep}em, inner ysep=0, '
                           f'text width={max(2, w):.2f}em}},\n')
             else:
@@ -1294,61 +1842,253 @@ class GT(object):
         xshift = -column_sep / 2
         descender_proportion = 0.25
 
-        ls = 'thick'
-        ln = 1
-        sio.write(
-            f'\\path[draw, {ls}] ({matrix_name}-{ln}-1.south west)  -- ({matrix_name}-{ln}-{nc+1}.south east);\n')
+        # GEMINI v2
+        # GEMINI v2
+        # GEMINI v2
+        # GEMINI v2
+        # GEMINI v2
+        # [Fix 2026-01-22] Helper to map config widths (ints) to TikZ styles
+        def get_linewidth(width_idx, is_vertical=False):
+            widths = self.config.vrule_widths if is_vertical else self.config.hrule_widths
+            # Safety check: ensure index is valid
+            if not isinstance(width_idx, int) or width_idx < 0 or width_idx >= len(widths):
+                return 'very thin'
 
-        for ln in hrule:
-            ls = 'thick' if ln == nr + nr_columns + \
-                1 else ('semithick' if ln == 1 + nr_columns else 'very thin')
-            if ln < nr:
-                sio.write(f'\\path[draw, {ls}] ([yshift={-yshift}em]{matrix_name}-{ln}-1.south west)  -- '
-                          f'([yshift={-yshift}em]{matrix_name}-{ln}-{nc+1}.south east);\n')
-            else:
-                ln = nr
-                sio.write(f'\\path[draw, thick] ([yshift={-descender_proportion-yshift}em]{matrix_name}-{ln}-1.base west)  -- '
-                          f'([yshift={-descender_proportion-yshift}em]{matrix_name}-{ln}-{nc+1}.base east);\n')
+            w = widths[width_idx]
+            return GT.w2tikz.get(w, 'very thin')
+            # if w == 0: return None # Don't draw if width is 0
+            # if w >= 2: return 'thick'
+            # if w >= 1: return 'semithick'
+            # return 'very thin'
 
-        if nr_columns > 1:
-            for ln in range(2, nr_columns + 1):
-                sio.write(f'\\path[draw, very thin] ([xshift={xshift}em, yshift={-yshift}em]'
-                          f'{matrix_name}-{ln}-{nc_index+1}.south west)  -- '
-                          f'([yshift={-yshift}em]{matrix_name}-{ln}-{nc+1}.south east);\n')
+        # --- 1. HORIZONTAL RULES ---
 
-        written = set(range(1, nc_index + 1))
-        if vrule and self.show_index:
+        # A. Top-most Frame Rule (User requested above Row 1)
+        # Note: Row 1 is the top-most spacer row.
+        style = GT.w2tikz.get(self.config.table_hrule_width, ' thin')
+        sio.write(f'\\path[draw, {style}] ({matrix_name}-1-1.north west) -- ({matrix_name}-1-{nc+1}.north east);\n')
+
+        # B. Grouping Rules
+        # Calculate where data rows start: Spacer(1) + Headers(nr_columns) + 1 (1-based indexing)
+        tikz_data_start = 1 + nr_columns + 1
+
+        # Map string level names to integer indices
+        index_name_to_level = dict(zip(self.raw_df.index.names, range(self.nindex)))
+
+        if self.show_index:
+            for r_idx, level_name in self.index_change_level.items():
+                level_idx = index_name_to_level.get(level_name, 0)
+
+                # HTML-like behavior: Start line at the level of change
+                start_col = level_idx + 1
+                if r_idx == 0:
+                    # above first row
+                    style = GT.w2tikz.get(self.config.table_hbaserule_width, ' thin')
+                else:
+                    style = get_linewidth(level_idx, is_vertical=False)
+                if style:
+                    tikz_row = tikz_data_start + r_idx
+
+                    # Anchor Y to the STABLE last column. Anchor X to the DYNAMIC start column.
+                    ref_node = f"{matrix_name}-{tikz_row}-{nc+1}"
+                    start_node = f"{matrix_name}-{tikz_row}-{start_col}"
+                    end_node = f"{matrix_name}-{tikz_row}-{nc+1}"
+
+                    sio.write(f'\\path[draw, {style}] '
+                              f'([yshift={yshift}em]{ref_node}.north -| {start_node}.west) -- '
+                              f'([yshift={yshift}em]{ref_node}.north -| {end_node}.east);\n')
+
+        # C. Bottom Frame Rule
+        style = GT.w2tikz.get(self.config.table_hrule_width, ' thin')
+        sio.write(f'\\path[draw, {style}] ([yshift={-yshift}em]{matrix_name}-1-1.south west |- {matrix_name}.south) -- '
+                  f'([yshift={-yshift}em]{matrix_name}-1-{nc+1}.south east |- {matrix_name}.south);\n')
+
+        # --- 2. VERTICAL RULES ---
+
+        # Define shifts.
+        # xshift was defined as -column_sep/2 (negative).
+        # We need a positive shift to move "Right" into the gap from a .south east anchor.
+        gap_shift = column_sep / 2
+
+        # A. Main Index Divider (Separating Index from Body)
+        if self.show_index and self.nindex > 0:
+            idx_col = self.nindex
+            # Draw to the RIGHT of the last index column.
+            # Use POSITIVE gap_shift to move into the space between Index and Body.
+            # This fixes the "cuts off words" bug.
+            sio.write(f'\\path[draw, thick] ([xshift={gap_shift}em]{matrix_name}-1-{idx_col}.south east) -- '
+                      f'([xshift={gap_shift}em]{matrix_name}-1-{idx_col}.south east |- {matrix_name}.south);\n')
+
+        # B. Body Vertical Rules (from self.vrule set)
+        if vrule:
             ls = 'very thin'
             for cn in vrule:
-                if cn not in written:
-                    sio.write(f'\\path[draw, {ls}] ([xshift={xshift}em]{matrix_name}-1-{cn}.south west)  -- '
-                              f'([yshift={-descender_proportion-yshift}em, xshift={xshift}em]{matrix_name}-{nr}-{cn}.base west);\n')
-                    written.add(cn - 1)
+                # [Fix] "First vertical shouldn't be there" -> Skip col 1
+                if cn <= 1: continue
+                # [Fix] "No v lines in the index" -> Skip if inside index
+                if self.show_index and cn <= self.nindex: continue
 
+                # Draw to the LEFT of column cn (Standard TikZ behavior)
+                # Use negative xshift (self.config.xshift is usually negative)
+                sio.write(f'\\path[draw, {ls}] ([xshift={xshift}em]{matrix_name}-1-{cn}.south west) -- '
+                            f'([xshift={xshift}em]{matrix_name}-1-{cn}.south west |- {matrix_name}.south);\n')
+
+        # C. Multi-Index Header Vertical Rules (mi_vrules)
+        written = set(range(1, nc_index + 1))
         if len(mi_vrules) > 0:
-            logger.debug(
-                f'Generated vlines {mi_vrules}; already written {written}')
             ls = 'ultra thin'
             for k, cols in mi_vrules.items():
                 if k == len(mi_vrules) - 1:
                     break
                 for cn in cols:
-                    if cn in written:
-                        pass
+                    if cn in written: continue
+                    # [Fix] Skip far-left line
+                    if cn <= 1: continue
+
+                    written.add(cn)
+                    top = k + 1
+                    start_anchor = f"{matrix_name}-{top}-{cn}.south east"
+
+                    # Draw to the RIGHT of column cn
+                    if top == 0:
+                         sio.write(f'\\path[draw, {ls}] ([xshift={gap_shift}em]{start_anchor}) -- '
+                                  f'([xshift={gap_shift}em, yshift={-yshift}em]{start_anchor} |- {matrix_name}.south);\n')
                     else:
-                        written.add(cn)
-                        top = k + 1
-                        if top == 0:
-                            sio.write(f'\\path[draw, {ls}] ([xshift={-xshift}em]{matrix_name}-{top}-{cn}.south east)  -- '
-                                      f'([yshift={-descender_proportion-yshift}em, xshift={-xshift}em]{matrix_name}-{nr}-{cn}.base east);\n')
-                        else:
-                            sio.write(f'\\path[draw, {ls}] ([xshift={-xshift}em, yshift={-yshift}em]{matrix_name}-{top}-{cn}.south east)  -- '
-                                      f'([yshift={-descender_proportion-yshift}em, xshift={-xshift}em]{matrix_name}-{nr}-{cn}.base east);\n')
+                        sio.write(f'\\path[draw, {ls}] ([xshift={gap_shift}em, yshift={-yshift}em]{start_anchor}) -- '
+                                  f'([xshift={gap_shift}em, yshift={-yshift}em]{start_anchor} |- {matrix_name}.south);\n')
 
         sio.write(footer.format(container_env=container_env,
                   post_process=post_process))
         if not all(df == self.df_tex):
             logger.error('In tikz and df has changed...')
+        return sio.getvalue()
+
+        # START===
+        # Gemini proposed fix VERSION 1
+        # [Fix 2026-01-22] Robust Line Drawing for Wrapped Cells
+        # Instead of anchoring to the potentially short index cell, we anchor to:
+        # 1. The TOP of the NEXT row for internal lines (since the next row is pushed down)
+        # 2. The BOTTOM of the MATRIX for the final line
+
+        # [Fix] Explicitly draw the top line above the header (Row 2)
+        # Row 1 is a spacer, so the visual top is Row 2's North.
+        # sio.write(f'\\path[draw, thick] ({matrix_name}-1-1.north west) -- ({matrix_name}-1-{nc+1}.north east);\n')
+
+        # for ln in hrule:
+        #     ls = 'thick' if ln == nr + nr_columns + 1 else ('semithick' if ln == 1 + nr_columns else 'very thin')
+
+        #     if ln < nr:
+        #         # INTERNAL LINES: Anchor to the top (north) of the NEXT row (ln + 1)
+        #         # We shift UP (positive yshift) into the gap between rows.
+        #         next_row = ln + 1
+        #         sio.write(f'\\path[draw, {ls}] ([yshift={yshift}em]{matrix_name}-{next_row}-1.north west)  -- '
+        #                   f'([yshift={yshift}em]{matrix_name}-{next_row}-{nc+1}.north east);\n')
+        #     else:
+        #         # BOTTOM LINE: Anchor to the bottom (south) of the entire matrix
+        #         # We shift DOWN (negative yshift) to provide padding.
+        #         # We use perpendicular coords (|- matrix.south) to keep X alignment precise.
+        #         sio.write(f'\\path[draw, thick] ([yshift={-yshift}em]{matrix_name}-1-1.south west |- {matrix_name}.south) -- '
+        #                   f'([yshift={-yshift}em]{matrix_name}-1-{nc+1}.south east |- {matrix_name}.south);\n')
+
+        # if nr_columns > 1:
+        #     for ln in range(2, nr_columns + 1):
+        #         sio.write(f'\\path[draw, very thin] ([xshift={xshift}em, yshift={-yshift}em]'
+        #                   f'{matrix_name}-{ln}-{nc_index+1}.south west)  -- '
+        #                   f'([yshift={-yshift}em]{matrix_name}-{ln}-{nc+1}.south east);\n')
+
+        # written = set(range(1, nc_index + 1))
+
+        # # VERTICAL LINES
+        # # [Fix] Anchor the bottom of v-lines to the matrix.south (matching the bottom h-line)
+        # if vrule and self.show_index:
+        #     ls = 'very thin'
+        #     for cn in vrule:
+        #         if cn not in written:
+        #             sio.write(f'\\path[draw, {ls}] ([xshift={xshift}em]{matrix_name}-1-{cn}.south west) -- '
+        #                       f'([xshift={xshift}em, yshift={-yshift}em]{matrix_name}-1-{cn}.south west |- {matrix_name}.south);\n')
+        #             written.add(cn - 1)
+
+        # if len(mi_vrules) > 0:
+        #     logger.debug(f'Generated vlines {mi_vrules}; already written {written}')
+        #     ls = 'ultra thin'
+        #     for k, cols in mi_vrules.items():
+        #         if k == len(mi_vrules) - 1:
+        #             break
+        #         for cn in cols:
+        #             if cn in written:
+        #                 pass
+        #             else:
+        #                 written.add(cn)
+        #                 top = k + 1
+        #                 # Adjust v-lines to also respect matrix bottom
+        #                 if top == 0:
+        #                      sio.write(f'\\path[draw, {ls}] ([xshift={-xshift}em]{matrix_name}-{top}-{cn}.south east) -- '
+        #                               f'([xshift={-xshift}em, yshift={-yshift}em]{matrix_name}-{top}-{cn}.south east |- {matrix_name}.south);\n')
+        #                 else:
+        #                     sio.write(f'\\path[draw, {ls}] ([xshift={-xshift}em, yshift={-yshift}em]{matrix_name}-{top}-{cn}.south east) -- '
+        #                               f'([xshift={-xshift}em, yshift={-yshift}em]{matrix_name}-{top}-{cn}.south east |- {matrix_name}.south);\n')
+        # second iteration end ===
+
+
+        # start ===
+        # ls = 'thick'
+        # ln = 1
+        # sio.write(
+        #     f'\\path[draw, {ls}] ({matrix_name}-{ln}-1.south west)  -- ({matrix_name}-{ln}-{nc+1}.south east);\n')
+
+        # for ln in hrule:
+        #     ls = 'thick' if ln == nr + nr_columns + \
+        #         1 else ('semithick' if ln == 1 + nr_columns else 'very thin')
+        #     if ln < nr:
+        #         sio.write(f'\\path[draw, {ls}] ([yshift={-yshift}em]{matrix_name}-{ln}-1.south west)  -- '
+        #                   f'([yshift={-yshift}em]{matrix_name}-{ln}-{nc+1}.south east);\n')
+        #     else:
+        #         ln = nr
+        #         sio.write(f'\\path[draw, thick] ([yshift={-descender_proportion-yshift}em]{matrix_name}-{ln}-1.base west)  -- '
+        #                   f'([yshift={-descender_proportion-yshift}em]{matrix_name}-{ln}-{nc+1}.base east);\n')
+
+        # if nr_columns > 1:
+        #     for ln in range(2, nr_columns + 1):
+        #         sio.write(f'\\path[draw, very thin] ([xshift={xshift}em, yshift={-yshift}em]'
+        #                   f'{matrix_name}-{ln}-{nc_index+1}.south west)  -- '
+        #                   f'([yshift={-yshift}em]{matrix_name}-{ln}-{nc+1}.south east);\n')
+
+        # written = set(range(1, nc_index + 1))
+        # if vrule and self.show_index:
+        #     ls = 'very thin'
+        #     for cn in vrule:
+        #         if cn not in written:
+        #             sio.write(f'\\path[draw, {ls}] ([xshift={xshift}em]{matrix_name}-1-{cn}.south west)  -- '
+        #                       f'([yshift={-descender_proportion-yshift}em, xshift={xshift}em]{matrix_name}-{nr}-{cn}.base west);\n')
+        #             written.add(cn - 1)
+
+        # if len(mi_vrules) > 0:
+        #     logger.debug(
+        #         f'Generated vlines {mi_vrules}; already written {written}')
+        #     ls = 'ultra thin'
+        #     for k, cols in mi_vrules.items():
+        #         if k == len(mi_vrules) - 1:
+        #             break
+        #         for cn in cols:
+        #             if cn in written:
+        #                 pass
+        #             else:
+        #                 written.add(cn)
+        #                 top = k + 1
+        #                 if top == 0:
+        #                     sio.write(f'\\path[draw, {ls}] ([xshift={-xshift}em]{matrix_name}-{top}-{cn}.south east)  -- '
+        #                               f'([yshift={-descender_proportion-yshift}em, xshift={-xshift}em]{matrix_name}-{nr}-{cn}.base east);\n')
+        #                 else:
+        #                     sio.write(f'\\path[draw, {ls}] ([xshift={-xshift}em, yshift={-yshift}em]{matrix_name}-{top}-{cn}.south east)  -- '
+        #                               f'([yshift={-descender_proportion-yshift}em, xshift={-xshift}em]{matrix_name}-{nr}-{cn}.base east);\n')
+        # end ===
+
+        sio.write(footer.format(container_env=container_env,
+                  post_process=post_process))
+        if not all(df == self.df_tex):
+            logger.error('In tikz and df has changed...saving to tmp')
+            df.to_csv('\\tmp\\original-df.csv')
+            self.df_tex.to_csv('\\tmp\\self-df.csv')
         return sio.getvalue()
 
     def make_rich(self, console, box_style=box.SQUARE):

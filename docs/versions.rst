@@ -12,6 +12,12 @@ Versions and Change Log
     * self.padl and r / 12 in make html width adj s/b elsewhere
 
 
+7.0.0
+-----
+* Proper h and vrules for TeX output!
+* Fixed wrapping and overlap issues for TeX output!
+* Added tester and GTTester class to mass produce test cases
+
 6.0.1
 -----
 * Fixed bug with multi-indexing by moving coversion to pyarrow

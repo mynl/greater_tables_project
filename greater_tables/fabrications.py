@@ -190,6 +190,10 @@ class Fabricator:
         """
         Fabricate a dataframe with the given specification.
 
+        Remember: simplify drops index levels that are all the same! If
+        you request too many index levels but too few rows, the extra
+        levels will get dropped.
+
         metric_name_spec = '' or tuple.list of names, or a spec
 
         Data types
@@ -214,8 +218,9 @@ class Fabricator:
 
         Args:
             rows: Number of rows.
-            columns: Column type spec (int for all float cols, or string type codes).
-            index: Index level types (int for RangeIndex or string like 'ti').
+            data_spec: Column type spec for each group (int for all float cols, or string type codes).
+            index_levels: number of index levels
+            column_groups:
             col_index: Column index levels (same format as `index`).
             missing: Proportion of missing data in each column.
 
@@ -252,8 +257,8 @@ class Fabricator:
             metric_names = [self.metric_name(t) for t in data_spec]
         elif isinstance(metric_name_spec, (list, tuple)):
             metric_names = [i.strip() for i in metric_name_spec]
-            assert len(metric_names) == metrics, f"metric_name_spec must have name for each of {
-                metrics} metrics"
+            assert len(metric_names) == metrics, ("metric_name_spec must have name for each of "
+                                                  f"{metrics} metrics")
         else:
             metric_name_spec = self._parse_colspec(metric_name_spec)
             assert len(metric_name_spec) == len(
@@ -365,7 +370,9 @@ class Fabricator:
             sc = 5
             return pd.Series(np.exp(self.rng.normal(loc=-sc**2 / 2 + 10, scale=sc, size=n)))
         if dtype == 'i':
-            return pd.Series(self.rng.integers(-1e4, 1e6, size=n), dtype='int64')
+            # this gives a poor spread
+            # return pd.Series(self.rng.integers(-1e4, 1e6, size=n), dtype='int64')
+            return pd.Series(self.rng.normal(80_000, 35_000, size=n)).astype(int)
         if dtype == 'd':
             return random_datetime_series(n, rng=self.rng)
         if dtype == 'y':

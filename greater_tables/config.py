@@ -57,10 +57,13 @@ class Configurator(BaseModel):
     table_float_format: Optional[Union[str, Callable[[Any, str], str]]] = Field(
         None, description="Float format function or format string for the entire table; overrides column-specific formats"
     )
-    table_hrule_width: int = Field(
+    table_hrule_width: float = Field(
         1, description="Width of top, bottom, and header horizontal rules"
     )
-    table_vrule_width: int = Field(
+    table_hbaserule_width: float = Field(
+        1, description="Width of header horizontal rule under header"
+    )
+    table_vrule_width: float = Field(
         1, description="Width of vertical rule separating index from body"
     )
     hrule_widths: Optional[tuple[float, float, float]] = Field(
