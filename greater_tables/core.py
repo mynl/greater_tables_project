@@ -1897,6 +1897,18 @@ class GT(object):
                     sio.write(f'\\path[draw, {style}] '
                               f'([yshift={yshift}em]{ref_node}.north -| {start_node}.west) -- '
                               f'([yshift={yshift}em]{ref_node}.north -| {end_node}.east);\n')
+        else:
+            # still need the under heading rule even when no index, r_idx == 0
+            style = GT.w2tikz.get(self.config.table_hbaserule_width, ' thin')
+            if style:
+                tikz_row = tikz_data_start
+                start_col = 1  # goes all the way left
+                ref_node = f"{matrix_name}-{tikz_row}-{nc+1}"
+                start_node = f"{matrix_name}-{tikz_row}-{start_col}"
+                end_node = f"{matrix_name}-{tikz_row}-{nc+1}"
+                sio.write(f'\\path[draw, {style}] '
+                          f'([yshift={yshift}em]{ref_node}.north -| {start_node}.west) -- '
+                          f'([yshift={yshift}em]{ref_node}.north -| {end_node}.east);\n')
 
         # C. Bottom Frame Rule
         style = GT.w2tikz.get(self.config.table_hrule_width, ' thin')
