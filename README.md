@@ -48,7 +48,7 @@ MIT.
 ```python
 import pandas as pd
 import numpy as np
-from greater_tables import sGT
+from greater_tables import GT
 level_1 = ["Group A", "Group A", "Group B", "Group B", 'Group C']
 level_2 = ['Sub 1', 'Sub 2', 'Sub 2', 'Sub 3', 'Sub 3']
 
@@ -64,9 +64,37 @@ df = pd.DataFrame(
 'e': 'once upon a time, risk is hard to define, not in Kansas anymore, neutrinos are hard to detect,  $\\int_\\infty^\\infty e^{-x^2/2}dx$ is a hard integral'.split(',')
 }).set_index('year')
 df.columns = multi_index
-gtc.GT(df, caption='A simple GT table.', 
+
+
+t = GT(df, caption='A simple GT table.', 
        year_cols='year',
        vrule_widths=(1,.5, 0))
+
+print(t) # as text
+┍━━━━━━┳━━━━━━━━━┯━━━━━━━━━┯━━━━━━━━━━┯━━━━━━━┯━━━━━━━━━━━━━━━━━━━━━┑
+│      ┃         │         │          │ Group │                     │
+│      ┃ Group A │ Group A │ Group B  │   B   │       Group C       │
+├──────╂─────────┼─────────┼──────────┼───────┼─────────────────────┤
+│ year ┃  Sub 1  │  Sub 2  │  Sub 2   │ Sub 3 │        Sub 3        │
+┝━━━━━━╋━━━━━━━━━┿━━━━━━━━━┿━━━━━━━━━━┿━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━┥
+│ 2020 ┃     100 │  1.000n │   601.00 │ 2026- │ once upon a time    │
+│      ┃         │         │          │ 02-27 │                     │
+├──────╂─────────┼─────────┼──────────┼───────┼─────────────────────┤
+│ 2021 ┃     105 │ 31.623u │ 1,450.75 │ 2026- │  risk is hard to    │
+│      ┃         │         │          │ 05-14 │ define              │
+├──────╂─────────┼─────────┼──────────┼───────┼─────────────────────┤
+│ 2022 ┃   2,000 │   1.000 │ 2,300.50 │ 2026- │  not in Kansas      │
+│      ┃         │         │          │ 07-30 │ anymore             │
+├──────╂─────────┼─────────┼──────────┼───────┼─────────────────────┤
+│ 2023 ┃   2,025 │ 31.623k │ 3,150.25 │ 2026- │  neutrinos are hard │
+│      ┃         │         │          │ 10-15 │ to detect           │
+├──────╂─────────┼─────────┼──────────┼───────┼─────────────────────┤
+│ 2024 ┃ 100,000 │  1.000G │ 4,000.00 │ 2026- │ $\int_\infty^\infty │
+│      ┃         │         │          │ 12-31 │ e^{-x^2/2}dx$ is a  │
+│      ┃         │         │          │       │ hard integral       │
+┕━━━━━━┻━━━━━━━━━┷━━━━━━━━━┷━━━━━━━━━━┷━━━━━━━┷━━━━━━━━━━━━━━━━━━━━━┙
+
+display(t) # in jupyter as html
 ```
 
 ![](docs/img/simple-example.png)
